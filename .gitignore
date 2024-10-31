@@ -1,0 +1,35 @@
+# Ignore raw data
+data/raw/*
+!data/raw/README.md  # Keep an empty README to explain where raw files go
+
+# Ignore any fastq.gz and large dataset files in processed data
+*.fastq.gz
+*.bam
+*.vcf
+*.sam
+*.csv
+*.tsv
+*.h5
+
+# Ignore large result files
+results/**/*.pdf
+results/**/*.png
+
+# Ignore temporary files and logs
+*.log
+*.tmp
+*.swp
+*.bak
+.DS_Store
+
+# Ignore container and config files specific to environment
+config/docker/*
+
+# Ignore compiled files and environments
+__pycache__/
+*.Rhistory
+*.Rproj.user
+*.ipynb_checkpoints/
+.venv/
+.env
+node_modules/
