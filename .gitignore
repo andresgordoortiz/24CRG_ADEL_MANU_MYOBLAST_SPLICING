@@ -26,6 +26,7 @@ results/**/*.png
 config/docker/*
 
 # Ignore compiled files and environments
+/tmp
 __pycache__/
 *.Rhistory
 *.Rproj.user
