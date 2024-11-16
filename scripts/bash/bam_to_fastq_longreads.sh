@@ -10,14 +10,14 @@
 #SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
 # time limit in minutes
-#SBATCH --time=10
+#SBATCH --time=30
 
 # queue
 #SBATCH --qos=vshort
 
 # memory (MB)
-#SBATCH --mem=10G
-#SBATCH --cpus-per-task=8
+#SBATCH --mem=5G
+#SBATCH --cpus-per-task=1
 
 # job name
 #SBATCH --job-name bam_to_fastq
