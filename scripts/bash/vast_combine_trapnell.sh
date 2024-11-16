@@ -41,7 +41,7 @@ set -o pipefail
 ###############
 # Store current working directory
 current_dir=$PWD
-cd $PWD/data/processed/trapnell2010/vast_out/to_combine
+cd $PWD/data/processed/trepnell2010/vast_out/to_combine
 
 # Initialize conda
 source ~/miniconda3/etc/profile.d/conda.sh
@@ -49,7 +49,7 @@ conda activate vasttools
 
 /users/mirimia/projects/vast-tools/vast-tools combine \
     -sp mm10 \
-    -o $current_dir/data/processed/trapnell2010/vast_out
+    -o $current_dir/data/processed/trepnell2010/vast_out
 
 conda deactivate
 
