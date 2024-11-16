@@ -3,14 +3,17 @@ data/raw/*
 !data/raw/README.md  # Keep an empty README to explain where raw files go
 
 # Ignore any fastq.gz and large dataset files in processed data
-*.fastq.gz
+*.gz
 *.bam
 *.vcf
 *.sam
 *.csv
 *.tsv
 *.h5
-
+*tmp/
+*to_combine/
+*.txt
+*downloads/
 # Ignore large result files
 results/**/*.pdf
 results/**/*.png
