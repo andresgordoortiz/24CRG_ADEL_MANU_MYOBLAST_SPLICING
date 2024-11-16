@@ -14,6 +14,8 @@ data/raw/*
 *to_combine/
 *.txt
 *downloads/
+*.bam
+*logs/
 # Ignore large result files
 results/**/*.pdf
 results/**/*.png
