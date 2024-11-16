@@ -22,7 +22,7 @@
 # job name
 #SBATCH --job-name vast-align
 # job array directive
-#SBATCH --array=2,4,6
+#SBATCH --array=0-9
 
 #################
 # start message #
