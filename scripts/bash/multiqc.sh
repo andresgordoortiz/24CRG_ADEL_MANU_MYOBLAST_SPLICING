@@ -6,8 +6,8 @@
 ##################
 
 # where to put stdout / stderr
-#SBATCH --output=/users/aaljord/agordo/git/24CRG_ADEL_MANU_OOCYTE_SPLICING/logs/%x.%A_%a.out
-#SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_OOCYTE_SPLICING/logs/%x.%A_%a.err
+#SBATCH --output=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.out
+#SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
 # time limit in minutes
 #SBATCH --time=1
@@ -42,7 +42,6 @@ cd $PWD/tmp
 cd -
 module load MultiQC/1.22.3-foss-2023b
 multiqc .
-mv multiqc_* $PWD/data/processed/pladienolideb
 ###############
 # end message #
 ###############
