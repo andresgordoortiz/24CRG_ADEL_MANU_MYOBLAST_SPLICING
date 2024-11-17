@@ -43,11 +43,11 @@ set -o pipefail
 ###############
 
 #Define file list and select the file for the current array job
-files=($PWD/data/processed/zhang_nature/*_1_trimmed.fastq.gz)
+files=($PWD/data/raw/zhang_nature/*_1.fastq.gz)
 file1=${files[$SLURM_ARRAY_TASK_ID]}
-file2=${file1/_1_trimmed.fastq.gz/_2_trimmed.fastq.gz}
+file2=${file1/_1.fastq.gz/_2.fastq.gz}
 
-basename=$(basename "$file1" _1_trimmed.fq.gz)
+basename=$(basename "$file1" _1.fastq.gz)
 mkdir -p $PWD/data/processed/zhang_nature/vast_out
 
 # Initialize conda
