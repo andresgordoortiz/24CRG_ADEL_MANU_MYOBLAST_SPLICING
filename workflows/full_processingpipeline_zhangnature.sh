@@ -29,9 +29,5 @@ echo "Submitting third job: Run vast combine..."
 jid3=$(sbatch --dependency=afterok:$jid2 $PWD/scripts/bash/zhang_nature/vast_combine_zhang.sh | tr -cd '[:digit:].')
 echo "...third job ID is $jid3"
 
-# Fourth job - generate MultiQC report (dependent on third job)
-echo "Submitting fourth job: MultiQC..."
-jid4=$(sbatch --dependency=afterok:$jid3 $PWD/scripts/bash/multiqc.sh | tr -cd '[:digit:].')
-echo "...fourth job ID is $jid4"
 
 echo "All jobs submitted!"
