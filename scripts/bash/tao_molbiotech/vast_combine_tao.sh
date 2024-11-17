@@ -51,6 +51,9 @@ conda activate vasttools
     -sp mm10 \
     -o $current_dir/data/processed/tao_molbiotech/vast_out
 
+cd $current_dir
+mv $PWD/data/processed/tao_molbiotech/vast_out/INCLUSION_LEVELS_FULL-mm10-12.tab $PWD/data/processed/tao_molbiotech/vast_out/Tao_INCLUSION_LEVELS_FULL-mm10.tab
+
 conda deactivate
 
 
