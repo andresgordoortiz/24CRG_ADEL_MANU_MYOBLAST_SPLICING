@@ -8,16 +8,15 @@
 # 3. Align reads
 # 4. Generate a multiQC report
 # 5. Run vast combine
-# 6. Run vast compare
 ##############################
 
 # SLURM output and error files
 #SBATCH --output=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.out
 #SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
-# First job - trim reads
+# First job - fastqc
 echo "Submitting first job: Trimming and FastQ..."
-jid1=$(sbatch $PWD/scripts/bash/zhang_nature/processing_trim_reads_zhang.sh | tr -cd '[:digit:].')
+jid1=$(sbatch $PWD/scripts/bash/zhang_nature/run_fastqc_zhang.sh | tr -cd '[:digit:].')
 echo "...first job ID is $jid1"
 
 # Second job - align reads (dependent on first job)
