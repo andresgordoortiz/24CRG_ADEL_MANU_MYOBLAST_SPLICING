@@ -19,6 +19,7 @@ data/raw/*
 *.html
 *.zip
 *multiqc_data/
+*.tab
 # Ignore large result files
 results/**/*.pdf
 results/**/*.png
