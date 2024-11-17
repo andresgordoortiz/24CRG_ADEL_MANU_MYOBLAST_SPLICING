@@ -1,8 +1,8 @@
 #!/usr/bin/bash
 
 ##############################
-# Full Processing Pipeline CRG Adel Manu Lab for Pladienolide B dataset
-# This script processes the Pladienolide B dataset (unpublished) by performing the following steps:
+# Full Processing Pipeline CRG Adel Lab for Trapnell 2010 dataset
+# This script processes the data by performing the following steps:
 # 1. Concatenate reads
 # 2. Trim reads
 # 3. Align reads
@@ -12,8 +12,8 @@
 ##############################
 
 # SLURM output and error files
-#SBATCH --output=/users/aaljord/agordo/git/24CRG_ADEL_MANU_OOCYTE_SPLICING/logs/%x.%A_%a.out
-#SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_OOCYTE_SPLICING/logs/%x.%A_%a.err
+#SBATCH --output=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.out
+#SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
 # Third job - align reads
 echo "Submitting third job: Align reads..."
