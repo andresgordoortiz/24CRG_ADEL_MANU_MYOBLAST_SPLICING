@@ -53,7 +53,7 @@ module load MultiQC/1.22.3-foss-2023b
 multiqc . -n zhang_nature_multiqc_report.html
 
 # Zip every file containing fastqc in the processed folder
-zip fastqc_results_zhang.zip *fastqc*
+zip $PWD/fastqc_results_zhang.zip *fastqc*
 rm *fastqc*
 
 ###############
