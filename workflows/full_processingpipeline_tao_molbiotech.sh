@@ -14,7 +14,6 @@
 #SBATCH --output=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.out
 #SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
-mkdir -p $PWD/tmp2/fastqc
 
 # First job - Download FastQC
 echo "Submitting first job: FastQC..."
