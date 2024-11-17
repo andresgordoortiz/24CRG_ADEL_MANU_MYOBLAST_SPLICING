@@ -16,13 +16,23 @@
 #SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
 # Third job - align reads
+echo "Submitting third job: Trimming and FastQ..."
+jid1=$(sbatch $PWD/scripts/bash/zhang_nature/processing_trim_reads_zhang.sh | tr -cd '[:digit:].')
+echo "...first job ID is $jid1"
+
+# Third job - align reads
 echo "Submitting third job: Align reads..."
-jid1=$(sbatch $PWD/scripts/bash/vast_align_trapnell.sh | tr -cd '[:digit:].')
-echo "...third job ID is $jid1"
+jid2=$(sbatch --dependency=afterok:$jid1 $PWD/scripts/bash/zhang_nature/vast_align_zhang.sh | tr -cd '[:digit:].')
+echo "...third job ID is $jid2"
 
 # Fifth job - run vast combine (dependent on third job)
 echo "Submitting fifth job: Run vast combine..."
-jid2=$(sbatch --dependency=afterok:$jid1 $PWD/scripts/bash/vast_combine_trapnell.sh | tr -cd '[:digit:].')
-echo "...fifth job ID is $jid2"
+jid3=$(sbatch --dependency=afterok:$jid2 $PWD/scripts/bash/zhang_nature/vast_combine_zhang.sh | tr -cd '[:digit:].')
+echo "...fifth job ID is $jid3"
+
+# Fifth job - run vast combine (dependent on third job)
+echo "Submitting fifth job: MultiQC..."
+jid4=$(sbatch --dependency=afterok:$jid3 $PWD/scripts/bash/multiqc.sh | tr -cd '[:digit:].')
+echo "...fifth job ID is $jid3"
 
 echo "All jobs submitted!"
