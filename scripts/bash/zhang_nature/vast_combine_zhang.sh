@@ -53,7 +53,8 @@ conda activate vasttools
 
 conda deactivate
 
-
+cd $current_dir
+mv $PWD/data/processed/zhang_nature/vast_out/INCLUSION_LEVELS_FULL-mm10-6.tab $PWD/data/processed/zhang_nature/vast_out/Zhang_INCLUSION_LEVELS_FULL-mm10.tab
 
 ###############
 # end message #
