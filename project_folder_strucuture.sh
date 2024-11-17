@@ -9,6 +9,7 @@ mkdir -p config/docker \
 		 workflows/modules \
 		 results/tables results/figures results/logs \
 		 docs \
+		 downloads \
 		 tests/data_tests tests/workflow_tests \
 		 .github/workflows \
 		 logs
