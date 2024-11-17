@@ -10,19 +10,19 @@
 #SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
 # time limit in minutes
-#SBATCH --time=5
+#SBATCH --time=3
 
 # queue
 #SBATCH --qos=vshort
 
 # memory (MB)
-#SBATCH --mem=4G
+#SBATCH --mem=2G
 
 # job name
 #SBATCH --job-name downloadfasta
 
 # job array directive
-#SBATCH --array=0-11
+#SBATCH --array=0-23
 
 #################
 # start message #
