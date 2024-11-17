@@ -16,20 +16,25 @@
 
 mkdir -p $PWD/tmp2/fastqc
 
-# First job - fastqc
+# First job - Download FastQC
 echo "Submitting first job: FastQC..."
-jid1=$(sbatch $PWD/scripts/bash/tao_molbiotech/run_fastqc_tao.sh | tr -cd '[:digit:].')
+jid1=$(sbatch $PWD/scripts/bash/tao_molbiotech/download_fastqc_tao.sh /data/raw/tao_molbiotech/fastq_files_tao.sh | tr -cd '[:digit:].')
 echo "...first job ID is $jid1"
 
-# Second job - align reads (dependent on first job)
-echo "Submitting second job: Align reads..."
-jid2=$(sbatch --dependency=afterok:$jid1 $PWD/scripts/bash/tao_molbiotech/vast_align_tao.sh | tr -cd '[:digit:].')
-echo "...second job ID is $jid2"
+# Second job - fastqc
+echo "Submitting first job: FastQC..."
+jid2=$(sbatch --dependency=afterok:$jid1 $PWD/scripts/bash/tao_molbiotech/run_fastqc_tao.sh | tr -cd '[:digit:].')
+echo "...first job ID is $jid2"
 
-# Third job - run vast combine (dependent on second job)
+# Third job - align reads
+echo "Submitting second job: Align reads..."
+jid3=$(sbatch --dependency=afterok:$jid1 $PWD/scripts/bash/tao_molbiotech/vast_align_tao.sh | tr -cd '[:digit:].')
+echo "...second job ID is $jid3"
+
+# Fourth job - run vast combine (dependent on second job)
 echo "Submitting third job: Run vast combine..."
-jid3=$(sbatch --dependency=afterok:$jid2 $PWD/scripts/bash/tao_molbiotech/vast_combine_tao.sh | tr -cd '[:digit:].')
-echo "...third job ID is $jid3"
+jid4=$(sbatch --dependency=afterok:$jid3 $PWD/scripts/bash/tao_molbiotech/vast_combine_tao.sh | tr -cd '[:digit:].')
+echo "...third job ID is $jid4"
 
 
 echo "All jobs submitted!"
