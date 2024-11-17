@@ -19,7 +19,7 @@ data/raw/*
 *logs/
 *.html
 *.zip
-*multiqc_data/
+*.json
 *.tab
 
 # Ignore large result files
