@@ -5,8 +5,8 @@
 ##################
 
 # where to put stdout / stderr
-#SBATCH --output=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/tmp/%x.%A_%a.out
-#SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/tmp/%x.%A_%a.err
+#SBATCH --output=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.out
+#SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
 # time limit in minutes
 #SBATCH --time=60
@@ -38,19 +38,23 @@ set -o pipefail
 ################
 # run fastqc   #
 ################
-mkdir -p $PWD/tmp/fastqc
+mkdir -p $PWD/data/processed/zhang_nature
 # Run FastQC using Singularity
 singularity exec --bind $PWD/data/raw/zhang_nature \
     docker://biocontainers/fastqc:v0.11.9_cv8 \
     fastqc -t 8 $PWD/data/raw/zhang_nature/*.fastq.gz \
-    --outdir $PWD/tmp/fastqc
+    --outdir $PWD/data/processed/zhang_nature
 
 ################
 # run multiqc  #
 ################
-cd $PWD/tmp/fastqc
+cd $PWD/data/processed/zhang_nature
 module load MultiQC/1.22.3-foss-2023b
-multiqc .
+multiqc . -n zhang_nature_multiqc_report.html
+
+# Zip every file containing fastqc in the processed folder
+zip fastqc_results_zhang.zip *fastqc*
+rm *fastqc*
 
 ###############
 # end message #
