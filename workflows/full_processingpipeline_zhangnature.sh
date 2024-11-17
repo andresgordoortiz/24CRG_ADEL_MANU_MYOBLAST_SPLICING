@@ -15,12 +15,12 @@
 #SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
 # First job - Download FastQC
-echo "Submitting first job: FastQC..."
-jid1=$(sbatch $PWD/scripts/bash/zhang_nature/download_fastqc_zhang.sh data/raw/zhang_nature/zhang_fasta_files.sh | tr -cd '[:digit:].')
+echo "Submitting first job: Downloading fastq..."
+jid1=$(sbatch $PWD/scripts/bash/zhang_nature/download_fastq_zhang.sh data/raw/zhang_nature/zhang_fasta_files.sh | tr -cd '[:digit:].')
 echo "...first job ID is $jid1"
 
 # Second job - fastqc
-echo "Submitting first job: Trimming and FastQ..."
+echo "Submitting first job: FastQC..."
 jid2=$(sbatch --dependency=afterok:$jid1 $PWD/scripts/bash/zhang_nature/run_fastqc_zhang.sh | tr -cd '[:digit:].')
 echo "...first job ID is $jid2"
 
