@@ -5,8 +5,8 @@
 ##################
 
 # where to put stdout / stderr
-#SBATCH --output=/users/aaljord/agordo/git/24CRG_ADEL_MANU_OOCYTE_SPLICING/logs/%x.%A.out
-#SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_OOCYTE_SPLICING/logs/%x.%A.err
+#SBATCH --output=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.out
+#SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
 # time limit in minutes
 #SBATCH --time=60
@@ -38,12 +38,12 @@ set -o pipefail
 ################
 # run fastqc   #
 ################
-singularity exec --bind $PWD/downloads docker://biocontainers/fastqc:v0.11.9_cv8 fastqc -t 4 $PWD/downloads/*.fastq.gz
+singularity exec --bind $PWD/data/processed/longreads_elisabeth docker://biocontainers/fastqc:v0.11.9_cv8 fastqc -t 4 $PWD/data/processed/longreads_elisabeth/*.fastq.gz
 
 ################
 # run multiqc  #
 ################
-cd $PWD/downloads
+cd $PWD/data/processed/longreads_elisabeth
 module load MultiQC/1.22.3-foss-2023b
 multiqc .
 
