@@ -1,8 +1,8 @@
-# Ignore raw data
+# Ignore raw data except README.md
 data/raw/*
 !data/raw/README.md  # Keep an empty README to explain where raw files go
 
-# Ignore any fastq.gz and large dataset files in processed data
+# Ignore compressed and large dataset files
 *.gz
 *.bam
 *.vcf
@@ -10,16 +10,18 @@ data/raw/*
 *.csv
 *.tsv
 *.h5
+
+# Ignore temporary and intermediate files
 *tmp/
 *to_combine/
 *.txt
 *downloads/
-*.bam
 *logs/
 *.html
 *.zip
 *multiqc_data/
 *.tab
+
 # Ignore large result files
 results/**/*.pdf
 results/**/*.png
