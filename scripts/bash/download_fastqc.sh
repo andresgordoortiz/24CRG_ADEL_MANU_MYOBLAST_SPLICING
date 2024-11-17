@@ -22,7 +22,7 @@
 #SBATCH --job-name downloadfasta
 
 # job array directive
-#SBATCH --array=0-3
+#SBATCH --array=0-11
 
 #################
 # start message #
