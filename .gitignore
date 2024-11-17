@@ -16,6 +16,8 @@ data/raw/*
 *downloads/
 *.bam
 *logs/
+*.html
+*.zip
 # Ignore large result files
 results/**/*.pdf
 results/**/*.png
