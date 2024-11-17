@@ -5,11 +5,11 @@
 ##################
 
 # where to put stdout / stderr
-#SBATCH --output=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/tmp2/%x.%A_%a.out
-#SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/tmp2/%x.%A_%a.err
+#SBATCH --output=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.out
+#SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
 # time limit in minutes
-#SBATCH --time=60
+#SBATCH --time=30
 
 # queue
 #SBATCH --qos=vshort
@@ -38,21 +38,23 @@ set -o pipefail
 ################
 # run fastqc   #
 ################
-mkdir -p $PWD/tmp2/fastqc
+mkdir -p $PWD/data/processed/tao_molbiotech
 # Run FastQC using Singularity
 singularity exec --bind $PWD/data/raw/tao_molbiotech \
     docker://biocontainers/fastqc:v0.11.9_cv8 \
     fastqc -t 8 $PWD/data/raw/tao_molbiotech/*.fastq.gz \
-    --outdir $PWD/tmp2/fastqc
+    --outdir $PWD/data/processed/tao_molbiotech
 
 ################
 # run multiqc  #
 ################
-cd $PWD/tmp2/fastqc
+cd $PWD/data/processed/tao_molbiotech
 module load MultiQC/1.22.3-foss-2023b
-multiqc .
+multiqc . -n tao_molbiotech_multiqc_report.html
 
-###############
+# Zip every file containing fastqc in the processed folder
+zip fastqc_results.zip *fastqc*
+rm *fastqc*
 # end message #
 ###############
 end_epoch=`date +%s`
