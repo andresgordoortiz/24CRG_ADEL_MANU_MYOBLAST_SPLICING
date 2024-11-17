@@ -46,7 +46,7 @@ files=($PWD/data/raw/zhang_nature/*.fastq.gz)
 file=${files[$SLURM_ARRAY_TASK_ID]}
 
 # Run the trimming command for the selected file
-singularity exec --bind $PWD/tmp \
+singularity exec --bind $PWD/tmp --bind $PWD/data/raw/zhang_nature \
     docker://dceoy/trim_galore:latest \
     trim_galore "$file" \
     --fastqc -j 8 -o $PWD/tmp/trimmed -q 20 \
@@ -54,7 +54,7 @@ singularity exec --bind $PWD/tmp \
 
 # Move the trimmed file with the new name format
 basename=$(basename "$file" .fastq.gz)
-mv "$PWD/tmp/trimmed/${basename}_trimmed.fq.gz" $PWD/data/processed/pladienolideb/
+mv "$PWD/tmp/trimmed/${basename}_trimmed.fq.gz" $PWD/data/processed/zhang_nature/
 
 ###############
 # end message #
