@@ -55,6 +55,7 @@ multiqc . -n tao_molbiotech_multiqc_report.html
 # Zip every file containing fastqc in the processed folder
 zip $PWD/fastQC_results_tao.zip *fastqc*
 rm *fastqc*
+rm vast_out/tmp -r
 # end message #
 ###############
 end_epoch=`date +%s`
