@@ -1,0 +1,291 @@
+---
+title: 'Splicing Exploration of the Tao Dataset'
+author: "Andrñes Gordo"
+date: "`r Sys.Date()`"  
+output: 
+    rmarkdown::html_vignette:
+        toc: true
+        number_sections: true
+        df_print: kable
+
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+```{r packages, message=FALSE, warning=F}
+library(betAS)
+
+if(!require(ggplot2)) install.packages("ggplot2")
+library(ggplot2)
+
+if(!require(plotly)) install.packages("plotly")
+library(plotly)
+
+if(!require(dplyr)) install.packages("dplyr")
+library(dplyr)
+
+if(!require(cowplot)) install.packages("cowplot")  
+library(cowplot)
+
+if(!require(DT)) install.packages("cowplot")  
+library(DT)
+```
+
+
+```{r load inclusion table}
+path<- "C:\\Users\\andre\\Documents\\GitHub\\24CRG_ADEL_MANU_MYOBLAST_SPLICING\\inclusion_tables\\Tao_INCLUSION_LEVELS_FULL-mm10.tab"
+taodata <- getDataset(pathTables=path, tool="vast-tools")
+taoevents <- getEvents(taodata, tool = "vast-tools")
+taoevents <- alternativeEvents(taoevents, minPsi=1, maxPsi=99)
+taoevents$EventsPerType
+```
+```{r load_metadata_example}
+metadata_path<-"C:\\Users\\andre\\Documents\\GitHub\\24CRG_ADEL_MANU_MYOBLAST_SPLICING\\metadata\\tao_metadata.csv"
+metadata <- read.csv(metadata_path, sep = ",")
+```
+
+```{r events extraction}
+#Only extraction of events with at least 5 junction reads in ALL samples
+tao_exons <- filterEvents(taoevents, types=c("C1", "C2", "C3", "S", "MIC"), N=5)
+tao_introns<- filterEvents(taoevents, types=c("IR"), N=5)
+tao_alternative<-filterEvents(taoevents, types=c("Alt3", "Alt5"), N=5)
+cat(paste0("Alternative events: ", nrow(tao_exons$PSI)))
+```
+## Splicing Quality Check { .tabset }
+
+### Exons
+```{r bigPicturePlotExons, fig.width=8, fig.height=4}
+# Plot for tao_exons
+bigPicturePlotExons <- bigPicturePlot(table = tao_exons$PSI)
+bigPicturePlotExons + theme_minimal()
+```
+### Introns
+```{r bigPicturePlotIntrons, fig.width=8, fig.height=4}
+# Plot for tao_exons
+bigPicturePlotIntrons <- bigPicturePlot(table = tao_introns$PSI)
+bigPicturePlotIntrons + theme_minimal()
+```
+### Altenative Splicing
+```{r bigPictureAlternative, fig.width=8, fig.height=4}
+# Plot for tao_exons
+bigPicturePlotAlternative <- bigPicturePlot(table = tao_alternative$PSI)
+bigPicturePlotAlternative + theme_minimal()
+```
+
+### PCA
+```{r PCA calculation}
+data_pca<-taodata[,taoevents$Samples]
+data_pca <- na.omit(data_pca) 
+pca_result <- prcomp(t(data_pca))  # Scaling the data
+# Extract PCA results
+pca_data <- as.data.frame(pca_result$x)  # Principal component scores
+pca_data$Sample <- rownames(pca_data)    # Add sample names
+
+# Merge PCA results with metadata (assuming metadata has a 'SampleID' column matching sample names)
+merged_data <- merge(pca_data, metadata, by.x = "Sample", by.y = "run_accession")
+```
+
+```{r pca plot}
+# Generate a vector of colors based on the number of unique levels in experiment_title
+num_levels <- length(unique(merged_data$experiment_title))
+color_palette <- RColorBrewer::brewer.pal(num_levels, "Set3")  # You can choose other palettes
+
+# Now plot with the dynamically generated colors
+ggplot(merged_data, aes(x = PC1, y = PC2, color = as.factor(experiment_title))) +  
+  geom_point(size = 4) + 
+  labs(title = 'PCA of Samples´ PSI', 
+       x = paste("PC1 - ", round(100 * summary(pca_result)$importance[2, 1]), "%", sep = ""),
+       y = paste("PC2 - ", round(100 * summary(pca_result)$importance[2, 2]), "%", sep = "")) +
+  scale_color_manual(values = color_palette) +  # Dynamically generated color palette
+  theme_minimal(base_size = 14) +
+  theme(legend.title = element_blank(), 
+        axis.title = element_text(size = 14), 
+        axis.text = element_text(size = 12)) + 
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+
+
+```
+
+
+## PSI Distributions comparing 0 Days vs. 7 Days
+
+
+```{r aux_featuregroup}
+# Define variable of the metadata table to be used as a grouping variable
+groupingVariable <- "experiment_title"
+groups <- unique(metadata[, groupingVariable])
+
+# Define vector of sample names based on the example metadata 
+samples <- metadata$run_accession
+
+# Define colors for the groups
+random_colors <- c("#FF9AA2", "#FFB7B2", "#FFDAC1", "#D5E1DF")
+
+
+```
+
+```{r featuregroup}
+
+groupList <- list()
+
+for(i in 1:length(groups)){
+
+  groupNames <- samples[which(metadata[,groupingVariable] == groups[i])]
+
+  # Assign new group
+  currentNames <- names(groupList)
+  groupList[[length(groupList)+1]] <- list(name = groups[i],
+                                           samples = groupNames,
+                                           color = random_colors[i])
+  names(groupList) <- make.unique(c(currentNames, groups[i]))
+
+}
+
+groupList
+
+```
+
+```{r groups_auxiliary}
+# Define groups
+groupA    <- "0_days"
+groupB    <- "7_days"
+# Define samples inside each group
+samplesA    <- groupList[[groupA]]$samples
+samplesB    <- groupList[[groupB]]$samples
+
+# Convert samples into indexes
+colsGroupA    <- convertCols(tao_exons$PSI, samplesA)
+colsGroupB    <- convertCols(tao_exons$PSI, samplesB)
+```
+
+### Exons { .tabset }
+
+#### Pdiff
+```{r plotvolcano_Pdiff, fig.width=14, fig.height=10, warning=F}
+set.seed(42)
+volcanoTable_Pdiff <- prepareTableVolcano(psitable = tao_exons$PSI,
+                                    qualtable = tao_exons$Qual,
+                                    npoints = 500,
+                                    colsA = colsGroupA,
+                                    colsB = colsGroupB,
+                                    labA = groupA,
+                                    labB = groupB,
+                                    basalColor = "#89C0AE",
+                                    interestColor = "#E69A9C",
+                                    maxDevTable = maxDevSimulationN100, 
+                                    seed=TRUE, 
+                                    CoverageWeight = FALSE)
+
+volcano_Pdiff <- plotVolcano(betasTable = volcanoTable_Pdiff,
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+
+volcano_Pdiff
+ 
+```
+
+```{r Pdiff_table}
+exon_diff_tab <- volcanoTable_Pdiff[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff>=0.95) %>%  # Remove rows where EVENT is NA and Pdiff greater than 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(exon_diff_tab)<-1:nrow(exon_diff_tab)
+
+datatable(exon_diff_tab, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
+))
+```
+
+#### F-statistic
+
+
+```{r plotvolcano_Fstat, fig.width=14, fig.height=10, warning=F}
+volcanoTable_Fstat <- prepareTableVolcanoFstat(psitable = tao_exons$PSI,
+                                    qualtable = tao_exons$Qual,
+                                    npoints = 500,
+                                    colsA = colsGroupA,
+                                    colsB = colsGroupB,
+                                    labA = groupA,
+                                    labB = groupB,
+                                    basalColor = "#89C0AE",
+                                    interestColor = "#E69A9C",
+                                    maxDevTable = maxDevSimulationN100, 
+                                    seed=TRUE,
+                                   CoverageWeight=F )
+
+volcano_Fstat <- plotVolcanoFstat(betasTable = volcanoTable_Fstat,
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+
+volcano_Fstat
+ 
+```
+
+```{r Fstat_table}
+exon_fstat_tab <- volcanoTable_Fstat[,c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(exon_fstat_tab)<-1:nrow(exon_fstat_tab)
+
+datatable(exon_fstat_tab, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
+))
+```
+
+#### False positive rate (FPR)
+
+To calculate the **FPR** for all events in our dataset, we will use the
+`prepareTableVolcanoFDR` function. To visualize the results in a volcano
+plot, we will use the `plotVolcanoFDR` function. The user can also use
+the approach presented above to make the plot interactive.
+
+```{r plotvolcano_FDR, fig.width=14, fig.height=10, warning=F}
+volcanoTable_FDR <- prepareTableVolcanoFDR(psitable = tao_exons$PSI,
+                                    qualtable = tao_exons$Qual,
+                                    npoints = 500,
+                                    colsA = colsGroupA,
+                                    colsB = colsGroupB,
+                                    labA = groupA,
+                                    labB = groupB,
+                                    basalColor = "#89C0AE",
+                                    interestColor = "#E69A9C",
+                                    maxDevTable = maxDevSimulationN100,
+                                    nsim = 100, 
+                                    seed=TRUE, 
+                                    CoverageWeight = FALSE) 
+        
+volcano_FDR <- plotVolcanoFDR(betasTable = volcanoTable_FDR,
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+
+volcano_FDR
+```
+
+```{r FDR_table}
+exon_fdr_tab <- volcanoTable_FDR[,c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(exon_fdr_tab)<-1:nrow(exon_fdr_tab)
+
+datatable(exon_fdr_tab, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
+))
+```
