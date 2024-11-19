@@ -1,148 +1,189 @@
 ---
 title: 'Splicing Exploration of the Tao Dataset'
-author: "Andrñes Gordo"
-date: "`r Sys.Date()`"  
+author: "Andrés Gordo Ortiz"
+date: "`r Sys.Date()`"
 output: 
-    rmarkdown::html_vignette:
-        toc: true
-        number_sections: true
-        df_print: kable
+  rmarkdown::html_document:
+    toc: true
+    number_sections: true
+    df_print: kable
 
 editor_options: 
   markdown: 
     wrap: 72
 ---
-```{r packages, message=FALSE, warning=F}
-library(betAS)
 
-if(!require(ggplot2)) install.packages("ggplot2")
-library(ggplot2)
+```{r setup, include=FALSE}
+# Ensure a clean environment and load required libraries.
+knitr::opts_chunk$set(
+  echo = TRUE, 
+  warning = FALSE, 
+  message = FALSE
+)
 
-if(!require(plotly)) install.packages("plotly")
-library(plotly)
+# Function to install and load packages dynamically.
+install_load <- function(pkg) {
+  if (!require(pkg, character.only = TRUE)) {
+    install.packages(pkg, dependencies = TRUE)
+    library(pkg, character.only = TRUE)
+  }
+}
 
-if(!require(dplyr)) install.packages("dplyr")
-library(dplyr)
-
-if(!require(cowplot)) install.packages("cowplot")  
-library(cowplot)
-
-if(!require(DT)) install.packages("cowplot")  
-library(DT)
+# Load required libraries
+install_load("betAS")
+install_load("ggplot2")
+install_load("plotly")
+install_load("dplyr")
+install_load("cowplot")
+install_load("DT")
 ```
 
 
 ```{r load inclusion table}
-path<- "C:\\Users\\andre\\Documents\\GitHub\\24CRG_ADEL_MANU_MYOBLAST_SPLICING\\inclusion_tables\\Tao_INCLUSION_LEVELS_FULL-mm10.tab"
-taodata <- getDataset(pathTables=path, tool="vast-tools")
+# Define the path to the inclusion table
+path <- "C:\\Users\\andre\\Documents\\GitHub\\24CRG_ADEL_MANU_MYOBLAST_SPLICING\\inclusion_tables\\Tao_INCLUSION_LEVELS_FULL-mm10.tab"
+
+# Load the dataset using vast-tools functions
+taodata <- getDataset(pathTables = path, tool = "vast-tools")
+
+# Extract alternative splicing events
 taoevents <- getEvents(taodata, tool = "vast-tools")
-taoevents <- alternativeEvents(taoevents, minPsi=1, maxPsi=99)
+
+# Filter events based on PSI thresholds
+taoevents <- alternativeEvents(taoevents, minPsi = 1, maxPsi = 99)
+
+# Display summary of events per type
 taoevents$EventsPerType
+
 ```
-```{r load_metadata_example}
-metadata_path<-"C:\\Users\\andre\\Documents\\GitHub\\24CRG_ADEL_MANU_MYOBLAST_SPLICING\\metadata\\tao_metadata.csv"
+
+```{r load_metadata}
+# Load metadata file containing sample information
+metadata_path <- "C:\\Users\\andre\\Documents\\GitHub\\24CRG_ADEL_MANU_MYOBLAST_SPLICING\\metadata\\tao_metadata.csv"
 metadata <- read.csv(metadata_path, sep = ",")
+DT::datatable(metadata, options = list(pageLength = 5, scrollX = TRUE))
+
 ```
 
 ```{r events extraction}
-#Only extraction of events with at least 5 junction reads in ALL samples
-tao_exons <- filterEvents(taoevents, types=c("C1", "C2", "C3", "S", "MIC"), N=5)
-tao_introns<- filterEvents(taoevents, types=c("IR"), N=5)
-tao_alternative<-filterEvents(taoevents, types=c("Alt3", "Alt5"), N=5)
-cat(paste0("Alternative events: ", nrow(tao_exons$PSI)))
+# Filter events for exons, introns, and alternative splicing events
+tao_exons <- filterEvents(taoevents, types = c("C1", "C2", "C3", "S", "MIC"), N = 5)
+tao_introns <- filterEvents(taoevents, types = c("IR"), N = 5)
+tao_alternative <- filterEvents(taoevents, types = c("Alt3", "Alt5"), N = 5)
+
+# Output the count of alternative splicing events
+cat(paste0("Alternative splicing events detected: ", nrow(tao_exons$PSI)))
+
 ```
 ## Splicing Quality Check { .tabset }
 
 ### Exons
 ```{r bigPicturePlotExons, fig.width=8, fig.height=4}
-# Plot for tao_exons
+# Create a big picture plot for exon inclusion levels
 bigPicturePlotExons <- bigPicturePlot(table = tao_exons$PSI)
-bigPicturePlotExons + theme_minimal()
+
+# Customize the plot for professional reporting
+bigPicturePlotExons +
+  ggtitle("Exon Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12)
+  )
+
 ```
 ### Introns
 ```{r bigPicturePlotIntrons, fig.width=8, fig.height=4}
 # Plot for tao_exons
 bigPicturePlotIntrons <- bigPicturePlot(table = tao_introns$PSI)
-bigPicturePlotIntrons + theme_minimal()
+# Customize the plot for professional reporting
+bigPicturePlotIntrons +
+  ggtitle("Introns Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12))
 ```
 ### Altenative Splicing
 ```{r bigPictureAlternative, fig.width=8, fig.height=4}
 # Plot for tao_exons
 bigPicturePlotAlternative <- bigPicturePlot(table = tao_alternative$PSI)
-bigPicturePlotAlternative + theme_minimal()
+bigPicturePlotAlternative +
+  ggtitle("Alternative Splice Site Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12))
 ```
 
 ### PCA
 ```{r PCA calculation}
-data_pca<-taodata[,taoevents$Samples]
-data_pca <- na.omit(data_pca) 
-pca_result <- prcomp(t(data_pca))  # Scaling the data
-# Extract PCA results
-pca_data <- as.data.frame(pca_result$x)  # Principal component scores
-pca_data$Sample <- rownames(pca_data)    # Add sample names
+# Subset and scale data
+data_pca <- taodata[, taoevents$Samples]
+data_pca <- na.omit(data_pca)
+pca_result <- prcomp(t(data_pca))  # Perform PCA
 
-# Merge PCA results with metadata (assuming metadata has a 'SampleID' column matching sample names)
+# Prepare PCA results for plotting
+pca_data <- as.data.frame(pca_result$x)
+pca_data$Sample <- rownames(pca_data)
 merged_data <- merge(pca_data, metadata, by.x = "Sample", by.y = "run_accession")
+
 ```
 
 ```{r pca plot}
-# Generate a vector of colors based on the number of unique levels in experiment_title
+# Generate dynamic color palette
 num_levels <- length(unique(merged_data$experiment_title))
-color_palette <- RColorBrewer::brewer.pal(num_levels, "Set3")  # You can choose other palettes
+color_palette <- RColorBrewer::brewer.pal(min(12, num_levels), "Set3")
 
-# Now plot with the dynamically generated colors
-ggplot(merged_data, aes(x = PC1, y = PC2, color = as.factor(experiment_title))) +  
-  geom_point(size = 4) + 
-  labs(title = 'PCA of Samples´ PSI', 
-       x = paste("PC1 - ", round(100 * summary(pca_result)$importance[2, 1]), "%", sep = ""),
-       y = paste("PC2 - ", round(100 * summary(pca_result)$importance[2, 2]), "%", sep = "")) +
-  scale_color_manual(values = color_palette) +  # Dynamically generated color palette
+# Create PCA plot
+ggplot(merged_data, aes(x = PC1, y = PC2, color = as.factor(experiment_title))) +
+  geom_point(size = 4) +
+  scale_color_manual(values = color_palette) +
+  labs(
+    title = "PCA of Samples (PSI Data)",
+    x = paste("PC1 (", round(100 * summary(pca_result)$importance[2, 1], 1), "%)", sep = ""),
+    y = paste("PC2 (", round(100 * summary(pca_result)$importance[2, 2], 1), "%)", sep = "")
+  ) +
   theme_minimal(base_size = 14) +
-  theme(legend.title = element_blank(), 
-        axis.title = element_text(size = 14), 
-        axis.text = element_text(size = 12)) + 
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.title = element_blank(),
+    axis.title = element_text(size = 14)
+  )
 
 ```
 
 
-## PSI Distributions comparing 0 Days vs. 7 Days
+## PSI Distributions comparing 0 Days vs. 7 Days {#psi-distributions .tabset}
 
-
+### Define Groups
 ```{r aux_featuregroup}
-# Define variable of the metadata table to be used as a grouping variable
+# Extract unique groups and sample IDs
 groupingVariable <- "experiment_title"
 groups <- unique(metadata[, groupingVariable])
-
-# Define vector of sample names based on the example metadata 
 samples <- metadata$run_accession
 
-# Define colors for the groups
+# Assign colors to groups
 random_colors <- c("#FF9AA2", "#FFB7B2", "#FFDAC1", "#D5E1DF")
 
-
-```
-
-```{r featuregroup}
-
-groupList <- list()
-
-for(i in 1:length(groups)){
-
-  groupNames <- samples[which(metadata[,groupingVariable] == groups[i])]
-
-  # Assign new group
-  currentNames <- names(groupList)
-  groupList[[length(groupList)+1]] <- list(name = groups[i],
-                                           samples = groupNames,
-                                           color = random_colors[i])
-  names(groupList) <- make.unique(c(currentNames, groups[i]))
-
-}
-
-groupList
+# Create group list with metadata
+groupList <- lapply(1:length(groups), function(i) {
+  list(
+    name = groups[i],
+    samples = samples[metadata[, groupingVariable] == groups[i]],
+    color = random_colors[i]
+  )
+})
+names(groupList) <- groups
 
 ```
 
@@ -178,29 +219,71 @@ volcanoTable_Pdiff <- prepareTableVolcano(psitable = tao_exons$PSI,
                                     seed=TRUE, 
                                     CoverageWeight = FALSE)
 
-volcano_Pdiff <- plotVolcano(betasTable = volcanoTable_Pdiff,
+volcano_Pdiff <- plotVolcano(betasTable = filter(volcanoTable_Pdiff,!is.na(EVENT)),
                             labA = groupA,
                             labB = groupB,
                             basalColor = "#89C0AE",
                             interestColor = "#E69A9C") 
 
-volcano_Pdiff
+volcano_Pdiff + labs(title = "Volcano Plot: Pdiff")
  
 ```
 
 ```{r Pdiff_table}
 exon_diff_tab <- volcanoTable_Pdiff[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
-  filter(!is.na(EVENT), Pdiff>=0.95) %>%  # Remove rows where EVENT is NA and Pdiff greater than 0.95
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
   arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(exon_diff_tab)<-1:nrow(exon_diff_tab)
+rownames(exon_diff_tab) <- 1:nrow(exon_diff_tab)
 
-datatable(exon_diff_tab, options = list(
-  pageLength = 10,  # Number of rows to show per page
-  autoWidth = TRUE,  # Auto adjust column widths
-  dom = 'Bfrtip',  # Add buttons (for download, etc.)
-  buttons = c('copy', 'csv', 'excel'),  # Enable export options
-  columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
-))
+# Render DataTable with enhancements
+datatable(
+  exon_diff_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+
 ```
 
 #### F-statistic
@@ -220,7 +303,7 @@ volcanoTable_Fstat <- prepareTableVolcanoFstat(psitable = tao_exons$PSI,
                                     seed=TRUE,
                                    CoverageWeight=F )
 
-volcano_Fstat <- plotVolcanoFstat(betasTable = volcanoTable_Fstat,
+volcano_Fstat <- plotVolcanoFstat(betasTable = filter(volcanoTable_Fstat,!is.na(EVENT)),
                             labA = groupA,
                             labB = groupB,
                             basalColor = "#89C0AE",
@@ -267,7 +350,7 @@ volcanoTable_FDR <- prepareTableVolcanoFDR(psitable = tao_exons$PSI,
                                     seed=TRUE, 
                                     CoverageWeight = FALSE) 
         
-volcano_FDR <- plotVolcanoFDR(betasTable = volcanoTable_FDR,
+volcano_FDR <- plotVolcanoFDR(betasTable = filter(volcanoTable_FDR,!is.na(EVENT)),
                             labA = groupA,
                             labB = groupB,
                             basalColor = "#89C0AE",
@@ -341,7 +424,7 @@ volcanoTable_Pdiff <- prepareTableVolcano(psitable = tao_introns$PSI,
                                     seed=TRUE, 
                                     CoverageWeight = FALSE)
 
-volcano_Pdiff <- plotVolcano(betasTable = volcanoTable_Pdiff,
+volcano_Pdiff <- plotVolcano(betasTable = filter(volcanoTable_Pdiff,!is.na(EVENT)),
                             labA = groupA,
                             labB = groupB,
                             basalColor = "#89C0AE",
@@ -388,7 +471,7 @@ intron_fstat_tab <- volcanoTable_Fstat[,c("GENE","EVENT","COORD","Fstat","deltap
   arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
 rownames(intron_fstat_tab)<-1:nrow(intron_fstat_tab)
 
-volcano_Fstat <- plotVolcanoFstat(betasTable = intron_fstat_tab,
+volcano_Fstat <- plotVolcanoFstat(betasTable = filter(intron_fstat_tab,!is.na(EVENT)),
                             labA = groupA,
                             labB = groupB,
                             basalColor = "#89C0AE",
@@ -440,7 +523,7 @@ volcano_FDR <- plotVolcanoFDR(betasTable =filter(volcanoTable_FDR,!is.na(EVENT))
 volcano_FDR
 ```
 
-```{r FDR_table}
+```{r FDR_table introns}
 intron_fdr_tab <- volcanoTable_FDR[,c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
   filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
   arrange((FDR), desc(abs(deltapsi)))  # Sort by FDR and abs(deltapsi)
@@ -456,7 +539,7 @@ datatable(intron_fdr_tab, options = list(
 ```
 
 #### Combination Table
-```{r combination table exons}
+```{r combination table introns}
 # Find common EVENTs across all tables
 common_events <- Reduce(intersect, list(intron_diff_tab$EVENT, intron_fstat_tab$EVENT, intron_fdr_tab$EVENT))
 
@@ -485,3 +568,156 @@ datatable(intron_combination_tab, options = list(
   columnDefs = list(list(targets = 0:4, className = 'dt-center'))))  # Center align columns
 
 ```
+
+### Event Densities
+```{r densities_per_event, fig.width=8, fig.height=4, warning=F}
+tdensities <- plotIndividualDensitiesList(eventID = "MmuINT1026428",
+                                          npoints = 500,
+                                          psitable = tao_introns$PSI,
+                                          qualtable = tao_introns$Qual,
+                                          groupList = groupList,
+                                          maxDevTable = maxDevSimulationN100, 
+                                          seed=TRUE, 
+                                          CoverageWeight = FALSE)
+
+tdensities + theme_minimal() + ggtitle("MmuINT1026428")
+
+```
+
+```{r densities_per_event 2, fig.width=8, fig.height=4, warning=F}
+eventID<-"MmuEX0042889"
+tdensities <- plotIndividualDensitiesList(eventID =eventID,
+                                          npoints = 500,
+                                          psitable = tao_exons$PSI,
+                                          qualtable = tao_exons$Qual,
+                                          groupList = groupList,
+                                          maxDevTable = maxDevSimulationN100, 
+                                          seed=TRUE, 
+                                          CoverageWeight = FALSE)
+
+tdensities + theme_minimal() + ggtitle(eventID)
+```
+
+
+```{r resultsplots_per_event, fig.width=14, fig.height=4, warning=F}
+
+plotPdiff <- prepareTableEvent(eventID = eventID,
+                               psitable = tao_exons$PSI,
+                               qualtable = tao_exons$Qual,
+                               npoints = 500,
+                               colsA = colsGroupA,
+                               colsB = colsGroupB,
+                               labA = groupA,
+                               labB = groupB,
+                               basalColor = "#89C0AE",
+                               interestColor = "#E69A9C",
+                               maxDevTable = maxDevSimulationN100,
+                               nsim = 1000, 
+                               seed=T,
+                                CoverageWeight=F) %>% 
+  plotPDiffFromEventObjList()
+
+plotFstat <- prepareTableEvent(eventID = eventID,
+                               psitable = tao_exons$PSI,
+                               qualtable = tao_exons$Qual,
+                               npoints = 500,
+                               colsA = colsGroupA,
+                               colsB = colsGroupB,
+                               labA = groupA,
+                               labB = groupB,
+                               basalColor = "#89C0AE",
+                               interestColor = "#E69A9C",
+                               maxDevTable = maxDevSimulationN100,
+                               nsim = 1000,
+                               seed=T,
+                             CoverageWeight=F) %>% 
+  plotFstatFromEventObjList()
+ 
+plotFDR <- prepareTableEvent(eventID = eventID,
+                               psitable = tao_exons$PSI,
+                               qualtable = tao_exons$Qual,
+                               npoints = 500,
+                               colsA = colsGroupA,
+                               colsB = colsGroupB,
+                               labA = groupA,
+                               labB = groupB,
+                               basalColor = "#89C0AE",
+                               interestColor = "#E69A9C",
+                               maxDevTable = maxDevSimulationN100,
+                               nsim = 1000,
+                               seed=T,
+                             CoverageWeight=F) %>% 
+  plotFDRFromEventObjList()
+
+plot_grid(plotPdiff,plotFstat,plotFDR, ncol=3)
+
+```
+
+## ANOVA Multigroups
+
+### Exons { .tabset}
+```{r table_multgroups exons}
+volcanoTable_multgroups_exons <- prepareTableVolcanoMultipleGroups(psitable = tao_exons$PSI,
+                                                 qualtable = tao_exons$Qual,
+                                                 groupList = groupList,
+                                                 npoints = 500,
+                                                 maxDevTable = maxDevSimulationN100, seed=TRUE, CoverageWeight = F)
+
+
+```
+
+```{r cat table multgroups}
+multgroups_tab_exons <- volcanoTable_multgroups_exons[,c("GENE","EVENT","Fstat","Pdiff","Pzero","medianBetweens","deltaAbsolute")] %>%
+  filter(!is.na(EVENT), Pdiff>=0.95) %>%  # Remove rows where EVENT is NA and Pdiff greater than 0.95
+  arrange(desc(Fstat),desc(Pdiff))  # Sort by FDR and abs(deltapsi)
+rownames(multgroups_tab)<-1:nrow(multgroups_tab) 
+
+datatable(multgroups_tab_exons, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
+))
+```
+
+### Introns { .tabset}
+```{r table_multgroups introns}
+volcanoTable_multgroups_introns <- prepareTableVolcanoMultipleGroups(psitable = tao_introns$PSI,
+                                                 qualtable = tao_introns$Qual,
+                                                 groupList = groupList,
+                                                 npoints = 500,
+                                                 maxDevTable = maxDevSimulationN100, seed=TRUE, CoverageWeight = F)
+
+
+```
+
+```{r cat table multgroups introns}
+multgroups_tab_introns <- volcanoTable_multgroups_introns[,c("GENE","EVENT","Fstat","Pdiff","Pzero","medianBetweens","deltaAbsolute")] %>%
+  filter(!is.na(EVENT), Pdiff>=0.95) %>%  # Remove rows where EVENT is NA and Pdiff greater than 0.95
+  arrange(desc(Fstat),desc(Pdiff))  # Sort by FDR and abs(deltapsi)
+rownames(multgroups_tab)<-1:nrow(multgroups_tab) 
+
+datatable(multgroups_tab_introns, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
+))
+```
+
+The multigroup ANOVA testing seems to be more restrictive in finding alternative splicing events compared to a pairwise comparison:
+
+Multigroup ANOVA:
+
+Compares means (or distributions, in the case of betAS) across multiple groups simultaneously.
+It accounts for variability both within groups and between groups, making it more conservative.
+Requires a stricter threshold to claim a significant effect due to the higher degrees of freedom and the need to correct for multiple comparisons.
+Results are less likely to detect small differences specific to one or two groups.
+Pairwise Comparisons:
+
+Focuses on comparing two groups at a time.
+Is more sensitive to differences between those two specific groups.
+Does not account for variation across other groups, potentially identifying more splicing events as significant.
+If your goal is to find more splicing events, pairwise comparisons are less restrictive, but they come at the cost of a higher false discovery rate. Use multigroup ANOVA when you want a stricter analysis and need to account for variations across all groups simultaneously.
