@@ -43,7 +43,7 @@ install_load("DT")
 
 ```{r load inclusion table}
 # Define the path to the inclusion table
-path <- "C:\\Users\\andre\\Documents\\GitHub\\24CRG_ADEL_MANU_MYOBLAST_SPLICING\\inclusion_tables\\Tao_INCLUSION_LEVELS_FULL-mm10.tab"
+path <- paste0(getwd(),"/inclusion_tables/Tao_INCLUSION_LEVELS_FULL-mm10.tab")
 
 # Load the dataset using vast-tools functions
 taodata <- getDataset(pathTables = path, tool = "vast-tools")
@@ -61,7 +61,7 @@ taoevents$EventsPerType
 
 ```{r load_metadata}
 # Load metadata file containing sample information
-metadata_path <- "C:\\Users\\andre\\Documents\\GitHub\\24CRG_ADEL_MANU_MYOBLAST_SPLICING\\metadata\\tao_metadata.csv"
+metadata_path <- paste0(getwd(),"/metadata/tao_metadata.csv")
 metadata <- read.csv(metadata_path, sep = ",")
 DT::datatable(metadata, options = list(pageLength = 5, scrollX = TRUE))
 
