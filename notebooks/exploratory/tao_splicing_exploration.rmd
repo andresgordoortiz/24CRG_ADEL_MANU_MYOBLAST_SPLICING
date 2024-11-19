@@ -13,6 +13,10 @@ knit:
 editor_options: 
   markdown: 
     wrap: 72
+
+# NOTE: To run this R Markdown file correctly, set the Knit Directory to the Project Directory.
+# You can do this by navigating to the gear icon next to the Knit button in RStudio,
+# and selecting "Project Directory" as the option. This ensures paths resolve correctly.
 ---
 
 ```{r setup, include=FALSE}

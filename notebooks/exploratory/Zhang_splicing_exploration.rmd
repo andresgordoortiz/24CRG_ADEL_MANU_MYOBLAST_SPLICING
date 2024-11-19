@@ -7,12 +7,14 @@ output:
     toc: true
     number_sections: true
     df_print: kable
-knit: 
-  root.dir: .
 
 editor_options: 
   markdown: 
     wrap: 72
+    
+# NOTE: To run this R Markdown file correctly, set the Knit Directory to the Project Directory.
+# You can do this by navigating to the gear icon next to the Knit button in RStudio,
+# and selecting "Project Directory" as the option. This ensures paths resolve correctly.
 ---
 
 ```{r setup, include=FALSE}
@@ -63,7 +65,7 @@ events$EventsPerType
 # Load metadata file containing sample information
 metadata_path <- paste0(getwd(),"/metadata/zhang_metadata.csv")
 metadata <- read.csv(metadata_path, sep = ",")
-DT::datatable(metadata, options = list(pageLength = 5, scrollX = TRUE))
+DT::datatable(metadata, options = list(pageLength = 6, scrollX = TRUE))
 
 ```
 
@@ -191,8 +193,8 @@ names(groupList) <- groups
 
 ```{r groups_auxiliary}
 # Define groups
-groupA    <- "0_days"
-groupB    <- "7_days"
+groupA    <- "Myoblasts"
+groupB    <- "Myotubes"
 # Define samples inside each group
 samplesA    <- groupList[[groupA]]$samples
 samplesB    <- groupList[[groupB]]$samples
@@ -716,7 +718,7 @@ volcanoTable_multgroups_introns <- prepareTableVolcanoMultipleGroups(psitable = 
 multgroups_tab_introns <- volcanoTable_multgroups_introns[,c("GENE","EVENT","Fstat","Pdiff","Pzero","medianBetweens","deltaAbsolute")] %>%
   filter(!is.na(EVENT), Pdiff>=0.95) %>%  # Remove rows where EVENT is NA and Pdiff greater than 0.95
   arrange(desc(Fstat),desc(Pdiff))  # Sort by FDR and abs(deltapsi)
-rownames(multgroups_tab)<-1:nrow(multgroups_tab) 
+rownames(multgroups_tab_introns)<-1:nrow(multgroups_tab_introns) 
 
 datatable(multgroups_tab_introns, options = list(
   pageLength = 10,  # Number of rows to show per page
