@@ -4,9 +4,16 @@ author: "Andrés Gordo Ortiz"
 date: "`r Sys.Date()`"
 output: 
   rmarkdown::html_document:
+    code_folding: show
+    code_download: false  
+    df_print: paged
+    theme: flatly
+    highlight: tango
     toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
     number_sections: true
-    df_print: kable
 
 editor_options: 
   markdown: 
@@ -16,6 +23,31 @@ editor_options:
 # You can do this by navigating to the gear icon next to the Knit button in RStudio,
 # and selecting "Project Directory" as the option. This ensures paths resolve correctly.
 ---
+
+```{css, echo=FALSE}
+/* Custom CSS to enhance styling */
+body {
+  font-family: 'Gill Sans', sans-serif;
+}
+
+h1 {
+  color: #2c3e50;
+  font-family: 'Ubuntu', sans-serif; /* Set header font to Ubuntu */
+}
+
+h2 {
+  color: #3498db;
+  font-family: 'Ubuntu', sans-serif; /* Set header font to Ubuntu */
+}
+
+h3 {
+  color: #7DE2D1;
+  font-family: 'Ubuntu', sans-serif; /* Set header font to Ubuntu */
+}
+p {
+  text-align: justify;
+}
+```
 
 ```{r setup, include=FALSE}
 # Ensure a clean environment and load required libraries.
@@ -40,6 +72,11 @@ install_load("plotly")
 install_load("dplyr")
 install_load("cowplot")
 install_load("DT")
+library("org.Mm.eg.db")
+library("enrichplot")
+library("DOSE")
+library("clusterProfiler")
+library("ReactomePA")
 ```
 
 
@@ -82,6 +119,7 @@ cat(paste0("Alternative splicing events detected: ", nrow(exons$PSI)))
 ## Splicing Quality Check { .tabset }
 
 ### Exons
+
 ```{r bigPicturePlotExons, fig.width=8, fig.height=4}
 # Create a big picture plot for exon inclusion levels
 bigPicturePlotExons <- bigPicturePlot(table = exons$PSI)
@@ -100,6 +138,7 @@ bigPicturePlotExons +
 
 ```
 ### Introns
+
 ```{r bigPicturePlotIntrons, fig.width=8, fig.height=4}
 # Plot for exons
 bigPicturePlotIntrons <- bigPicturePlot(table = introns$PSI)
@@ -115,6 +154,7 @@ bigPicturePlotIntrons +
     axis.title = element_text(size = 12))
 ```
 ### Altenative Splicing
+
 ```{r bigPictureAlternative, fig.width=8, fig.height=4}
 # Plot for exons
 bigPicturePlotAlternative <- bigPicturePlot(table = alternative$PSI)
@@ -130,6 +170,7 @@ bigPicturePlotAlternative +
 ```
 
 ### PCA
+
 ```{r PCA calculation}
 # Subset and scale data
 data_pca <- data[, events$Samples]
@@ -170,6 +211,7 @@ ggplot(merged_data, aes(x = PC1, y = PC2, color = as.factor(experiment_title))) 
 ## PSI Distributions comparing 0 Days vs. 7 Days {#psi-distributions .tabset}
 
 ### Define Groups
+
 ```{r aux_featuregroup}
 # Extract unique groups and sample IDs
 groupingVariable <- "experiment_title"
@@ -209,6 +251,7 @@ set.seed(42) #Setting seed for downstream simulations of the beta distribution
 ### Exons { .tabset }
 
 #### Pdiff
+
 ```{r plotvolcano_Pdiff, fig.width=14, fig.height=10, warning=F}
 volcanoTable_Pdiff <- prepareTableVolcano(psitable = exons$PSI,
                                     qualtable = exons$Qual,
@@ -379,6 +422,7 @@ datatable(exon_fdr_tab, options = list(
 ```
 
 #### Combination Table
+
 ```{r combination table exons}
 # Find common EVENTs across all tables
 common_events <- Reduce(intersect, list(exon_diff_tab$EVENT, exon_fstat_tab$EVENT, exon_fdr_tab$EVENT))
@@ -420,6 +464,7 @@ write.csv(exon_combination_tab,
 ### Introns { .tabset }
 
 #### Pdiff
+
 ```{r plotvolcano_Pdiff introns, fig.width=14, fig.height=10, warning=F}
 volcanoTable_Pdiff <- prepareTableVolcano(psitable = introns$PSI,
                                     qualtable = introns$Qual,
@@ -549,6 +594,7 @@ datatable(intron_fdr_tab, options = list(
 ```
 
 #### Combination Table
+
 ```{r combination table introns}
 # Find common EVENTs across all tables
 common_events <- Reduce(intersect, list(intron_diff_tab$EVENT, intron_fstat_tab$EVENT, intron_fdr_tab$EVENT))
@@ -586,6 +632,7 @@ write.csv(intron_combination_tab,
 ```
 
 ### Event Densities
+
 ```{r densities_per_event, fig.width=8, fig.height=4, warning=F}
 tdensities <- plotIndividualDensitiesList(eventID = "MmuINT1026428",
                                           npoints = 500,
@@ -601,7 +648,7 @@ tdensities + theme_minimal() + ggtitle("MmuINT1026428")
 ```
 
 ```{r densities_per_event 2, fig.width=8, fig.height=4, warning=F}
-eventID<-"MmuEX0042889"
+eventID<-"MmuEX0026259"
 tdensities <- plotIndividualDensitiesList(eventID =eventID,
                                           npoints = 500,
                                           psitable = exons$PSI,
@@ -669,9 +716,54 @@ plot_grid(plotPdiff,plotFstat,plotFDR, ncol=3)
 
 ```
 
+## Gene Ontology Enrichment
+
+```{r gene ontology calculation}
+gene_entrez <- bitr(union(intron_combination_tab$GENE, exon_combination_tab$GENE), fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+
+# GO Enrichment Analysis
+go_enrich <- enrichGO(gene = gene_entrez$ENTREZID,
+                      OrgDb = org.Mm.eg.db,
+                      ont = "ALL",
+                      pAdjustMethod = "BH",
+                      pvalueCutoff = 0.05,
+                      qvalueCutoff = 0.05)
+
+# KEGG Pathway Enrichment
+kegg_enrich <- enrichKEGG(gene = gene_entrez$ENTREZID,
+                          organism = "mmu",
+                          pAdjustMethod = "BH",
+                          pvalueCutoff = 0.05)
+
+# Reactome Pathway Enrichment Guangchuang Yu, Qing-Yu He. ReactomePA: an R/Bioconductor package for reactome pathway analysis and visualization. Molecular BioSystems 2016, 12(2):477-479
+reactome_enrich <- enrichPathway(gene = gene_entrez$ENTREZID,
+                                 organism = "mouse",
+                                 pAdjustMethod = "BH",
+                                 pvalueCutoff = 0.05)
+
+```
+
+```{r go visualise}
+# Dot plot for GO terms
+dotplot(go_enrich, showCategory = 20) + ggtitle("GO Enrichment Analysis")
+
+# Bar plot for KEGG pathways
+barplot(kegg_enrich, showCategory = 20) + ggtitle("KEGG Pathway Enrichment")
+
+# Network plot for Reactome pathways
+emapplot(pairwise_termsim(reactome_enrich)) + ggtitle("Reactome Pathway Network")
+
+
+```
+
+
+
+
+
 ## ANOVA Multigroups
 
 ### Exons { .tabset}
+
 ```{r table_multgroups exons}
 volcanoTable_multgroups_exons <- prepareTableVolcanoMultipleGroups(psitable = exons$PSI,
                                                  qualtable = exons$Qual,
@@ -704,6 +796,7 @@ write.csv(multgroups_tab_exons,
 ```
 
 ### Introns { .tabset}
+
 ```{r table_multgroups introns}
 volcanoTable_multgroups_introns <- prepareTableVolcanoMultipleGroups(psitable = introns$PSI,
                                                  qualtable = introns$Qual,
