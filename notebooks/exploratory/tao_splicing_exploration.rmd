@@ -409,7 +409,7 @@ datatable(exon_combination_tab, options = list(
 output_dir <- file.path(getwd(), "results", "tables")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 write.csv(exon_combination_tab, 
-          file = file.path(output_dir, paste0("exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          file = file.path(output_dir, paste0("tao_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 
 ```
@@ -579,7 +579,7 @@ datatable(intron_combination_tab, options = list(
 output_dir <- file.path(getwd(), "results", "tables")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 write.csv(intron_combination_tab, 
-          file = file.path(output_dir, paste0("intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          file = file.path(output_dir, paste0("tao_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
 
@@ -697,7 +697,7 @@ datatable(multgroups_tab_exons, options = list(
 output_dir <- file.path(getwd(), "results", "tables")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 write.csv(multgroups_tab_exons, 
-          file = file.path(output_dir, paste0("exon_multgroup_tab", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          file = file.path(output_dir, paste0("tao_exon_multgroup_tab", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
 
@@ -729,7 +729,7 @@ datatable(multgroups_tab_introns, options = list(
 output_dir <- file.path(getwd(), "results", "tables")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 write.csv(multgroups_tab_introns, 
-          file = file.path(output_dir, paste0("introns_multgroup_tab", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          file = file.path(output_dir, paste0("tao_introns_multgroup_tab", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
 
