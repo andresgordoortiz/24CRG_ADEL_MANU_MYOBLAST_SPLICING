@@ -7,6 +7,8 @@ output:
     toc: true
     number_sections: true
     df_print: kable
+knit: 
+  root.dir: .
 
 editor_options: 
   markdown: 
@@ -404,6 +406,12 @@ datatable(exon_combination_tab, options = list(
   buttons = c('copy', 'csv', 'excel'),  # Enable export options
   columnDefs = list(list(targets = 0:4, className = 'dt-center'))))  # Center align columns
 
+output_dir <- file.path(getwd(), "results", "tables")
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+write.csv(exon_combination_tab, 
+          file = file.path(output_dir, paste0("exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+
 ```
 
 
@@ -567,6 +575,12 @@ datatable(intron_combination_tab, options = list(
   buttons = c('copy', 'csv', 'excel'),  # Enable export options
   columnDefs = list(list(targets = 0:4, className = 'dt-center'))))  # Center align columns
 
+# Output CSV table in the results/table folder, with todays name on it to know when it was downloaded from this script
+output_dir <- file.path(getwd(), "results", "tables")
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+write.csv(intron_combination_tab, 
+          file = file.path(output_dir, paste0("intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
 ```
 
 ### Event Densities
@@ -670,7 +684,7 @@ volcanoTable_multgroups_exons <- prepareTableVolcanoMultipleGroups(psitable = ta
 multgroups_tab_exons <- volcanoTable_multgroups_exons[,c("GENE","EVENT","Fstat","Pdiff","Pzero","medianBetweens","deltaAbsolute")] %>%
   filter(!is.na(EVENT), Pdiff>=0.95) %>%  # Remove rows where EVENT is NA and Pdiff greater than 0.95
   arrange(desc(Fstat),desc(Pdiff))  # Sort by FDR and abs(deltapsi)
-rownames(multgroups_tab)<-1:nrow(multgroups_tab) 
+rownames(multgroups_tab_exons)<-1:nrow(multgroups_tab_exons) 
 
 datatable(multgroups_tab_exons, options = list(
   pageLength = 10,  # Number of rows to show per page
@@ -679,6 +693,12 @@ datatable(multgroups_tab_exons, options = list(
   buttons = c('copy', 'csv', 'excel'),  # Enable export options
   columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
 ))
+
+output_dir <- file.path(getwd(), "results", "tables")
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+write.csv(multgroups_tab_exons, 
+          file = file.path(output_dir, paste0("exon_multgroup_tab", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
 ```
 
 ### Introns { .tabset}
@@ -705,6 +725,12 @@ datatable(multgroups_tab_introns, options = list(
   buttons = c('copy', 'csv', 'excel'),  # Enable export options
   columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
 ))
+
+output_dir <- file.path(getwd(), "results", "tables")
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+write.csv(multgroups_tab_introns, 
+          file = file.path(output_dir, paste0("introns_multgroup_tab", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
 ```
 
 The multigroup ANOVA testing seems to be more restrictive in finding alternative splicing events compared to a pairwise comparison:
