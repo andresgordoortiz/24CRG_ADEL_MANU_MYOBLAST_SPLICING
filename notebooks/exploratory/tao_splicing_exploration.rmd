@@ -157,13 +157,14 @@ samplesB    <- groupList[[groupB]]$samples
 # Convert samples into indexes
 colsGroupA    <- convertCols(tao_exons$PSI, samplesA)
 colsGroupB    <- convertCols(tao_exons$PSI, samplesB)
+
+set.seed(42) #Setting seed for downstream simulations of the beta distribution
 ```
 
 ### Exons { .tabset }
 
 #### Pdiff
 ```{r plotvolcano_Pdiff, fig.width=14, fig.height=10, warning=F}
-set.seed(42)
 volcanoTable_Pdiff <- prepareTableVolcano(psitable = tao_exons$PSI,
                                     qualtable = tao_exons$Qual,
                                     npoints = 500,
@@ -288,4 +289,199 @@ datatable(exon_fdr_tab, options = list(
   buttons = c('copy', 'csv', 'excel'),  # Enable export options
   columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
 ))
+```
+
+#### Combination Table
+```{r combination table exons}
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(exon_diff_tab$EVENT, exon_fstat_tab$EVENT, exon_fdr_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_exon_diff_tab <- exon_diff_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fstat_tab <- exon_fstat_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fdr_tab <- exon_fdr_tab %>% filter(EVENT %in% common_events)
+
+
+# Select only unique columns from each table
+filtered_exon_diff_tab <- filtered_exon_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_exon_fstat_tab <- filtered_exon_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_exon_fdr_tab <- filtered_exon_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+exon_combination_tab <- filtered_exon_diff_tab %>%
+  inner_join(filtered_exon_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_exon_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+
+datatable(exon_combination_tab, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))))  # Center align columns
+
+```
+
+
+### Introns { .tabset }
+
+#### Pdiff
+```{r plotvolcano_Pdiff introns, fig.width=14, fig.height=10, warning=F}
+volcanoTable_Pdiff <- prepareTableVolcano(psitable = tao_introns$PSI,
+                                    qualtable = tao_introns$Qual,
+                                    npoints = 500,
+                                    colsA = colsGroupA,
+                                    colsB = colsGroupB,
+                                    labA = groupA,
+                                    labB = groupB,
+                                    basalColor = "#89C0AE",
+                                    interestColor = "#E69A9C",
+                                    maxDevTable = maxDevSimulationN100, 
+                                    seed=TRUE, 
+                                    CoverageWeight = FALSE)
+
+volcano_Pdiff <- plotVolcano(betasTable = volcanoTable_Pdiff,
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+
+volcano_Pdiff
+ 
+```
+
+```{r Pdiff_table introns}
+intron_diff_tab <- volcanoTable_Pdiff[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff>=0.95) %>%  # Remove rows where EVENT is NA and Pdiff greater than 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(intron_diff_tab)<-1:nrow(intron_diff_tab)
+
+datatable(intron_diff_tab, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
+))
+```
+
+#### F-statistic
+
+
+```{r plotvolcano_Fstat introns, fig.width=14, fig.height=10, warning=F}
+volcanoTable_Fstat <- prepareTableVolcanoFstat(psitable = tao_introns$PSI,
+                                    qualtable = tao_introns$Qual,
+                                    npoints = 500,
+                                    colsA = colsGroupA,
+                                    colsB = colsGroupB,
+                                    labA = groupA,
+                                    labB = groupB,
+                                    basalColor = "#89C0AE",
+                                    interestColor = "#E69A9C",
+                                    maxDevTable = maxDevSimulationN100, 
+                                    seed=TRUE,
+                                   CoverageWeight=F )
+
+intron_fstat_tab <- volcanoTable_Fstat[,c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(intron_fstat_tab)<-1:nrow(intron_fstat_tab)
+
+volcano_Fstat <- plotVolcanoFstat(betasTable = intron_fstat_tab,
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+
+volcano_Fstat
+```
+
+```{r Fstat_table introns}
+
+datatable(intron_fstat_tab, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
+))
+```
+
+#### False positive rate (FPR)
+
+To calculate the **FPR** for all events in our dataset, we will use the
+`prepareTableVolcanoFDR` function. To visualize the results in a volcano
+plot, we will use the `plotVolcanoFDR` function. The user can also use
+the approach presented above to make the plot interactive.
+
+```{r plotvolcano_FDR introns, fig.width=14, fig.height=10, warning=F}
+volcanoTable_FDR <- prepareTableVolcanoFDR(psitable = tao_introns$PSI,
+                                    qualtable = tao_introns$Qual,
+                                    npoints = 500,
+                                    colsA = colsGroupA,
+                                    colsB = colsGroupB,
+                                    labA = groupA,
+                                    labB = groupB,
+                                    basalColor = "#89C0AE",
+                                    interestColor = "#E69A9C",
+                                    maxDevTable = maxDevSimulationN100,
+                                    nsim = 100, 
+                                    seed=TRUE, 
+                                    CoverageWeight = FALSE) 
+
+
+volcano_FDR <- plotVolcanoFDR(betasTable =filter(volcanoTable_FDR,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+
+volcano_FDR
+```
+
+```{r FDR_table}
+intron_fdr_tab <- volcanoTable_FDR[,c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))  # Sort by FDR and abs(deltapsi)
+rownames(intron_fdr_tab)<-1:nrow(intron_fdr_tab) 
+
+datatable(intron_fdr_tab, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
+))
+```
+
+#### Combination Table
+```{r combination table exons}
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(intron_diff_tab$EVENT, intron_fstat_tab$EVENT, intron_fdr_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_intron_diff_tab <- intron_diff_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fstat_tab <- intron_fstat_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fdr_tab <- intron_fdr_tab %>% filter(EVENT %in% common_events)
+
+# Select only unique columns from each table
+filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+intron_combination_tab <- filtered_intron_diff_tab %>%
+  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+
+datatable(intron_combination_tab, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))))  # Center align columns
+
 ```
