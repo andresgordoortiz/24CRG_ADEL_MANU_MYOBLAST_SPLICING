@@ -716,7 +716,7 @@ volcanoTable_multgroups_introns <- prepareTableVolcanoMultipleGroups(psitable = 
 multgroups_tab_introns <- volcanoTable_multgroups_introns[,c("GENE","EVENT","Fstat","Pdiff","Pzero","medianBetweens","deltaAbsolute")] %>%
   filter(!is.na(EVENT), Pdiff>=0.95) %>%  # Remove rows where EVENT is NA and Pdiff greater than 0.95
   arrange(desc(Fstat),desc(Pdiff))  # Sort by FDR and abs(deltapsi)
-rownames(multgroups_tab)<-1:nrow(multgroups_tab) 
+rownames(multgroups_tab_introns)<-1:nrow(multgroups_tab_introns) 
 
 datatable(multgroups_tab_introns, options = list(
   pageLength = 10,  # Number of rows to show per page
