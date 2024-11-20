@@ -10,10 +10,10 @@
 #SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
 # time limit in minutes
-#SBATCH --time=180
+#SBATCH --time=300
 
 # queue
-#SBATCH --qos=shorter
+#SBATCH --qos=short
 
 # memory (MB)
 #SBATCH --mem=10G
