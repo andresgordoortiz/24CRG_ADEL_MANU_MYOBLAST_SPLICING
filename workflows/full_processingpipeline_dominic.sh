@@ -30,7 +30,7 @@ echo "...second job ID is $jid3"
 
 # Fourth job - run vast combine (dependent on second job)
 echo "Submitting third job: Run vast combine..."
-jid4=$(sbatch --dependency=afterok:$jid3 $PWD/scripts/bash/dominic_frontiers_2024/vast_combine_lyu.sh | tr -cd '[:digit:].')
+jid4=$(sbatch --dependency=afterok:$jid3 $PWD/scripts/bash/dominic_frontiers_2024/vast_combine_dominic.sh | tr -cd '[:digit:].')
 echo "...third job ID is $jid4"
 
 
