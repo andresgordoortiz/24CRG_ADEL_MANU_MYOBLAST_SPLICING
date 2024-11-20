@@ -1,0 +1,758 @@
+---
+title: 'Splicing Exploration of the Lyu Dataset'
+author: "Andrés Gordo Ortiz"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_document:
+    code_folding: show
+    code_download: false  
+    df_print: paged
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    number_sections: true
+
+editor_options: 
+  markdown: 
+    wrap: 72
+    
+# NOTE: To run this R Markdown file correctly, set the Knit Directory to the Project Directory.
+# You can do this by navigating to the gear icon next to the Knit button in RStudio,
+# and selecting "Project Directory" as the option. This ensures paths resolve correctly.
+---
+
+```{css, echo=FALSE}
+/* Custom CSS to enhance styling */
+body {
+  font-family: 'Gill Sans', sans-serif;
+}
+
+h1 {
+  color: #2c3e50;
+  font-family: 'Ubuntu', sans-serif; /* Set header font to Ubuntu */
+}
+
+h2 {
+  color: #3498db;
+  font-family: 'Ubuntu', sans-serif; /* Set header font to Ubuntu */
+}
+
+h3 {
+  color: #7DE2D1;
+  font-family: 'Ubuntu', sans-serif; /* Set header font to Ubuntu */
+}
+p {
+  text-align: justify;
+}
+```
+
+```{r setup, include=FALSE}
+# Ensure a clean environment and load required libraries.
+knitr::opts_chunk$set(
+  echo = TRUE, 
+  warning = FALSE, 
+  message = FALSE
+)
+
+# Function to install and load packages dynamically.
+install_load <- function(pkg) {
+  if (!require(pkg, character.only = TRUE)) {
+    install.packages(pkg, dependencies = TRUE)
+    library(pkg, character.only = TRUE)
+  }
+}
+
+# Load required libraries
+install_load("betAS")
+install_load("ggplot2")
+install_load("plotly")
+install_load("dplyr")
+install_load("cowplot")
+install_load("DT")
+library("org.Mm.eg.db")
+library("enrichplot")
+library("DOSE")
+library("clusterProfiler")
+library("ReactomePA")
+```
+
+
+```{r load inclusion table}
+# Define the path to the inclusion table
+path <- paste0(getwd(),"/inclusion_tables/Lyu_Cells_INCLUSION_LEVELS_FULL-mm10.tab")
+
+# Load the dataset using vast-tools functions
+data <- getDataset(pathTables = path, tool = "vast-tools")
+
+# Extract alternative splicing events
+events <- getEvents(data, tool = "vast-tools")
+
+# Filter events based on PSI thresholds
+events <- alternativeEvents(events, minPsi = 1, maxPsi = 99)
+
+# Display summary of events per type
+events$EventsPerType
+
+```
+
+```{r load_metadata}
+# Load metadata file containing sample information
+metadata_path <- paste0(getwd(),"/metadata/lyu_metadata.csv")
+metadata <- read.csv(metadata_path, sep = ",")
+DT::datatable(metadata, options = list(pageLength = 6, scrollX = TRUE))
+
+```
+
+```{r events extraction}
+# Filter events for exons, introns, and alternative splicing events
+exons <- filterEvents(events, types = c("C1", "C2", "C3", "S", "MIC"), N = 3)
+introns <- filterEvents(events, types = c("IR"), N = 5)
+alternative <- filterEvents(events, types = c("Alt3", "Alt5"), N = 3)
+
+# Output the count of alternative splicing events
+cat(paste0("Alternative splicing events detected: ", nrow(exons$PSI)))
+
+```
+## Splicing Quality Check { .tabset }
+
+### Exons
+
+```{r bigPicturePlotExons, fig.width=8, fig.height=4}
+# Create a big picture plot for exon inclusion levels
+bigPicturePlotExons <- bigPicturePlot(table = exons$PSI)
+
+# Customize the plot for professional reporting
+bigPicturePlotExons +
+  ggtitle("Exon Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12)
+  )
+
+```
+### Introns
+
+```{r bigPicturePlotIntrons, fig.width=8, fig.height=4}
+# Plot for exons
+bigPicturePlotIntrons <- bigPicturePlot(table = introns$PSI)
+# Customize the plot for professional reporting
+bigPicturePlotIntrons +
+  ggtitle("Introns Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12))
+```
+### Altenative Splicing
+
+```{r bigPictureAlternative, fig.width=8, fig.height=4}
+# Plot for exons
+bigPicturePlotAlternative <- bigPicturePlot(table = alternative$PSI)
+bigPicturePlotAlternative +
+  ggtitle("Alternative Splice Site Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12))
+```
+
+### PCA
+
+```{r PCA calculation}
+# Subset and scale data
+data_pca <- data[, events$Samples]
+data_pca <- na.omit(data_pca)
+pca_result <- prcomp(t(data_pca))  # Perform PCA
+
+# Prepare PCA results for plotting
+pca_data <- as.data.frame(pca_result$x)
+pca_data$Sample <- rownames(pca_data)
+merged_data <- merge(pca_data, metadata, by.x = "Sample", by.y = "run_accession")
+
+```
+
+```{r pca plot}
+# Generate dynamic color palette
+num_levels <- length(unique(merged_data$experiment_title))
+color_palette <- RColorBrewer::brewer.pal(min(12, num_levels), "Set3")
+
+# Create PCA plot
+ggplot(merged_data, aes(x = PC1, y = PC2, color = as.factor(experiment_title))) +
+  geom_point(size = 4) +
+  scale_color_manual(values = color_palette) +
+  labs(
+    title = "PCA of Samples (PSI Data)",
+    x = paste("PC1 (", round(100 * summary(pca_result)$importance[2, 1], 1), "%)", sep = ""),
+    y = paste("PC2 (", round(100 * summary(pca_result)$importance[2, 2], 1), "%)", sep = "")
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.title = element_blank(),
+    axis.title = element_text(size = 14)
+  )
+
+```
+
+
+## PSI Distributions comparing 0 Days vs. 7 Days {#psi-distributions .tabset}
+
+### Define Groups
+
+```{r aux_featuregroup}
+# Extract unique groups and sample IDs
+groupingVariable <- "experiment_title"
+groups <- unique(metadata[, groupingVariable])
+samples <- metadata$run_accession
+
+# Assign colors to groups
+random_colors <- c("#FF9AA2", "#FFB7B2", "#FFDAC1", "#D5E1DF")
+
+# Create group list with metadata
+groupList <- lapply(1:length(groups), function(i) {
+  list(
+    name = groups[i],
+    samples = samples[metadata[, groupingVariable] == groups[i]],
+    color = random_colors[i]
+  )
+})
+names(groupList) <- groups
+
+```
+
+```{r groups_auxiliary}
+# Define groups
+groupA    <- "Myoblasts"
+groupB    <- "Myotubes"
+# Define samples inside each group
+samplesA    <- groupList[[groupA]]$samples
+samplesB    <- groupList[[groupB]]$samples
+
+# Convert samples into indexes
+colsGroupA    <- convertCols(exons$PSI, samplesA)
+colsGroupB    <- convertCols(exons$PSI, samplesB)
+
+set.seed(42) #Setting seed for downstream simulations of the beta distribution
+```
+
+### Exons { .tabset }
+
+#### Pdiff
+
+```{r plotvolcano_Pdiff, fig.width=14, fig.height=10, warning=F}
+volcanoTable_Pdiff <- prepareTableVolcano(psitable = exons$PSI,
+                                    qualtable = exons$Qual,
+                                    npoints = 500,
+                                    colsA = colsGroupA,
+                                    colsB = colsGroupB,
+                                    labA = groupA,
+                                    labB = groupB,
+                                    basalColor = "#89C0AE",
+                                    interestColor = "#E69A9C",
+                                    maxDevTable = maxDevSimulationN100, 
+                                    seed=TRUE, 
+                                    CoverageWeight = FALSE)
+
+volcano_Pdiff <- plotVolcano(betasTable = filter(volcanoTable_Pdiff,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+
+volcano_Pdiff + labs(title = "Volcano Plot: Pdiff")
+ 
+```
+
+```{r Pdiff_table}
+exon_diff_tab <- volcanoTable_Pdiff[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(exon_diff_tab) <- 1:nrow(exon_diff_tab)
+
+# Render DataTable with enhancements
+datatable(
+  exon_diff_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+
+```
+
+#### F-statistic
+
+
+```{r plotvolcano_Fstat, fig.width=14, fig.height=10, warning=F}
+volcanoTable_Fstat <- prepareTableVolcanoFstat(psitable = exons$PSI,
+                                    qualtable = exons$Qual,
+                                    npoints = 500,
+                                    colsA = colsGroupA,
+                                    colsB = colsGroupB,
+                                    labA = groupA,
+                                    labB = groupB,
+                                    basalColor = "#89C0AE",
+                                    interestColor = "#E69A9C",
+                                    maxDevTable = maxDevSimulationN100, 
+                                    seed=TRUE,
+                                   CoverageWeight=F )
+
+volcano_Fstat <- plotVolcanoFstat(betasTable = filter(volcanoTable_Fstat,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+
+volcano_Fstat
+ 
+```
+
+```{r Fstat_table}
+exon_fstat_tab <- volcanoTable_Fstat[,c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(exon_fstat_tab)<-1:nrow(exon_fstat_tab)
+
+datatable(exon_fstat_tab, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
+))
+```
+
+#### False positive rate (FPR)
+
+To calculate the **FPR** for all events in our dataset, we will use the
+`prepareTableVolcanoFDR` function. To visualize the results in a volcano
+plot, we will use the `plotVolcanoFDR` function. The user can also use
+the approach presented above to make the plot interactive.
+
+```{r plotvolcano_FDR, fig.width=14, fig.height=10, warning=F}
+volcanoTable_FDR <- prepareTableVolcanoFDR(psitable = exons$PSI,
+                                    qualtable = exons$Qual,
+                                    npoints = 500,
+                                    colsA = colsGroupA,
+                                    colsB = colsGroupB,
+                                    labA = groupA,
+                                    labB = groupB,
+                                    basalColor = "#89C0AE",
+                                    interestColor = "#E69A9C",
+                                    maxDevTable = maxDevSimulationN100,
+                                    nsim = 100, 
+                                    seed=TRUE, 
+                                    CoverageWeight = FALSE) 
+        
+volcano_FDR <- plotVolcanoFDR(betasTable = filter(volcanoTable_FDR,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+
+volcano_FDR
+```
+
+```{r FDR_table}
+exon_fdr_tab <- volcanoTable_FDR[,c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(exon_fdr_tab)<-1:nrow(exon_fdr_tab)
+
+datatable(exon_fdr_tab, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
+))
+```
+
+#### Combination Table
+
+```{r combination table exons}
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(exon_diff_tab$EVENT, exon_fstat_tab$EVENT, exon_fdr_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_exon_diff_tab <- exon_diff_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fstat_tab <- exon_fstat_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fdr_tab <- exon_fdr_tab %>% filter(EVENT %in% common_events)
+
+
+# Select only unique columns from each table
+filtered_exon_diff_tab <- filtered_exon_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_exon_fstat_tab <- filtered_exon_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_exon_fdr_tab <- filtered_exon_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+exon_combination_tab <- filtered_exon_diff_tab %>%
+  inner_join(filtered_exon_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_exon_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+
+datatable(exon_combination_tab, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))))  # Center align columns
+
+output_dir <- file.path(getwd(), "results", "tables")
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+write.csv(exon_combination_tab, 
+          file = file.path(output_dir, paste0("lyu_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+
+```
+
+
+### Introns { .tabset }
+
+#### Pdiff
+
+```{r plotvolcano_Pdiff introns, fig.width=14, fig.height=10, warning=F}
+volcanoTable_Pdiff <- prepareTableVolcano(psitable = introns$PSI,
+                                    qualtable = introns$Qual,
+                                    npoints = 500,
+                                    colsA = colsGroupA,
+                                    colsB = colsGroupB,
+                                    labA = groupA,
+                                    labB = groupB,
+                                    basalColor = "#89C0AE",
+                                    interestColor = "#E69A9C",
+                                    maxDevTable = maxDevSimulationN100, 
+                                    seed=TRUE, 
+                                    CoverageWeight = FALSE)
+
+volcano_Pdiff <- plotVolcano(betasTable = filter(volcanoTable_Pdiff,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+
+volcano_Pdiff
+ 
+```
+
+```{r Pdiff_table introns}
+intron_diff_tab <- volcanoTable_Pdiff[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff>=0.95) %>%  # Remove rows where EVENT is NA and Pdiff greater than 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(intron_diff_tab)<-1:nrow(intron_diff_tab)
+
+datatable(intron_diff_tab, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
+))
+```
+
+#### F-statistic
+
+
+```{r plotvolcano_Fstat introns, fig.width=14, fig.height=10, warning=F}
+volcanoTable_Fstat <- prepareTableVolcanoFstat(psitable = introns$PSI,
+                                    qualtable = introns$Qual,
+                                    npoints = 500,
+                                    colsA = colsGroupA,
+                                    colsB = colsGroupB,
+                                    labA = groupA,
+                                    labB = groupB,
+                                    basalColor = "#89C0AE",
+                                    interestColor = "#E69A9C",
+                                    maxDevTable = maxDevSimulationN100, 
+                                    seed=TRUE,
+                                   CoverageWeight=F )
+
+intron_fstat_tab <- volcanoTable_Fstat[,c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(intron_fstat_tab)<-1:nrow(intron_fstat_tab)
+
+volcano_Fstat <- plotVolcanoFstat(betasTable = filter(intron_fstat_tab,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+
+volcano_Fstat
+```
+
+```{r Fstat_table introns}
+
+datatable(intron_fstat_tab, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
+))
+```
+
+#### False positive rate (FPR)
+
+To calculate the **FPR** for all events in our dataset, we will use the
+`prepareTableVolcanoFDR` function. To visualize the results in a volcano
+plot, we will use the `plotVolcanoFDR` function. The user can also use
+the approach presented above to make the plot interactive.
+
+```{r plotvolcano_FDR introns, fig.width=14, fig.height=10, warning=F}
+volcanoTable_FDR <- prepareTableVolcanoFDR(psitable = introns$PSI,
+                                    qualtable = introns$Qual,
+                                    npoints = 500,
+                                    colsA = colsGroupA,
+                                    colsB = colsGroupB,
+                                    labA = groupA,
+                                    labB = groupB,
+                                    basalColor = "#89C0AE",
+                                    interestColor = "#E69A9C",
+                                    maxDevTable = maxDevSimulationN100,
+                                    nsim = 100, 
+                                    seed=TRUE, 
+                                    CoverageWeight = FALSE) 
+
+
+volcano_FDR <- plotVolcanoFDR(betasTable =filter(volcanoTable_FDR,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+
+volcano_FDR
+```
+
+```{r FDR_table introns}
+intron_fdr_tab <- volcanoTable_FDR[,c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))  # Sort by FDR and abs(deltapsi)
+rownames(intron_fdr_tab)<-1:nrow(intron_fdr_tab) 
+
+datatable(intron_fdr_tab, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))  # Center align columns
+))
+```
+
+#### Combination Table
+
+```{r combination table introns}
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(intron_diff_tab$EVENT, intron_fstat_tab$EVENT, intron_fdr_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_intron_diff_tab <- intron_diff_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fstat_tab <- intron_fstat_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fdr_tab <- intron_fdr_tab %>% filter(EVENT %in% common_events)
+
+# Select only unique columns from each table
+filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+intron_combination_tab <- filtered_intron_diff_tab %>%
+  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+
+datatable(intron_combination_tab, options = list(
+  pageLength = 10,  # Number of rows to show per page
+  autoWidth = TRUE,  # Auto adjust column widths
+  dom = 'Bfrtip',  # Add buttons (for download, etc.)
+  buttons = c('copy', 'csv', 'excel'),  # Enable export options
+  columnDefs = list(list(targets = 0:4, className = 'dt-center'))))  # Center align columns
+
+# Output CSV table in the results/table folder, with todays name on it to know when it was downloaded from this script
+output_dir <- file.path(getwd(), "results", "tables")
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+write.csv(intron_combination_tab, 
+          file = file.path(output_dir, paste0("lyu_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
+### Event Densities
+
+```{r densities_per_event, fig.width=8, fig.height=4, warning=F}
+tdensities <- plotIndividualDensitiesList(eventID = "MmuEX0044363",
+                                          npoints = 500,
+                                          psitable = exons$PSI,
+                                          qualtable = exons$Qual,
+                                          groupList = groupList,
+                                          maxDevTable = maxDevSimulationN100, 
+                                          seed=TRUE, 
+                                          CoverageWeight = FALSE)
+
+tdensities + theme_minimal() + ggtitle("MmuEX0044363")
+
+```
+
+```{r densities_per_event 2, fig.width=8, fig.height=4, warning=F}
+eventID<-"MmuEX0044363"
+tdensities <- plotIndividualDensitiesList(eventID =eventID,
+                                          npoints = 500,
+                                          psitable = exons$PSI,
+                                          qualtable = exons$Qual,
+                                          groupList = groupList,
+                                          maxDevTable = maxDevSimulationN100, 
+                                          seed=TRUE, 
+                                          CoverageWeight = FALSE)
+
+tdensities + theme_minimal() + ggtitle(eventID)
+```
+
+
+```{r resultsplots_per_event, fig.width=14, fig.height=4, warning=F}
+
+plotPdiff <- prepareTableEvent(eventID = eventID,
+                               psitable = exons$PSI,
+                               qualtable = exons$Qual,
+                               npoints = 500,
+                               colsA = colsGroupA,
+                               colsB = colsGroupB,
+                               labA = groupA,
+                               labB = groupB,
+                               basalColor = "#89C0AE",
+                               interestColor = "#E69A9C",
+                               maxDevTable = maxDevSimulationN100,
+                               nsim = 1000, 
+                               seed=T,
+                                CoverageWeight=F) %>% 
+  plotPDiffFromEventObjList()
+
+plotFstat <- prepareTableEvent(eventID = eventID,
+                               psitable = exons$PSI,
+                               qualtable = exons$Qual,
+                               npoints = 500,
+                               colsA = colsGroupA,
+                               colsB = colsGroupB,
+                               labA = groupA,
+                               labB = groupB,
+                               basalColor = "#89C0AE",
+                               interestColor = "#E69A9C",
+                               maxDevTable = maxDevSimulationN100,
+                               nsim = 1000,
+                               seed=T,
+                             CoverageWeight=F) %>% 
+  plotFstatFromEventObjList()
+ 
+plotFDR <- prepareTableEvent(eventID = eventID,
+                               psitable = exons$PSI,
+                               qualtable = exons$Qual,
+                               npoints = 500,
+                               colsA = colsGroupA,
+                               colsB = colsGroupB,
+                               labA = groupA,
+                               labB = groupB,
+                               basalColor = "#89C0AE",
+                               interestColor = "#E69A9C",
+                               maxDevTable = maxDevSimulationN100,
+                               nsim = 1000,
+                               seed=T,
+                             CoverageWeight=F) %>% 
+  plotFDRFromEventObjList()
+
+plot_grid(plotPdiff,plotFstat,plotFDR, ncol=3)
+
+```
+
+## Gene Ontology Enrichment
+
+```{r gene ontology calculation}
+gene_entrez <- bitr(union(intron_combination_tab$GENE, exon_combination_tab$GENE), fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+
+# GO Enrichment Analysis
+go_enrich <- enrichGO(gene = gene_entrez$ENTREZID,
+                      OrgDb = org.Mm.eg.db,
+                      ont = "ALL",
+                      pAdjustMethod = "BH",
+                      pvalueCutoff = 0.05,
+                      qvalueCutoff = 0.05)
+
+# KEGG Pathway Enrichment
+kegg_enrich <- enrichKEGG(gene = gene_entrez$ENTREZID,
+                          organism = "mmu",
+                          pAdjustMethod = "BH",
+                          pvalueCutoff = 0.05)
+
+# Reactome Pathway Enrichment Guangchuang Yu, Qing-Yu He. ReactomePA: an R/Bioconductor package for reactome pathway analysis and visualization. Molecular BioSystems 2016, 12(2):477-479
+reactome_enrich <- enrichPathway(gene = gene_entrez$ENTREZID,
+                                 organism = "mouse",
+                                 pAdjustMethod = "BH",
+                                 pvalueCutoff = 0.05)
+
+```
+
+```{r go visualise}
+# Dot plot for GO terms
+dotplot(go_enrich, showCategory = 20) + ggtitle("GO Enrichment Analysis")
+
+# Bar plot for KEGG pathways
+barplot(kegg_enrich, showCategory = 20) + ggtitle("KEGG Pathway Enrichment")
+
+# Network plot for Reactome pathways
+emapplot(pairwise_termsim(reactome_enrich)) + ggtitle("Reactome Pathway Network")
+
+
+```
+
