@@ -6,11 +6,11 @@
 ##################
 
 # where to put stdout / stderr
-#SBATCH --output=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/tmp/%x.%A_%a.out
-#SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/tmp/%x.%A_%a.err
+#SBATCH --output=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.out
+#SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
 # time limit in minutes
-#SBATCH --time=120
+#SBATCH --time=180
 
 # queue
 #SBATCH --qos=shorter
@@ -43,12 +43,12 @@ set -o pipefail
 ###############
 
 #Define file list and select the file for the current array job
-files=($PWD/data/raw/trepnell2010/*_1.fastq.gz)
+files=($PWD/data/raw/trapnell2010/*_1.fastq.gz)
 file1=${files[$SLURM_ARRAY_TASK_ID]}
 file2=${file1/_1.fastq.gz/_2.fastq.gz}
 
 basename=$(basename "$file1" _1.fastq.gz)
-mkdir -p $PWD/data/processed/trepnell2010/vast_out
+mkdir -p $PWD/data/processed/trapnell2010/vast_out
 
 # Initialize conda
 source ~/miniconda3/etc/profile.d/conda.sh
@@ -56,7 +56,7 @@ conda activate vasttools
 /users/mirimia/projects/vast-tools/vast-tools align \
     "$file1" "$file2" \
     -sp mm10 \
-    -o $PWD/data/processed/trepnell2010/vast_out \
+    -o $PWD/data/processed/trapnell2010/vast_out \
     --IR_version 2 \
     -c 8 \
     -n "$basename"
