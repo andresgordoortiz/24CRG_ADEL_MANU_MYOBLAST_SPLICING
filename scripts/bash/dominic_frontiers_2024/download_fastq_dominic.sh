@@ -16,7 +16,7 @@
 #SBATCH --qos=vshort
 
 # memory (MB)
-#SBATCH --mem=2G
+#SBATCH --mem=5G
 
 # job name
 #SBATCH --job-name downloadfasta
@@ -44,7 +44,7 @@ trap 'echo [$(date +"%Y-%m-%d %H:%M:%S")] "An error occurred. Exiting..."' ERR
 ###############
 # run command #
 ###############
-echo "Creating directory $PWD/data/raw/lyu_cells2022"
+
 mkdir -p $PWD/data/raw/dominic_frontiers2024
 
 echo "Changing directory to $PWD/data/raw/dominic_frontiers2024"
