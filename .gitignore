@@ -10,7 +10,7 @@ data/raw/*
 *.csv
 *.tsv
 *.h5
-
+*.Rproj
 # Ignore temporary and intermediate files
 *tmp/
 *to_combine/
