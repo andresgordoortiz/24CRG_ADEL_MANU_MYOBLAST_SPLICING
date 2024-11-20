@@ -21,7 +21,6 @@ data/raw/*
 *.zip
 *.json
 *.tab
-
 # Ignore large result files
 results/**/*.pdf
 results/**/*.png
