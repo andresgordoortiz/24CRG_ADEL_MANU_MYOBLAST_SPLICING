@@ -10,7 +10,7 @@
 #SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
 # time limit in minutes
-#SBATCH --time=20
+#SBATCH --time=30
 
 # queue
 #SBATCH --qos=vshort
@@ -41,7 +41,7 @@ set -o pipefail
 ###############
 # Store current working directory
 current_dir=$PWD
-cd $PWD/data/processed/trepnell2010/vast_out/to_combine
+cd $PWD/data/processed/trapnell2010/vast_out/to_combine
 
 # Initialize conda
 source ~/miniconda3/etc/profile.d/conda.sh
@@ -49,11 +49,11 @@ conda activate vasttools
 
 /users/mirimia/projects/vast-tools/vast-tools combine \
     -sp mm10 \
-    -o $current_dir/data/processed/trepnell2010/vast_out
-
+    -o $current_dir/data/processed/trapnell2010/vast_out
 conda deactivate
 
-
+cd $current_dir
+mv $PWD/data/processed/trapnell2010/vast_out/INCLUSION_LEVELS_FULL-mm10-10.tab $PWD/data/processed/trapnell2010/vast_out/Trapnell_Naturebiotech_INCLUSION_LEVELS_FULL-mm10.tab
 
 ###############
 # end message #
