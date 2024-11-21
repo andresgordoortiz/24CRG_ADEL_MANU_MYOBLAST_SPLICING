@@ -934,7 +934,7 @@ zhang_exon_combination_tab <- filtered_exon_diff_tab %>%
 ```{r zhang combination table}
 # Render DataTable with enhancements
 datatable(
-  exon_diff_tab,
+  zhang_exon_combination_tab,
   options = list(
     pageLength = 10,                      # Rows per page
     autoWidth = TRUE,                     # Adjust column widths automatically
@@ -982,16 +982,289 @@ datatable(
 
 output_dir <- file.path(getwd(), "results", "tables")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-write.csv(exon_combination_tab, 
+write.csv(zhang_exon_combination_tab, 
           file = file.path(output_dir, paste0("zhang_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
 
+#### Lyu
+
+```{r lyu table making}
+lyu_pdiff_exons_tab <- lyu_pdiff_exons[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(lyu_pdiff_exons_tab) <- 1:nrow(lyu_pdiff_exons_tab)
+
+lyu_fstat_exons_tab <- lyu_fstat_exons[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(lyu_fstat_exons_tab) <- 1:nrow(lyu_fstat_exons_tab)
+
+lyu_fdr_exons_tab <- lyu_fdr_exons[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))
+rownames(lyu_fdr_exons_tab) <- 1:nrow(lyu_fdr_exons_tab)
+
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(lyu_pdiff_exons_tab$EVENT, lyu_fstat_exons_tab$EVENT, lyu_fdr_exons_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_exon_diff_tab <- lyu_pdiff_exons_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fstat_tab <- lyu_fstat_exons_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fdr_tab <- lyu_fdr_exons_tab %>% filter(EVENT %in% common_events)
 
 
+# Select only unique columns from each table
+filtered_exon_diff_tab <- filtered_exon_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_exon_fstat_tab <- filtered_exon_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_exon_fdr_tab <- filtered_exon_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+lyu_exon_combination_tab <- filtered_exon_diff_tab %>%
+  inner_join(filtered_exon_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_exon_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+```
+
+```{r lyu combination table}
+# Render DataTable with enhancements
+datatable(
+  lyu_exon_combination_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+write.csv(lyu_exon_combination_tab, 
+          file = file.path(output_dir, paste0("lyu_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
+#### Tao
+
+```{r tao table making}
+tao_pdiff_exons_tab <- tao_pdiff_exons[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(tao_pdiff_exons_tab) <- 1:nrow(tao_pdiff_exons_tab)
+
+tao_fstat_exons_tab <- tao_fstat_exons[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(tao_fstat_exons_tab) <- 1:nrow(tao_fstat_exons_tab)
+
+tao_fdr_exons_tab <- tao_fdr_exons[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))
+rownames(tao_fdr_exons_tab) <- 1:nrow(tao_fdr_exons_tab)
+
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(tao_pdiff_exons_tab$EVENT, tao_fstat_exons_tab$EVENT, tao_fdr_exons_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_exon_diff_tab <- tao_pdiff_exons_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fstat_tab <- tao_fstat_exons_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fdr_tab <- tao_fdr_exons_tab %>% filter(EVENT %in% common_events)
 
 
+# Select only unique columns from each table
+filtered_exon_diff_tab <- filtered_exon_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_exon_fstat_tab <- filtered_exon_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_exon_fdr_tab <- filtered_exon_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+tao_exon_combination_tab <- filtered_exon_diff_tab %>%
+  inner_join(filtered_exon_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_exon_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+```
+
+```{r tao combination table}
+# Render DataTable with enhancements
+datatable(
+  tao_exon_combination_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+write.csv(tao_exon_combination_tab, 
+          file = file.path(output_dir, paste0("tao_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
+#### Christopher
+
+```{r christopher table making}
+christopher_pdiff_exons_tab <- christopher_pdiff_exons[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(christopher_pdiff_exons_tab) <- 1:nrow(christopher_pdiff_exons_tab)
+
+christopher_fstat_exons_tab <- christopher_fstat_exons[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(christopher_fstat_exons_tab) <- 1:nrow(christopher_fstat_exons_tab)
+
+christopher_fdr_exons_tab <- christopher_fdr_exons[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))
+rownames(christopher_fdr_exons_tab) <- 1:nrow(christopher_fdr_exons_tab)
+
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(christopher_pdiff_exons_tab$EVENT, christopher_fstat_exons_tab$EVENT, christopher_fdr_exons_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_exon_diff_tab <- christopher_pdiff_exons_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fstat_tab <- christopher_fstat_exons_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fdr_tab <- christopher_fdr_exons_tab %>% filter(EVENT %in% common_events)
 
 
+# Select only unique columns from each table
+filtered_exon_diff_tab <- filtered_exon_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_exon_fstat_tab <- filtered_exon_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_exon_fdr_tab <- filtered_exon_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
 
+# Merge the data frames by EVENT
+christopher_exon_combination_tab <- filtered_exon_diff_tab %>%
+  inner_join(filtered_exon_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_exon_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+```
 
+```{r christopher combination table}
+# Render DataTable with enhancements
+datatable(
+  christopher_exon_combination_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+write.csv(christopher_exon_combination_tab, 
+          file = file.path(output_dir, paste0("christopher_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
