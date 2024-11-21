@@ -78,6 +78,8 @@ install_load("tidyverse")
 install_load("cowplot")
 install_load("DT")
 install_load("paletteer")
+install_load("paletteer")
+install_load("ggupset")
 library("patchwork")
 library("org.Mm.eg.db")
 library("enrichplot")
@@ -415,7 +417,6 @@ plot1 <- bigPicturePlotExons +
     plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
     axis.text = element_text(size = 10),
     axis.title = element_text(size = 12),
-    panel.background = element_rect(fill = "lightblue"),  # Set background color
     panel.grid.major = element_line(color = "gray90", size = 0.5),
     panel.grid.minor = element_line(color = "gray95", size = 0.25)
   )
@@ -847,6 +848,18 @@ lyu_fdr_exons <- prepareTableVolcanoFDR(
 
 ```
 
+```{r multigroup ANOVA tao}
+tao_multgroups_exons <- prepareTableVolcanoMultipleGroups(
+  psitable = tao_exons$PSI,
+  qualtable = tao_exons$Qual,
+  groupList = groupList_tao,
+  npoints = 500,
+  maxDevTable = maxDevSimulationN100, 
+  seed=TRUE, 
+  CoverageWeight = F)
+```
+
+
 ### FDR Volcano Plots { .tabset}
 
 #### Zhang
@@ -905,7 +918,7 @@ zhang_fstat_exons_tab <- zhang_fstat_exons[, c("GENE","EVENT","COORD","Fstat","d
 rownames(zhang_fstat_exons_tab) <- 1:nrow(zhang_fstat_exons_tab)
 
 zhang_fdr_exons_tab <- zhang_fdr_exons[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
-  ilter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
   arrange((FDR), desc(abs(deltapsi)))
 rownames(zhang_fdr_exons_tab) <- 1:nrow(zhang_fdr_exons_tab)
 
@@ -1175,6 +1188,59 @@ write.csv(tao_exon_combination_tab,
           row.names = FALSE)
 ```
 
+#### Tao ANOVA Multigroup
+
+```{r tao ANOVA combination table}
+
+tao_multgroups_exons <-tao_multgroups_exons[,c("GENE","EVENT","Fstat","Pdiff","Pzero","medianBetweens","deltaAbsolute")] %>%
+  filter(!is.na(EVENT), Pdiff>=0.95) %>%  # Remove rows where EVENT is NA and Pdiff greater than 0.95
+  arrange(desc(Fstat),desc(Pdiff))  # Sort by FDR and abs(deltapsi)
+
+rownames(tao_multgroups_exons)<-1:nrow(tao_multgroups_exons) 
+
+# Render DataTable with enhancements
+datatable(
+  tao_multgroups_exons,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+)
+
+write.csv(tao_multgroups_exons, 
+          file = file.path(output_dir, paste0("tao_exon_ANOVAMultigroups_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
 #### Christopher
 
 ```{r christopher table making}
@@ -1268,3 +1334,226 @@ write.csv(christopher_exon_combination_tab,
           file = file.path(output_dir, paste0("christopher_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
+
+# Unsorted Exon Candidates List
+
+```{r merging final lists}
+# List of data frames to compare
+dataframes <- list(
+  christopher = christopher_exon_combination_tab,
+  tao = tao_exon_combination_tab,
+  lyu = lyu_exon_combination_tab,
+  zhang= zhang_exon_combination_tab,
+  tao_anova=tao_multgroups_exons
+)
+
+# Extract unique EVENTS for each data frame
+events_list <- lapply(dataframes, function(df) unique(df$EVENT))
+
+# Function to calculate unique and shared counts for a given combination of data frames
+compute_shared_and_unique <- function(indices) {
+  combo_names <- names(events_list)[indices]
+  combined_events <- events_list[indices]
+  
+  # Compute shared and unique values
+  shared <- Reduce(intersect, combined_events)
+  unique_events <- lapply(combined_events, function(events) {
+    setdiff(events, unlist(combined_events[-which(combined_events == events)]))
+  })
+  
+  # Return result even if one combination is empty
+  list(
+    combination = combo_names, # Store as list of dataset names
+    shared_count = length(shared),
+    unique_counts = sapply(unique_events, length)
+  )
+}
+
+# Iterate through all subsets of data frames
+all_combinations <- lapply(1:length(events_list), function(k) {
+  combn(seq_along(events_list), k, compute_shared_and_unique, simplify = FALSE)
+})
+
+# Flatten the list of results
+all_combinations <- unlist(all_combinations, recursive = FALSE)
+
+# Ensure all results have consistent structure
+exons_candidates <- do.call(rbind, lapply(all_combinations, function(res) {
+  # Handle cases with no unique values gracefully
+  data.frame(
+    Combination = I(list(res$combination)), # Store combination as list object
+    Shared = res$shared_count,
+    Unique = I(list(res$unique_counts)),   # Store unique counts as list object
+    row.names = NULL
+  )
+}))
+exons_candidates<-as.tibble(exons_candidates)
+
+exons_candidates <- exons_candidates %>%
+  mutate(Combination = map2(Combination, Shared, ~rep(list(.x), .y))) %>%
+  unnest(Combination)
+
+```
+
+
+```{r plot venn diagram}
+counts <- exons_candidates %>%
+  count(Combination)
+
+upset_exon_plot<-exons_candidates %>%
+  ggplot(aes(x = Combination)) +
+  geom_bar(fill = "#D8D97AFF", color = "black") +  # Polished bar colors
+  geom_text(data = counts, aes(x = Combination, y = n, label = n),
+            vjust = -0.5, size = 3.5, family = "Times") +  # Add count labels
+  scale_x_upset(n_intersections = 31) +
+  labs(
+    title = paste("UpSet Plot of Exon Candidates (", Sys.Date(), ")", sep = ""),
+    x = "Exon Combinations",
+    y = "Count"
+  ) +
+  theme_minimal(base_family = "Times") +  # Professional font
+  theme(
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    panel.grid.major = element_line(color = "white", size = 0.7),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "lightblue"),  # Set background color
+    plot.background = element_rect(fill = "white"),
+    strip.text = element_text(size = 12, face = "bold")
+  ) 
+
+upset_exon_plot
+```
+```{r shared events final list}
+# Extract the shared events in all dataframes
+shared_events <- Reduce(intersect, lapply(dataframes, function(df) df$EVENT))
+
+tao_shared<-tao_exon_combination_tab[tao_exon_combination_tab$EVENT %in% shared_events,]
+lyu_shared<-lyu_exon_combination_tab[lyu_exon_combination_tab$EVENT %in% shared_events,]
+zhang_shared<-zhang_exon_combination_tab[zhang_exon_combination_tab$EVENT %in% shared_events,]
+christopher_shared<-christopher_exon_combination_tab[christopher_exon_combination_tab$EVENT %in% shared_events,]
+
+
+combined_data <- bind_rows(
+  tao_shared %>% mutate(Source = "tao_shared"),
+  lyu_shared %>% mutate(Source = "lyu_shared"),
+  zhang_shared %>% mutate(Source = "zhang_shared"),
+  christopher_shared %>% mutate(Source = "christopher_shared"),
+)
+
+# Calculate average per EVENT
+averaged_data <- combined_data %>%
+  group_by(EVENT) %>%
+  summarise(
+    avg_deltapsi = mean(deltapsi, na.rm = TRUE),
+    avg_Fstat = mean(Fstat, na.rm = TRUE),
+    avg_Pdiff = mean(Pdiff, na.rm = TRUE),
+    avg_FDR = mean(FDR, na.rm = TRUE)
+  )
+
+final_exon_list<-averaged_data 
+final_exon_list$GENE <- tao_shared$GENE[match(final_exon_list$EVENT, tao_shared$EVENT)]
+final_exon_list$COORD <- tao_shared$COORD[match(final_exon_list$EVENT, tao_shared$EVENT)]
+final_exon_list<- final_exon_list %>%
+  select(GENE, EVENT, COORD, everything()) %>%
+  arrange(desc(abs(avg_deltapsi))) %>%
+  mutate(avg_deltapsi = round(avg_deltapsi, 3),
+         avg_Fstat = round(avg_Fstat, 3),
+         avg_Pdiff = round(avg_Pdiff, 3),
+         avg_FDR = round(avg_FDR, 3))
+
+```
+
+```{r output final list}
+# Render DataTable with enhancements
+datatable(
+  final_exon_list,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "avg_Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "avg_deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+
+
+
+write.csv(final_exon_list, 
+          file = file.path(output_dir, paste0("final_exon_list_unsorted_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+## Event Densities
+
+```{r densities_per_event, fig.width=8, fig.height=4, warning=F}
+plots <- lapply(1:nrow(final_exon_list), function(i) {
+  eventID <- final_exon_list$EVENT[i]
+  geneName <- final_exon_list$GENE[i]
+  
+  # Create the plot for each row using the provided parameters
+  tdensities <- plotIndividualDensitiesList(
+    eventID = eventID,
+    npoints = 500,
+    psitable = tao_exons$PSI,
+    qualtable = tao_exons$Qual,
+    groupList = groupList_tao,
+    maxDevTable = maxDevSimulationN100, 
+    seed = TRUE, 
+    CoverageWeight = FALSE
+  )
+  
+  # Modify the plot with ggtitle using the GENE and EVENT from the row
+  plot_with_title <- tdensities + 
+    theme_minimal() + 
+    ggtitle(paste(geneName, eventID))
+  
+  return(plot_with_title)
+})
+
+# Combine all 8 plots into one figure using patchwork
+final_figure <- wrap_plots(plots, ncol = 2)
+
+# Display the combined figure
+final_figure
+
+```
+
+
