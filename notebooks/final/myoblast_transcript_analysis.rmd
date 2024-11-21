@@ -545,6 +545,102 @@ combined_plot
 
 # Differential Splicing
 
+```{r aux_featuregroup}
+# Extract unique groups and sample IDs
+groupingVariable <- "experiment_title"
+# Zhang
+groups_zhang <- unique(metadata_zhang[, groupingVariable])
+samples_zhang <- metadata_zhang$run_accession
+# Tao
+groups_tao <- unique(metadata_tao[, groupingVariable])
+samples_tao <- metadata_tao$run_accession
+# Lyu
+groups_lyu <- unique(metadata_lyu[, groupingVariable])
+samples_lyu <- metadata_lyu$run_accession
+# Christopher
+groups_christopher <- unique(metadata_christopher[, groupingVariable])
+samples_christopher <- metadata_christopher$run_accession
+
+
+
+random_colors=c("#D8D97AFF", "#95C36EFF", "#74C8C3FF", "#5A97C1FF", "#295384FF", "#0A2E57FF")
+  
+# Create group list with metadata
+groupList_zhang <- lapply(1:length(groups_zhang), function(i) {
+  list(
+    name = groups_zhang[i],
+    samples = samples_zhang[metadata_zhang[, groupingVariable] == groups_zhang[i]],
+    color = random_colors[i]
+  )
+})
+names(groupList_zhang) <- groups_zhang
+
+# Create group list with metadata for Tao, Christopher, and Lyu
+groupList_tao <- lapply(1:length(groups_tao), function(i) {
+  list(
+    name = groups_tao[i],
+    samples = samples_tao[metadata_tao[, groupingVariable] == groups_tao[i]],
+    color = random_colors[i]
+  )
+})
+names(groupList_tao) <- groups_tao
+
+groupList_christopher <- lapply(1:length(groups_christopher), function(i) {
+  list(
+    name = groups_christopher[i],
+    samples = samples_christopher[metadata_christopher[, groupingVariable] == groups_christopher[i]],
+    color = random_colors[i]
+  )
+})
+names(groupList_christopher) <- groups_christopher
+
+groupList_lyu <- lapply(1:length(groups_lyu), function(i) {
+  list(
+    name = groups_lyu[i],
+    samples = samples_lyu[metadata_lyu[, groupingVariable] == groups_lyu[i]],
+    color = random_colors[i]
+  )
+})
+names(groupList_lyu) <- groups_lyu
+
+
+```
+
+```{r groups_auxiliary}
+# Define groups
+groupA    <- "Myoblasts"
+groupB    <- "Myotubes"
+groupA_tao<-"0_days"
+groupB_tao<-"7_days"
+# Define samples inside each group
+# Zhang
+samplesA_zhang    <- groupList_zhang[[groupA]]$samples
+samplesB_zhang    <- groupList_zhang[[groupB]]$samples
+colsGroupA_zhang    <- convertCols(zhang_exons$PSI, samplesA_zhang)
+colsGroupB_zhang    <- convertCols(zhang_exons$PSI, samplesB_zhang)
+
+# For Tao
+samplesA_tao <- groupList_tao[[groupA_tao]]$samples
+samplesB_tao <- groupList_tao[[groupB_tao]]$samples
+colsGroupA_tao <- convertCols(tao_exons$PSI, samplesA_tao)
+colsGroupB_tao <- convertCols(tao_exons$PSI, samplesB_tao)
+
+# For Christopher
+samplesA_christopher <- groupList_christopher[[groupA]]$samples
+samplesB_christopher <- groupList_christopher[[groupB]]$samples
+colsGroupA_christopher <- convertCols(christopher_exons$PSI, samplesA_christopher)
+colsGroupB_christopher <- convertCols(christopher_exons$PSI, samplesB_christopher)
+
+# For Lyu
+samplesA_lyu <- groupList_lyu[[groupA]]$samples
+samplesB_lyu <- groupList_lyu[[groupB]]$samples
+colsGroupA_lyu <- convertCols(lyu_exons$PSI, samplesA_lyu)
+colsGroupB_lyu <- convertCols(lyu_exons$PSI, samplesB_lyu)
+
+
+set.seed(42) #Setting seed for downstream simulations of the beta distribution
+```
+
 
 
 
