@@ -641,6 +641,355 @@ colsGroupB_lyu <- convertCols(lyu_exons$PSI, samplesB_lyu)
 set.seed(42) #Setting seed for downstream simulations of the beta distribution
 ```
 
+## Exon Lists
+
+### Calculations
+
+```{r pdiff calculation}
+# Preprae table for zhang
+zhang_pdiff_exons <- prepareTableVolcano(
+  psitable = zhang_exons$PSI,
+  qualtable = zhang_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_zhang,
+  colsB = colsGroupB_zhang,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed=TRUE, 
+  CoverageWeight = FALSE)
+
+# Prepare table for Tao
+tao_pdiff_exons <- prepareTableVolcano(
+  psitable = tao_exons$PSI,
+  qualtable = tao_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_tao,
+  colsB = colsGroupB_tao,
+  labA = groupA_tao,
+  labB = groupB_tao,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+# Prepare table for Christopher
+christopher_pdiff_exons <- prepareTableVolcano(
+  psitable = christopher_exons$PSI,
+  qualtable = christopher_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_christopher,
+  colsB = colsGroupB_christopher,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+# Prepare table for Lyu
+lyu_pdiff_exons <- prepareTableVolcano(
+  psitable = lyu_exons$PSI,
+  qualtable = lyu_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_lyu,
+  colsB = colsGroupB_lyu,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+```
+
+```{r f-stat}
+# Preprae table for zhang
+zhang_fstat_exons <- prepareTableVolcanoFstat(
+  psitable = zhang_exons$PSI,
+  qualtable = zhang_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_zhang,
+  colsB = colsGroupB_zhang,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed=TRUE, 
+  CoverageWeight = FALSE)
+
+# Prepare table for Tao
+tao_fstat_exons <- prepareTableVolcanoFstat(
+  psitable = tao_exons$PSI,
+  qualtable = tao_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_tao,
+  colsB = colsGroupB_tao,
+  labA = groupA_tao,
+  labB = groupB_tao,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+# Prepare table for Christopher
+christopher_fstat_exons <- prepareTableVolcanoFstat(
+  psitable = christopher_exons$PSI,
+  qualtable = christopher_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_christopher,
+  colsB = colsGroupB_christopher,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+# Prepare table for Lyu
+lyu_fstat_exons <- prepareTableVolcanoFstat(
+  psitable = lyu_exons$PSI,
+  qualtable = lyu_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_lyu,
+  colsB = colsGroupB_lyu,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+```
+
+```{r FDR}
+# Preprae table for zhang
+zhang_fdr_exons <- prepareTableVolcanoFDR(
+  psitable = zhang_exons$PSI,
+  qualtable = zhang_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_zhang,
+  colsB = colsGroupB_zhang,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  nsim = 100, 
+  seed=TRUE, 
+  CoverageWeight = FALSE) 
+
+# Prepare table for Tao
+tao_fdr_exons <- prepareTableVolcanoFDR(
+  psitable = tao_exons$PSI,
+  qualtable = tao_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_tao,
+  colsB = colsGroupB_tao,
+  labA = groupA_tao,
+  labB = groupB_tao,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  nsim = 100, 
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+# Prepare table for Christopher
+christopher_fdr_exons <- prepareTableVolcanoFDR(
+  psitable = christopher_exons$PSI,
+  qualtable = christopher_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_christopher,
+  colsB = colsGroupB_christopher,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  nsim = 100,
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+# Prepare table for Lyu
+lyu_fdr_exons <- prepareTableVolcanoFDR(
+  psitable = lyu_exons$PSI,
+  qualtable = lyu_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_lyu,
+  colsB = colsGroupB_lyu,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  nsim = 100,
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+```
+
+### FDR Volcano Plots { .tabset}
+
+#### Zhang
+
+```{r zhang fdr volcano}
+plotVolcanoFDR(betasTable =filter(zhang_fdr_exons,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+```
+
+#### Lyu
+
+```{r lyu fdr volcano}
+plotVolcanoFDR(betasTable =filter(lyu_fdr_exons,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+```
+
+#### Tao
+
+```{r tao fdr volcano}
+plotVolcanoFDR(betasTable =filter(tao_fdr_exons,!is.na(EVENT)),
+                            labA = groupA_tao,
+                            labB = groupB_tao,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+```
+
+#### Christopher
+
+```{r christopher fdr volcano}
+plotVolcanoFDR(betasTable =filter(christopher_fdr_exons,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+```
+
+### Individual Combination Tables { .tabset}
+
+#### Zhang
+
+```{r zhang table making}
+zhang_pdiff_exons_tab <- zhang_pdiff_exons[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(zhang_pdiff_exons_tab) <- 1:nrow(zhang_pdiff_exons_tab)
+
+zhang_fstat_exons_tab <- zhang_fstat_exons[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(zhang_fstat_exons_tab) <- 1:nrow(zhang_fstat_exons_tab)
+
+zhang_fdr_exons_tab <- zhang_fdr_exons[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  ilter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))
+rownames(zhang_fdr_exons_tab) <- 1:nrow(zhang_fdr_exons_tab)
+
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(zhang_pdiff_exons_tab$EVENT, zhang_fstat_exons_tab$EVENT, zhang_fdr_exons_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_exon_diff_tab <- zhang_pdiff_exons_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fstat_tab <- zhang_fstat_exons_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fdr_tab <- zhang_fdr_exons_tab %>% filter(EVENT %in% common_events)
+
+
+# Select only unique columns from each table
+filtered_exon_diff_tab <- filtered_exon_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_exon_fstat_tab <- filtered_exon_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_exon_fdr_tab <- filtered_exon_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+zhang_exon_combination_tab <- filtered_exon_diff_tab %>%
+  inner_join(filtered_exon_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_exon_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+```
+
+```{r zhang combination table}
+# Render DataTable with enhancements
+datatable(
+  exon_diff_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+output_dir <- file.path(getwd(), "results", "tables")
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+write.csv(exon_combination_tab, 
+          file = file.path(output_dir, paste0("zhang_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
+
+
+
 
 
 
