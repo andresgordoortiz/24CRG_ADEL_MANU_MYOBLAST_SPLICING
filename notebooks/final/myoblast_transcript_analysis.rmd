@@ -22,7 +22,10 @@ editor_options:
     
 # NOTE: To run this R Markdown file correctly, set the Knit Directory to the Project Directory.
 # You can do this by navigating to the gear icon next to the Knit button in RStudio,
-# and selecting "Project Directory" as the option. This ensures paths resolve correctly.
+# and selecting "Project Directory" as the option. This ensures paths resolve correctly. Also, to download libraries in the same version as mine, you can use the following code:
+# install.packages("renv")
+# renv::init()
+# renv::restore()
 ---
 
 ```{css, echo=FALSE}
@@ -195,5 +198,300 @@ To determine the functional relevance of candidate splicing events in myoblast d
 | Christopher Azar  | Physiological Reports                 | [SRP198848](https://www.ebi.ac.uk/ena/browser/view/SRP198848) | 2021 | Cells differentiated for 6 days with daily media changes. 3 single-end biological replicates per condition (0 days myoblast, 6 days myotube), totaling 6 fastq files.                                 | ~30M per biosample
 
 ---
+
+## Importing Inclusion Data
+
+```{r inclusion tables}
+# Zhang et al. 2018 data
+zhang_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Zhang_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
+zhang_events <- getEvents(zhang_data, tool = "vast-tools") # Extract alternative splicing events
+zhang_events <- alternativeEvents(zhang_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
+zhang_exons <- filterEvents(zhang_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 3)
+zhang_introns <- filterEvents(zhang_events, types = c("IR"), N = 5)
+
+# Lyu et al. 2022 data
+lyu_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Lyu_Cells_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
+lyu_events <- getEvents(lyu_data, tool = "vast-tools") # Extract alternative splicing events
+lyu_events <- alternativeEvents(lyu_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
+lyu_exons <- filterEvents(lyu_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 3)
+lyu_introns <- filterEvents(lyu_events, types = c("IR"), N = 5)
+
+# Tao et al. 2024 data
+tao_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Tao_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
+tao_events <- getEvents(tao_data, tool = "vast-tools") # Extract alternative splicing events
+tao_events <- alternativeEvents(tao_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
+tao_exons <- filterEvents(tao_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 3)
+tao_introns <- filterEvents(tao_events, types = c("IR"), N = 5)
+
+# Christopher Azar 2021 data
+christopher_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Christopher_Physioreports_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
+christopher_events <- getEvents(christopher_data, tool = "vast-tools") # Extract alternative splicing events
+christopher_events <- alternativeEvents(christopher_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
+christopher_exons <- filterEvents(christopher_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 3)
+christopher_introns <- filterEvents(christopher_events, types = c("IR"), N = 5)
+```
+
+
+## Metadata { .tabset}
+
+```{r metadata zhang}
+# Load metadata file containing sample information
+metadata_zhang <- read.csv(paste0(getwd(),"/metadata/zhang_metadata.csv"), sep = ",")
+DT::datatable(metadata_zhang, options = list(pageLength = nrow(metadata_zhang), scrollX = TRUE))
+```
+
+```{r metadata lyu}
+# Load metadata file containing sample information
+metadata_lyu <- read.csv(paste0(getwd(),"/metadata/lyu_metadata.csv"), sep = ",")
+DT::datatable(metadata_lyu, options = list(pageLength = nrow(metadata_lyu), scrollX = TRUE))
+```
+
+```{r metadata tao}
+# Load metadata file containing sample information
+metadata_tao <- read.csv(paste0(getwd(),"/metadata/tao_metadata.csv"), sep = ",")
+DT::datatable(metadata_tao, options = list(pageLength = nrow(metadata_tao), scrollX = TRUE))
+```
+
+```{r metadata christopher}
+# Load metadata file containing sample information
+metadata_christopher <- read.csv(paste0(getwd(),"/metadata/christopher_metadata.csv"), sep = ",")
+DT::datatable(metadata_christopher, options = list(pageLength = nrow(metadata_christopher), scrollX = TRUE))
+```
+
+---
+
+# Splicing & Sample Quality Checking
+
+## PSI Distribution Plots { .tabset}
+
+### Zhang
+
+```{r psi distribution zhang}
+# Create the first plot for exon inclusion levels
+bigPicturePlotExons <- bigPicturePlot(table = zhang_exons$PSI)
+
+# Customize the first plot for professional reporting
+plot1 <- bigPicturePlotExons +
+  ggtitle("Exon Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    panel.background = element_rect(fill = "lightblue"),  # Set background color
+    panel.grid.major = element_line(color = "gray90", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.25)
+  )
+
+# Create a second plot for a hypothetical dataframe
+# Replace 'hypothetical_data$PSI' with your actual dataframe and column
+bigPictureIntrons <- bigPicturePlot(table = zhang_introns$PSI)
+
+# Customize the second plot
+plot2 <- bigPictureIntrons +
+  ggtitle("Introns Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    panel.background = element_rect(fill = "lightblue"),  # Set background color
+    panel.grid.major = element_line(color = "gray90", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.25)
+  )
+
+# Combine both plots into one figure using patchwork
+plot1 + plot2
+```
+
+### Lyu
+
+```{r lyu distribution plot}
+# Create the first plot for exon inclusion levels
+bigPicturePlotExons <- bigPicturePlot(table = lyu_exons$PSI)
+
+# Customize the first plot for professional reporting
+plot1 <- bigPicturePlotExons +
+  ggtitle("Exon Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    panel.background = element_rect(fill = "lightblue"),  # Set background color
+    panel.grid.major = element_line(color = "gray90", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.25)
+  )
+
+# Create a second plot for a hypothetical dataframe
+# Replace 'hypothetical_data$PSI' with your actual dataframe and column
+bigPictureIntrons <- bigPicturePlot(table = lyu_introns$PSI)
+
+# Customize the second plot
+plot2 <- bigPictureIntrons +
+  ggtitle("Introns Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    panel.background = element_rect(fill = "lightblue"),  # Set background color
+    panel.grid.major = element_line(color = "gray90", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.25)
+  )
+
+# Combine both plots into one figure using patchwork
+plot1 + plot2
+```
+
+### Tao
+
+```{r tao distri plots}
+# Create the first plot for exon inclusion levels
+bigPicturePlotExons <- bigPicturePlot(table = tao_exons$PSI)
+
+# Customize the first plot for professional reporting
+plot1 <- bigPicturePlotExons +
+  ggtitle("Exon Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    panel.background = element_rect(fill = "lightblue"),  # Set background color
+    panel.grid.major = element_line(color = "gray90", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.25)
+  )
+
+# Create a second plot for a hypothetical dataframe
+# Replace 'hypothetical_data$PSI' with your actual dataframe and column
+bigPictureIntrons <- bigPicturePlot(table = tao_introns$PSI)
+
+# Customize the second plot
+plot2 <- bigPictureIntrons +
+  ggtitle("Introns Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    panel.background = element_rect(fill = "lightblue"),  # Set background color
+    panel.grid.major = element_line(color = "gray90", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.25)
+  )
+
+# Combine both plots into one figure using patchwork
+plot1 + plot2
+```
+
+### Christopher
+
+```{r christopher distro plots}
+# Create the first plot for exon inclusion levels
+bigPicturePlotExons <- bigPicturePlot(table = christopher_exons$PSI)
+
+# Customize the first plot for professional reporting
+plot1 <- bigPicturePlotExons +
+  ggtitle("Exon Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    panel.background = element_rect(fill = "lightblue"),  # Set background color
+    panel.grid.major = element_line(color = "gray90", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.25)
+  )
+
+# Create a second plot for a hypothetical dataframe
+# Replace 'hypothetical_data$PSI' with your actual dataframe and column
+bigPictureIntrons <- bigPicturePlot(table = christopher_introns$PSI)
+
+# Customize the second plot
+plot2 <- bigPictureIntrons +
+  ggtitle("Introns Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    panel.background = element_rect(fill = "lightblue"),  # Set background color
+    panel.grid.major = element_line(color = "gray90", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.25)
+  )
+
+# Combine both plots into one figure using patchwork
+plot1 + plot2
+```
+
+## PCA Plot
+
+```{r pca calculation}
+# Subset and scale data
+pca_zhang <- zhang_data[, c("EVENT",zhang_events$Samples)]
+pca_tao <- tao_data[,  c("EVENT",tao_events$Samples)]
+pca_lyu <- lyu_data[,  c("EVENT",lyu_events$Samples)]
+pca_christopher <- christopher_data[,  c("EVENT",christopher_events$Samples)]
+# merge pca data columns by row names
+merged_pca <- pca_zhang %>%
+  left_join(pca_tao, by = "EVENT") %>%
+  left_join(pca_lyu, by = "EVENT") %>%
+  left_join(pca_christopher, by="EVENT") %>%
+  na.omit()
+rownames(merged_pca)<- merged_pca$EVENT
+merged_pca<-t(merged_pca[,-1])
+
+metadata_merged<-tibble(sample=c(metadata_zhang$run_accession,metadata_tao$run_accession,metadata_lyu$run_accession,metadata_christopher$run_accession),experiment_title=c(metadata_zhang$experiment_title,metadata_tao$experiment_title,metadata_lyu$experiment_title,metadata_christopher$experiment_title))
+
+# Reorder metadata_merged$experiment_title based on the row names of merged_pca
+condition_pca <- metadata_merged$experiment_title[match(rownames(merged_pca), metadata_merged$sample)]
+
+
+pca_result <- prcomp(merged_pca)  # Perform PCA
+
+# Prepare PCA results for plotting
+pca_data <- as.data.frame(pca_result$x)
+pca_data$Sample <- rownames(pca_data)
+pca_data$condition<-condition_pca
+pca_data$data_origin<-c(rep("Zhang",ncol(pca_zhang)-1),rep("Tao",ncol(pca_tao)-1),rep("Lyu",ncol(pca_lyu)-1),rep("Christopher",ncol(pca_christopher)-1))
+```
+
+```{r pca plotting}
+# Create PCA plot
+ggplot(pca_data, aes(x = PC1, y = PC2, color = as.factor(condition), shape=as.factor(data_origin))) +
+  geom_point(size = 4) +
+  labs(
+    title = "PCA of Samples (PSI Data)",
+    x = paste("PC1 (", round(100 * summary(pca_result)$importance[2, 1], 1), "%)", sep = ""),
+    y = paste("PC2 (", round(100 * summary(pca_result)$importance[2, 2], 1), "%)", sep = "")
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.title = element_blank(),
+    axis.title = element_text(size = 14)
+  )
+```
+
+
+
+
+
 
 
