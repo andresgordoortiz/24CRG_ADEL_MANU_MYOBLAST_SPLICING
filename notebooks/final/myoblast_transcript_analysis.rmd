@@ -1,5 +1,5 @@
 ---
-title: 'Force-based regulation of splicing during myoblast differentiation'
+title: 'Force-based regulation of splicing during Myoblast differentiation'
 subtitle: "Stage 1: Bioinformatical Analysis of Myogenic Transcripts"
 author: "Andrés Gordo Ortiz @Al Jord Lab CRG"
 date: "`r Sys.Date()`"
@@ -74,8 +74,11 @@ install_load("betAS")
 install_load("ggplot2")
 install_load("plotly")
 install_load("dplyr")
+install_load("tidyverse")
 install_load("cowplot")
 install_load("DT")
+install_load("paletteer")
+library("patchwork")
 library("org.Mm.eg.db")
 library("enrichplot")
 library("DOSE")
@@ -474,8 +477,8 @@ pca_data$data_origin<-c(rep("Zhang",ncol(pca_zhang)-1),rep("Tao",ncol(pca_tao)-1
 
 ```{r pca plotting}
 # Create PCA plot
-ggplot(pca_data, aes(x = PC1, y = PC2, color = as.factor(condition), shape=as.factor(data_origin))) +
-  geom_point(size = 4) +
+pca_plot<-ggplot(pca_data, aes(x = PC1, y = PC2, color = as.factor(condition), shape=as.factor(data_origin))) +
+  geom_point(size = 6) +
   labs(
     title = "PCA of Samples (PSI Data)",
     x = paste("PC1 (", round(100 * summary(pca_result)$importance[2, 1], 1), "%)", sep = ""),
@@ -486,9 +489,61 @@ ggplot(pca_data, aes(x = PC1, y = PC2, color = as.factor(condition), shape=as.fa
     plot.title = element_text(hjust = 0.5),
     legend.title = element_blank(),
     axis.title = element_text(size = 14)
-  )
+  ) + coord_fixed()
+pca_plot
 ```
 
+## Total Splicing Events
+
+```{r splicing events barplot stacked}
+# Create a stacked bar plot of splicing events
+splicing_events<-tibble(event_type=names(zhang_events$EventsPerType), zhang=zhang_events$EventsPerType, tao=tao_events$EventsPerType, lyu=lyu_events$EventsPerType, christopher=christopher_events$EventsPerType)
+
+splicing_events_long<-splicing_events %>% pivot_longer(cols=c(zhang, tao, lyu, christopher), names_to="study", values_to="count")
+
+# Combine specific event types and update the dataset
+splicing_events_long <- splicing_events_long %>%
+  mutate(event_type = ifelse(event_type %in% c("C1", "C2", "C3", "ANN", "S", "MIC"), "EX", event_type)) %>%
+  group_by(study, event_type) %>%
+  summarize(count = sum(count, na.rm = TRUE), .groups = "drop")
+
+
+
+# Stacked bar plot (proportion)
+plot_proportion <- ggplot(splicing_events_long, aes(fill = event_type, y = count, x = study)) + 
+  geom_bar(position = "fill", stat = "identity") +
+  labs(
+    title = "Proportion of Splicing Events by Study",
+    x = "",
+    y = "Proportion of Events",
+    fill = "Event Type"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  scale_fill_paletteer_d("MetBrewer::Hokusai3")
+
+# Regular bar plot (absolute counts)
+plot_absolute <- ggplot(splicing_events_long, aes(color = event_type, y = count, x = study)) + 
+  geom_point(size=4) +
+  labs(
+    x = "Study",
+    y = "Number of Events",
+  ) +
+  theme_minimal() + scale_colour_paletteer_d("MetBrewer::Hokusai3") +
+  theme(
+    legend.position = "none", # Remove legend
+    plot.margin = margin(0, 0, 0, 0) # Remove extra spacing
+  )
+
+# Combine the two plots vertically
+combined_plot <- plot_proportion / plot_absolute +
+  plot_layout(heights = c(1, 0.3)) & theme(plot.margin = margin(2, -5, 4, 0))
+
+# Display the combined plot
+combined_plot
+```
+
+# Differential Splicing
 
 
 
