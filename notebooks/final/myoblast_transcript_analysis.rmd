@@ -396,7 +396,7 @@ plot2 <- bigPictureIntrons +
   )
 
 # Combine both plots into one figure using patchwork
-plot1 + plot2
+plot1 / plot2
 ```
 
 ### Lyu
@@ -440,7 +440,7 @@ plot2 <- bigPictureIntrons +
   )
 
 # Combine both plots into one figure using patchwork
-plot1 + plot2
+plot1 / plot2
 ```
 
 ### Tao
@@ -484,7 +484,7 @@ plot2 <- bigPictureIntrons +
   )
 
 # Combine both plots into one figure using patchwork
-plot1 + plot2
+plot1 / plot2
 ```
 
 ### Christopher
@@ -527,7 +527,7 @@ plot2 <- bigPictureIntrons +
   )
 
 # Combine both plots into one figure using patchwork
-plot1 + plot2
+plot1 / plot2
 ```
 
 ```{r dominic distro plots}
@@ -568,7 +568,7 @@ plot2 <- bigPictureIntrons +
   )
 
 # Combine both plots into one figure using patchwork
-plot1 + plot2
+plot1 / plot2 
 ```
 
 ## PCA Plot
