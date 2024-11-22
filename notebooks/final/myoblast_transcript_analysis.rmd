@@ -143,12 +143,18 @@ install_load("DT")
 install_load("paletteer")
 install_load("paletteer")
 install_load("ggupset")
+install_load("showtext")
+install_load("ggtext")
 library("patchwork")
 library("org.Mm.eg.db")
 library("enrichplot")
 library("DOSE")
 library("clusterProfiler")
 library("ReactomePA")
+# Register Google fonts
+showtext_auto()
+font_add_google("Roboto", "roboto")
+font="roboto"
 ```
 
 # Introduction to this Analysis
@@ -608,28 +614,37 @@ pca_data$data_origin<-c(rep("Zhang",ncol(pca_zhang)-1),rep("Tao",ncol(pca_tao)-1
 
 ```{r pca plotting}
 # Create PCA plot
-pca_plot<-ggplot(pca_data, aes(x = PC1, y = PC2, color = as.factor(condition), shape=as.factor(data_origin))) +
+pca_plot <- ggplot(pca_data, aes(x = PC1, y = PC2, color = as.factor(condition), shape = as.factor(data_origin))) +
   geom_point(size = 6) +
   labs(
-    title = "PCA of Samples (PSI Data)",
+    title = "<b style='font-size:18px;'>PCA of Samples (PSI Data)</b>",
     x = paste("PC1 (", round(100 * summary(pca_result)$importance[2, 1], 1), "%)", sep = ""),
     y = paste("PC2 (", round(100 * summary(pca_result)$importance[2, 2], 1), "%)", sep = "")
   ) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_family = "roboto") +
   theme(
-    plot.title = element_text(hjust = 0.5),
+    plot.title = element_markdown(),
+    plot.title.position = "plot",
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.position = "right",
     legend.title = element_blank(),
-    axis.title = element_text(size = 14)
-  ) + coord_fixed()
+    panel.background = element_rect(fill = "gray98"),
+    panel.grid = element_line(color = "gray90", size = 0.5),
+    panel.grid.major = element_line(color = "gray90", size = 0.5),
+    panel.grid.minor = element_blank()
+  ) +
+  scale_colour_paletteer_d("MetBrewer::Hokusai3") +
+  scale_colour_manual(values = rev(paletteer::paletteer_d("MetBrewer::Hokusai3")))
+  coord_fixed()
+
 pca_plot
+
 ```
 
 ## Total Splicing Events
 
 ```{r splicing events barplot stacked}
-# Register Google fonts
-showtext_auto()
-font_add_google("Publico Headline", "publico_headline")
 
 # Adjusted version of the script
 splicing_events <- tibble(
@@ -657,7 +672,7 @@ plot_proportion <- ggplot(splicing_events_long, aes(fill = event_type, y = count
     y = "Proportion of Events",
     fill = "Event Type"
   ) +
-  theme_minimal(base_family = "publico_headline") +
+  theme_minimal(base_family = font) +
   theme(
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
@@ -669,12 +684,12 @@ plot_proportion <- ggplot(splicing_events_long, aes(fill = event_type, y = count
 
 # Absolute counts plot
 plot_absolute <- ggplot(splicing_events_long, aes(color = event_type, y = count, x = study)) + 
-  geom_jitter(size = 4, width = 0.2) +
+  geom_jitter(size = 6, width = 0.2) +
   labs(
     x = "Study",
     y = "Number of Events"
   ) +
-  theme_minimal(base_family = "publico_headline") +
+  theme_minimal(base_family = font) +
   theme(
     legend.position = "none",
     axis.title.x = element_text(margin = margin(t = 10)),
@@ -694,7 +709,7 @@ combined_plot <- plot_proportion / plot_absolute +
 combined_plot
 ```
 
-# Differential Splicing
+# Differential Splicing Calculation
 
 ```{r aux_featuregroup}
 # Extract unique groups and sample IDs
@@ -1057,16 +1072,6 @@ dominic_fdr_exons <- prepareTableVolcanoFDR(
   CoverageWeight = FALSE) 
 ```
 
-```{r multigroup ANOVA tao}
-tao_multgroups_exons <- prepareTableVolcanoMultipleGroups(
-  psitable = tao_exons$PSI,
-  qualtable = tao_exons$Qual,
-  groupList = groupList_tao,
-  npoints = 500,
-  maxDevTable = maxDevSimulationN100, 
-  seed=TRUE, 
-  CoverageWeight = F)
-```
 
 
 ### FDR Volcano Plots { .tabset}
@@ -1078,7 +1083,15 @@ plotVolcanoFDR(betasTable =filter(zhang_fdr_exons,!is.na(EVENT)),
                             labA = groupA,
                             labB = groupB,
                             basalColor = "#89C0AE",
-                            interestColor = "#E69A9C") 
+                            interestColor = "#E69A9C") +
+  
+theme(
+  plot.title = element_text(size = 10),  # Title font size
+  axis.title = element_text(size = 10),  # Axis title font size
+  axis.text = element_text(size = 10),   # Axis text font size
+  legend.text = element_text(size = 10), # Legend text font size
+  legend.title = element_text(size = 10) # Legend title font size
+)
 ```
 
 #### Lyu
@@ -1088,7 +1101,14 @@ plotVolcanoFDR(betasTable =filter(lyu_fdr_exons,!is.na(EVENT)),
                             labA = groupA,
                             labB = groupB,
                             basalColor = "#89C0AE",
-                            interestColor = "#E69A9C") 
+                            interestColor = "#E69A9C") +
+theme(
+  plot.title = element_text(size = 10),  # Title font size
+  axis.title = element_text(size = 10),  # Axis title font size
+  axis.text = element_text(size = 10),   # Axis text font size
+  legend.text = element_text(size = 10), # Legend text font size
+  legend.title = element_text(size = 10) # Legend title font size
+)
 ```
 
 #### Tao
@@ -1098,7 +1118,14 @@ plotVolcanoFDR(betasTable =filter(tao_fdr_exons,!is.na(EVENT)),
                             labA = groupA_tao,
                             labB = groupB_tao,
                             basalColor = "#89C0AE",
-                            interestColor = "#E69A9C") 
+                            interestColor = "#E69A9C") +
+theme(
+  plot.title = element_text(size = 10),  # Title font size
+  axis.title = element_text(size = 10),  # Axis title font size
+  axis.text = element_text(size = 10),   # Axis text font size
+  legend.text = element_text(size = 10), # Legend text font size
+  legend.title = element_text(size = 10) # Legend title font size
+)
 ```
 
 #### Christopher
@@ -1108,7 +1135,14 @@ plotVolcanoFDR(betasTable =filter(christopher_fdr_exons,!is.na(EVENT)),
                             labA = groupA,
                             labB = groupB,
                             basalColor = "#89C0AE",
-                            interestColor = "#E69A9C") 
+                            interestColor = "#E69A9C") +
+theme(
+  plot.title = element_text(size = 10),  # Title font size
+  axis.title = element_text(size = 10),  # Axis title font size
+  axis.text = element_text(size = 10),   # Axis text font size
+  legend.text = element_text(size = 10), # Legend text font size
+  legend.title = element_text(size = 10) # Legend title font size
+)
 ```
 
 #### Dominic
@@ -1118,7 +1152,14 @@ plotVolcanoFDR(betasTable =filter(dominic_fdr_exons,!is.na(EVENT)),
                             labA = groupA,
                             labB = groupB,
                             basalColor = "#89C0AE",
-                            interestColor = "#E69A9C") 
+                            interestColor = "#E69A9C") +
+theme(
+  plot.title = element_text(size = 10),  # Title font size
+  axis.title = element_text(size = 10),  # Axis title font size
+  axis.text = element_text(size = 10),   # Axis text font size
+  legend.text = element_text(size = 10), # Legend text font size
+  legend.title = element_text(size = 10) # Legend title font size
+)
 ```
 
 ### Individual Combination Tables { .tabset}
@@ -1423,7 +1464,7 @@ rownames(dominic_fstat_exons_tab) <- 1:nrow(dominic_fstat_exons_tab)
 dominic_fdr_exons_tab <- dominic_fdr_exons[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
   filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
   arrange((FDR), desc(abs(deltapsi)))
-rownames(dominic_fdr_exons_tab) <- 1:nrow(zdominic_fdr_exons_tab)
+rownames(dominic_fdr_exons_tab) <- 1:nrow(dominic_fdr_exons_tab)
 
 # Find common EVENTs across all tables
 common_events <- Reduce(intersect, list(dominic_pdiff_exons_tab$EVENT, dominic_fstat_exons_tab$EVENT, dominic_fdr_exons_tab$EVENT))
@@ -1447,7 +1488,7 @@ dominic_exon_combination_tab <- filtered_exon_diff_tab %>%
   arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
 ```
 
-```{r zhang combination table}
+```{r dominic combination table}
 # Render DataTable with enhancements
 datatable(
   dominic_exon_combination_tab,
@@ -1502,58 +1543,6 @@ write.csv(dominic_exon_combination_tab,
           row.names = FALSE)
 ```
 
-#### Tao ANOVA Multigroup
-
-```{r tao ANOVA combination table}
-
-tao_multgroups_exons <-tao_multgroups_exons[,c("GENE","EVENT","Fstat","Pdiff","Pzero","medianBetweens","deltaAbsolute")] %>%
-  filter(!is.na(EVENT), Pdiff>=0.95) %>%  # Remove rows where EVENT is NA and Pdiff greater than 0.95
-  arrange(desc(Fstat),desc(Pdiff))  # Sort by FDR and abs(deltapsi)
-
-rownames(tao_multgroups_exons)<-1:nrow(tao_multgroups_exons) 
-
-# Render DataTable with enhancements
-datatable(
-  tao_multgroups_exons,
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-)
-
-write.csv(tao_multgroups_exons, 
-          file = file.path(output_dir, paste0("tao_exon_ANOVAMultigroups_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
 
 #### Christopher
 
@@ -1649,17 +1638,1264 @@ write.csv(christopher_exon_combination_tab,
           row.names = FALSE)
 ```
 
+
+#### Dominic
+
+```{r dominic table making}
+dominic_pdiff_exons_tab <- dominic_pdiff_exons[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(dominic_pdiff_exons_tab) <- 1:nrow(dominic_pdiff_exons_tab)
+
+dominic_fstat_exons_tab <- dominic_fstat_exons[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(dominic_fstat_exons_tab) <- 1:nrow(dominic_fstat_exons_tab)
+
+dominic_fdr_exons_tab <- dominic_fdr_exons[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))
+rownames(dominic_fdr_exons_tab) <- 1:nrow(dominic_fdr_exons_tab)
+
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(dominic_pdiff_exons_tab$EVENT, dominic_fstat_exons_tab$EVENT, dominic_fdr_exons_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_exon_diff_tab <- dominic_pdiff_exons_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fstat_tab <- dominic_fstat_exons_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fdr_tab <- dominic_fdr_exons_tab %>% filter(EVENT %in% common_events)
+
+
+# Select only unique columns from each table
+filtered_exon_diff_tab <- filtered_exon_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_exon_fstat_tab <- filtered_exon_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_exon_fdr_tab <- filtered_exon_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+dominic_exon_combination_tab <- filtered_exon_diff_tab %>%
+  inner_join(filtered_exon_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_exon_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+```
+
+```{r dominic combination table}
+# Render DataTable with enhancements
+datatable(
+  dominic_exon_combination_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+write.csv(dominic_exon_combination_tab, 
+          file = file.path(output_dir, paste0("dominic_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
+## Intron Lists
+
+### Calculations
+
+```{r pdiff intron calculation}
+# Preprae table for zhang
+zhang_pdiff_introns <- prepareTableVolcano(
+  psitable = zhang_introns$PSI,
+  qualtable = zhang_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_zhang,
+  colsB = colsGroupB_zhang,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed=TRUE, 
+  CoverageWeight = FALSE)
+
+# Prepare table for Tao
+tao_pdiff_introns <- prepareTableVolcano(
+  psitable = tao_introns$PSI,
+  qualtable = tao_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_tao,
+  colsB = colsGroupB_tao,
+  labA = groupA_tao,
+  labB = groupB_tao,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+# Prepare table for Christopher
+christopher_pdiff_introns <- prepareTableVolcano(
+  psitable = christopher_introns$PSI,
+  qualtable = christopher_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_christopher,
+  colsB = colsGroupB_christopher,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+# Prepare table for Lyu
+lyu_pdiff_introns <- prepareTableVolcano(
+  psitable = lyu_introns$PSI,
+  qualtable = lyu_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_lyu,
+  colsB = colsGroupB_lyu,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+# Preprae table for dominic
+dominic_pdiff_introns <- prepareTableVolcano(
+  psitable = dominic_introns$PSI,
+  qualtable = dominic_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_dominic,
+  colsB = colsGroupB_dominic,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed=TRUE, 
+  CoverageWeight = FALSE)
+```
+
+```{r intron f-stat}
+# Preprae table for zhang
+zhang_fstat_introns <- prepareTableVolcanoFstat(
+  psitable = zhang_introns$PSI,
+  qualtable = zhang_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_zhang,
+  colsB = colsGroupB_zhang,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed=TRUE, 
+  CoverageWeight = FALSE)
+
+# Prepare table for Tao
+tao_fstat_introns <- prepareTableVolcanoFstat(
+  psitable = tao_introns$PSI,
+  qualtable = tao_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_tao,
+  colsB = colsGroupB_tao,
+  labA = groupA_tao,
+  labB = groupB_tao,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+# Prepare table for Christopher
+christopher_fstat_introns <- prepareTableVolcanoFstat(
+  psitable = christopher_introns$PSI,
+  qualtable = christopher_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_christopher,
+  colsB = colsGroupB_christopher,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+# Prepare table for Lyu
+lyu_fstat_introns <- prepareTableVolcanoFstat(
+  psitable = lyu_introns$PSI,
+  qualtable = lyu_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_lyu,
+  colsB = colsGroupB_lyu,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+# Preprae table for dominic
+dominic_fstat_introns <- prepareTableVolcanoFstat(
+  psitable = dominic_introns$PSI,
+  qualtable = dominic_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_dominic,
+  colsB = colsGroupB_dominic,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed=TRUE, 
+  CoverageWeight = FALSE)
+```
+
+```{r FDR intron calculations}
+# Preprae table for zhang
+zhang_fdr_introns <- prepareTableVolcanoFDR(
+  psitable = zhang_introns$PSI,
+  qualtable = zhang_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_zhang,
+  colsB = colsGroupB_zhang,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  nsim = 100, 
+  seed=TRUE, 
+  CoverageWeight = FALSE) 
+
+# Prepare table for Tao
+tao_fdr_introns <- prepareTableVolcanoFDR(
+  psitable = tao_introns$PSI,
+  qualtable = tao_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_tao,
+  colsB = colsGroupB_tao,
+  labA = groupA_tao,
+  labB = groupB_tao,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  nsim = 100, 
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+# Prepare table for Christopher
+christopher_fdr_introns <- prepareTableVolcanoFDR(
+  psitable = christopher_introns$PSI,
+  qualtable = christopher_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_christopher,
+  colsB = colsGroupB_christopher,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  nsim = 100,
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+# Prepare table for Lyu
+lyu_fdr_introns <- prepareTableVolcanoFDR(
+  psitable = lyu_introns$PSI,
+  qualtable = lyu_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_lyu,
+  colsB = colsGroupB_lyu,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  nsim = 100,
+  seed = TRUE, 
+  CoverageWeight = FALSE
+)
+
+# Preprae table for dominic
+dominic_fdr_introns <- prepareTableVolcanoFDR(
+  psitable = dominic_introns$PSI,
+  qualtable = dominic_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_dominic,
+  colsB = colsGroupB_dominic,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  nsim = 100, 
+  seed=TRUE, 
+  CoverageWeight = FALSE) 
+```
+
+
+
+### FDR Volcano Plots { .tabset}
+
+#### Zhang
+
+```{r zhang intron fdr volcano}
+plotVolcanoFDR(betasTable =filter(zhang_fdr_introns,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") +
+  
+theme(
+  plot.title = element_text(size = 10),  # Title font size
+  axis.title = element_text(size = 10),  # Axis title font size
+  axis.text = element_text(size = 10),   # Axis text font size
+  legend.text = element_text(size = 10), # Legend text font size
+  legend.title = element_text(size = 10) # Legend title font size
+)
+```
+
+#### Lyu
+
+```{r lyu fdr intron volcano}
+plotVolcanoFDR(betasTable =filter(lyu_fdr_introns,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") +
+theme(
+  plot.title = element_text(size = 10),  # Title font size
+  axis.title = element_text(size = 10),  # Axis title font size
+  axis.text = element_text(size = 10),   # Axis text font size
+  legend.text = element_text(size = 10), # Legend text font size
+  legend.title = element_text(size = 10) # Legend title font size
+)
+```
+
+#### Tao
+
+```{r tao fdr intron volcano}
+plotVolcanoFDR(betasTable =filter(tao_fdr_introns,!is.na(EVENT)),
+                            labA = groupA_tao,
+                            labB = groupB_tao,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") +
+theme(
+  plot.title = element_text(size = 10),  # Title font size
+  axis.title = element_text(size = 10),  # Axis title font size
+  axis.text = element_text(size = 10),   # Axis text font size
+  legend.text = element_text(size = 10), # Legend text font size
+  legend.title = element_text(size = 10) # Legend title font size
+)
+```
+
+#### Christopher
+
+```{r christopher fdr intron volcano}
+plotVolcanoFDR(betasTable =filter(christopher_fdr_introns,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") +
+theme(
+  plot.title = element_text(size = 10),  # Title font size
+  axis.title = element_text(size = 10),  # Axis title font size
+  axis.text = element_text(size = 10),   # Axis text font size
+  legend.text = element_text(size = 10), # Legend text font size
+  legend.title = element_text(size = 10) # Legend title font size
+)
+```
+
+#### Dominic
+
+```{r dominic fdr intron volcano}
+plotVolcanoFDR(betasTable =filter(dominic_fdr_introns,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") +
+theme(
+  plot.title = element_text(size = 10),  # Title font size
+  axis.title = element_text(size = 10),  # Axis title font size
+  axis.text = element_text(size = 10),   # Axis text font size
+  legend.text = element_text(size = 10), # Legend text font size
+  legend.title = element_text(size = 10) # Legend title font size
+)
+```
+
+### Individual Combination Tables { .tabset}
+
+#### Zhang
+
+```{r zhang table intron making}
+zhang_pdiff_introns_tab <- zhang_pdiff_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(zhang_pdiff_introns_tab) <- 1:nrow(zhang_pdiff_introns_tab)
+
+zhang_fstat_introns_tab <- zhang_fstat_introns[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(zhang_fstat_introns_tab) <- 1:nrow(zhang_fstat_introns_tab)
+
+zhang_fdr_introns_tab <- zhang_fdr_introns[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))
+rownames(zhang_fdr_introns_tab) <- 1:nrow(zhang_fdr_introns_tab)
+
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(zhang_pdiff_introns_tab$EVENT, zhang_fstat_introns_tab$EVENT, zhang_fdr_introns_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_intron_diff_tab <- zhang_pdiff_introns_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fstat_tab <- zhang_fstat_introns_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fdr_tab <- zhang_fdr_introns_tab %>% filter(EVENT %in% common_events)
+
+
+# Select only unique columns from each table
+filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+zhang_intron_combination_tab <- filtered_intron_diff_tab %>%
+  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+```
+
+```{r zhang combination intron table}
+# Render DataTable with enhancements
+datatable(
+  zhang_intron_combination_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+output_dir <- file.path(getwd(), "results", "tables")
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+write.csv(zhang_intron_combination_tab, 
+          file = file.path(output_dir, paste0("zhang_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
+#### Lyu
+
+```{r lyu table intron making}
+lyu_pdiff_introns_tab <- lyu_pdiff_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(lyu_pdiff_introns_tab) <- 1:nrow(lyu_pdiff_introns_tab)
+
+lyu_fstat_introns_tab <- lyu_fstat_introns[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(lyu_fstat_introns_tab) <- 1:nrow(lyu_fstat_introns_tab)
+
+lyu_fdr_introns_tab <- lyu_fdr_introns[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))
+rownames(lyu_fdr_introns_tab) <- 1:nrow(lyu_fdr_introns_tab)
+
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(lyu_pdiff_introns_tab$EVENT, lyu_fstat_introns_tab$EVENT, lyu_fdr_introns_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_intron_diff_tab <- lyu_pdiff_introns_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fstat_tab <- lyu_fstat_introns_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fdr_tab <- lyu_fdr_introns_tab %>% filter(EVENT %in% common_events)
+
+
+# Select only unique columns from each table
+filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+lyu_intron_combination_tab <- filtered_intron_diff_tab %>%
+  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+```
+
+```{r lyu combination intron table}
+# Render DataTable with enhancements
+datatable(
+  lyu_intron_combination_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+write.csv(lyu_intron_combination_tab, 
+          file = file.path(output_dir, paste0("lyu_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
+#### Tao
+
+```{r tao table intron making}
+tao_pdiff_introns_tab <- tao_pdiff_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(tao_pdiff_introns_tab) <- 1:nrow(tao_pdiff_introns_tab)
+
+tao_fstat_introns_tab <- tao_fstat_introns[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(tao_fstat_introns_tab) <- 1:nrow(tao_fstat_introns_tab)
+
+tao_fdr_introns_tab <- tao_fdr_introns[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))
+rownames(tao_fdr_introns_tab) <- 1:nrow(tao_fdr_introns_tab)
+
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(tao_pdiff_introns_tab$EVENT, tao_fstat_introns_tab$EVENT, tao_fdr_introns_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_intron_diff_tab <- tao_pdiff_introns_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fstat_tab <- tao_fstat_introns_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fdr_tab <- tao_fdr_introns_tab %>% filter(EVENT %in% common_events)
+
+
+# Select only unique columns from each table
+filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+tao_intron_combination_tab <- filtered_intron_diff_tab %>%
+  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+```
+
+```{r tao combination intron table}
+# Render DataTable with enhancements
+datatable(
+  tao_intron_combination_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+write.csv(tao_intron_combination_tab, 
+          file = file.path(output_dir, paste0("tao_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
+#### Dominic
+
+```{r dominic table intron making}
+dominic_pdiff_introns_tab <- dominic_pdiff_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(dominic_pdiff_introns_tab) <- 1:nrow(dominic_pdiff_introns_tab)
+
+dominic_fstat_introns_tab <- dominic_fstat_introns[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(dominic_fstat_introns_tab) <- 1:nrow(dominic_fstat_introns_tab)
+
+dominic_fdr_introns_tab <- dominic_fdr_introns[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))
+rownames(dominic_fdr_introns_tab) <- 1:nrow(dominic_fdr_introns_tab)
+
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(dominic_pdiff_introns_tab$EVENT, dominic_fstat_introns_tab$EVENT, dominic_fdr_introns_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_intron_diff_tab <- dominic_pdiff_introns_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fstat_tab <- dominic_fstat_introns_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fdr_tab <- dominic_fdr_introns_tab %>% filter(EVENT %in% common_events)
+
+
+# Select only unique columns from each table
+filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+dominic_intron_combination_tab <- filtered_intron_diff_tab %>%
+  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+```
+
+```{r dominic combination intron table}
+# Render DataTable with enhancements
+datatable(
+  dominic_intron_combination_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+
+write.csv(dominic_intron_combination_tab, 
+          file = file.path(output_dir, paste0("dominic_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
+
+#### Christopher
+
+```{r christopher table intron making}
+christopher_pdiff_introns_tab <- christopher_pdiff_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(christopher_pdiff_introns_tab) <- 1:nrow(christopher_pdiff_introns_tab)
+
+christopher_fstat_introns_tab <- christopher_fstat_introns[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(christopher_fstat_introns_tab) <- 1:nrow(christopher_fstat_introns_tab)
+
+christopher_fdr_introns_tab <- christopher_fdr_introns[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))
+rownames(christopher_fdr_introns_tab) <- 1:nrow(christopher_fdr_introns_tab)
+
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(christopher_pdiff_introns_tab$EVENT, christopher_fstat_introns_tab$EVENT, christopher_fdr_introns_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_intron_diff_tab <- christopher_pdiff_introns_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fstat_tab <- christopher_fstat_introns_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fdr_tab <- christopher_fdr_introns_tab %>% filter(EVENT %in% common_events)
+
+
+# Select only unique columns from each table
+filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+christopher_intron_combination_tab <- filtered_intron_diff_tab %>%
+  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+```
+
+```{r christopher combination intron table}
+# Render DataTable with enhancements
+datatable(
+  christopher_intron_combination_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+write.csv(christopher_intron_combination_tab, 
+          file = file.path(output_dir, paste0("christopher_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
+
+#### Dominic
+
+```{r dominic table intron making}
+dominic_pdiff_introns_tab <- dominic_pdiff_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(dominic_pdiff_introns_tab) <- 1:nrow(dominic_pdiff_introns_tab)
+
+dominic_fstat_introns_tab <- dominic_fstat_introns[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(dominic_fstat_introns_tab) <- 1:nrow(dominic_fstat_introns_tab)
+
+dominic_fdr_introns_tab <- dominic_fdr_introns[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))
+rownames(dominic_fdr_introns_tab) <- 1:nrow(dominic_fdr_introns_tab)
+
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(dominic_pdiff_introns_tab$EVENT, dominic_fstat_introns_tab$EVENT, dominic_fdr_introns_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_intron_diff_tab <- dominic_pdiff_introns_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fstat_tab <- dominic_fstat_introns_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fdr_tab <- dominic_fdr_introns_tab %>% filter(EVENT %in% common_events)
+
+
+# Select only unique columns from each table
+filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+dominic_intron_combination_tab <- filtered_intron_diff_tab %>%
+  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+```
+
+```{r dominic combination intron table}
+# Render DataTable with enhancements
+datatable(
+  dominic_intron_combination_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+write.csv(dominic_intron_combination_tab, 
+          file = file.path(output_dir, paste0("dominic_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
+# Unsorted Intron Candidates List
+
+```{r merging final intron lists intron, warning=FALSE}
+# List of data frames to compare
+dataframes <- list(
+  christopher = christopher_intron_combination_tab,
+  tao = tao_intron_combination_tab,
+  lyu = lyu_intron_combination_tab,
+  zhang= zhang_intron_combination_tab,
+  dominic=dominic_intron_combination_tab
+)
+
+# Extract unique EVENTS for each data frame
+events_list <- lapply(dataframes, function(df) unique(df$EVENT))
+
+# Function to calculate unique and shared counts for a given combination of data frames
+compute_shared_and_unique <- function(indices) {
+  combo_names <- names(events_list)[indices]
+  combined_events <- events_list[indices]
+  
+  # Compute shared and unique values
+  shared <- Reduce(intersect, combined_events)
+  unique_events <- lapply(combined_events, function(events) {
+    setdiff(events, unlist(combined_events[-which(combined_events == events)]))
+  })
+  
+  # Return result even if one combination is empty
+  list(
+    combination = combo_names, # Store as list of dataset names
+    shared_count = length(shared),
+    unique_counts = sapply(unique_events, length)
+  )
+}
+
+# Iterate through all subsets of data frames
+all_combinations <- lapply(1:length(events_list), function(k) {
+  combn(seq_along(events_list), k, compute_shared_and_unique, simplify = FALSE)
+})
+
+# Flatten the list of results
+all_combinations <- unlist(all_combinations, recursive = FALSE)
+
+# Ensure all results have consistent structure
+introns_candidates <- do.call(rbind, lapply(all_combinations, function(res) {
+  # Handle cases with no unique values gracefully
+  data.frame(
+    Combination = I(list(res$combination)), # Store combination as list object
+    Shared = res$shared_count,
+    Unique = I(list(res$unique_counts)),   # Store unique counts as list object
+    row.names = NULL
+  )
+}))
+introns_candidates<-as.tibble(introns_candidates)
+
+# Check if lengths match
+if (length(introns_candidates$Combination) != length(introns_candidates$Shared)) {
+  stop("Lengths of Combination and Shared are not the same.")
+}
+
+# Apply mutate safely
+introns_candidates <- introns_candidates %>%
+  mutate(Combination = map2(Combination, Shared, ~rep(list(.x), .y))) %>%
+  unnest(Combination)
+
+
+```
+
+
+```{r plot venn diagram intron}
+counts <- introns_candidates %>%
+  count(Combination)
+
+upset_intron_plot<-introns_candidates %>%
+  ggplot(aes(x = Combination)) +
+  geom_bar(fill = "#D8D97AFF", color = "black") +  # Polished bar colors
+  geom_text(data = counts, aes(x = Combination, y = n, label = n),
+            vjust = -0.5, size = 3.5) +  # Add count labels
+  scale_x_upset(n_intersections = 31) +
+  labs(
+    title = paste("UpSet Plot of Intron Candidates (", Sys.Date(), ")", sep = ""),
+    x = "Intron Combinations",
+    y = "Count"
+  ) +
+  theme_minimal() +  # Professional font
+  theme(
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    panel.grid.major = element_line(color = "white", size = 0.7),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "lightblue"),  # Set background color
+    plot.background = element_rect(fill = "white"),
+    strip.text = element_text(size = 12, face = "bold")
+  ) 
+
+upset_intron_plot
+```
+```{r shared events final list intron}
+# Extract the shared events in all dataframes
+shared_events <- Reduce(intersect, lapply(dataframes, function(df) df$EVENT))
+
+tao_shared<-tao_intron_combination_tab[tao_intron_combination_tab$EVENT %in% shared_events,]
+lyu_shared<-lyu_intron_combination_tab[lyu_intron_combination_tab$EVENT %in% shared_events,]
+zhang_shared<-zhang_intron_combination_tab[zhang_intron_combination_tab$EVENT %in% shared_events,]
+christopher_shared<-christopher_intron_combination_tab[christopher_intron_combination_tab$EVENT %in% shared_events,]
+dominic_shared<-dominic_intron_combination_tab[dominic_intron_combination_tab$EVENT %in% shared_events,]
+
+
+combined_data <- bind_rows(
+  tao_shared %>% mutate(Source = "tao_shared"),
+  lyu_shared %>% mutate(Source = "lyu_shared"),
+  zhang_shared %>% mutate(Source = "zhang_shared"),
+  christopher_shared %>% mutate(Source = "christopher_shared"),
+  dominic_shared<-dominic_intron_combination_tab[dominic_intron_combination_tab$EVENT %in% shared_events,]
+)
+
+# Calculate average per EVENT
+averaged_data <- combined_data %>%
+  group_by(EVENT) %>%
+  summarise(
+    avg_deltapsi = mean(deltapsi, na.rm = TRUE),
+    avg_Fstat = mean(Fstat, na.rm = TRUE),
+    avg_Pdiff = mean(Pdiff, na.rm = TRUE),
+    avg_FDR = mean(FDR, na.rm = TRUE)
+  )
+
+final_intron_list<-averaged_data 
+final_intron_list$GENE <- tao_shared$GENE[match(final_intron_list$EVENT, tao_shared$EVENT)]
+final_intron_list$COORD <- tao_shared$COORD[match(final_intron_list$EVENT, tao_shared$EVENT)]
+final_intron_list<- final_intron_list %>%
+  select(GENE, EVENT, COORD, everything()) %>%
+  arrange(desc(abs(avg_deltapsi))) %>%
+  mutate(avg_deltapsi = round(avg_deltapsi, 3),
+         avg_Fstat = round(avg_Fstat, 3),
+         avg_Pdiff = round(avg_Pdiff, 3),
+         avg_FDR = round(avg_FDR, 3))
+
+```
+
+```{r output final list intron}
+# Render DataTable with enhancements
+datatable(
+  final_intron_list,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "avg_Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "avg_deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+
+
+
+write.csv(final_intron_list, 
+          file = file.path(output_dir, paste0("final_intron_list_unsorted_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+## Event Densities
+
+```{r densities_per_event intron, fig.width=14, fig.height=10, out.width="100%", warning=FALSE, message=FALSE}
+# Adjust your plotting function
+plots <- lapply(1:12, function(i) {
+  eventID <- final_intron_list$EVENT[i]
+  geneName <- final_intron_list$GENE[i]
+  
+  # Create the plot for each row using the provided parameters
+  tdensities <- plotIndividualDensitiesList(
+    eventID = eventID,
+    npoints = 500,
+    psitable = tao_introns$PSI,
+    qualtable = tao_introns$Qual,
+    groupList = groupList_tao,
+    maxDevTable = maxDevSimulationN100, 
+    seed = TRUE, 
+    CoverageWeight = FALSE
+  )
+  
+  # Modify the plot with ggtitle using the GENE and EVENT from the row
+  plot_with_title <- tdensities + 
+    theme_minimal(base_family = font) + 
+    theme(
+      plot.title = element_text(size = 14, face = "bold"),  # Increase title size
+      axis.text = element_text(size = 12),  # Increase axis label size
+      axis.title = element_text(size = 14),  # Increase axis text size
+      axis.text.y = element_blank(),  # Remove Y-axis text
+      axis.title.y = element_blank(),  # Remove Y-axis title
+      axis.ticks.y = element_blank()   # Remove Y-axis tick
+    ) + 
+    ggtitle(paste(geneName, eventID))
+  
+  return(plot_with_title)
+})
+
+# Adjust the number of columns for wrapping and add the Y-axis once per row
+final_figure_intron <- wrap_plots(plots, ncol = 3, byrow = TRUE) + 
+  plot_layout(guides = 'collect') + 
+  theme(plot.margin = margin(0, 0, 0, 0))  # Adjust margins for consistent spacing
+
+# Display the combined figure
+final_figure_intron
+
+```
+
+
+
 # Unsorted Exon Candidates List
 
-```{r merging final lists}
+```{r merging final lists, warning=FALSE}
 # List of data frames to compare
 dataframes <- list(
   christopher = christopher_exon_combination_tab,
   tao = tao_exon_combination_tab,
   lyu = lyu_exon_combination_tab,
   zhang= zhang_exon_combination_tab,
-  dominic=dominic_exon_combination_tabs,
-  tao_anova=tao_multgroups_exons
+  dominic=dominic_exon_combination_tab
 )
 
 # Extract unique EVENTS for each data frame
@@ -1704,9 +2940,16 @@ exons_candidates <- do.call(rbind, lapply(all_combinations, function(res) {
 }))
 exons_candidates<-as.tibble(exons_candidates)
 
+# Check if lengths match
+if (length(exons_candidates$Combination) != length(exons_candidates$Shared)) {
+  stop("Lengths of Combination and Shared are not the same.")
+}
+
+# Apply mutate safely
 exons_candidates <- exons_candidates %>%
   mutate(Combination = map2(Combination, Shared, ~rep(list(.x), .y))) %>%
   unnest(Combination)
+
 
 ```
 
@@ -1719,14 +2962,14 @@ upset_exon_plot<-exons_candidates %>%
   ggplot(aes(x = Combination)) +
   geom_bar(fill = "#D8D97AFF", color = "black") +  # Polished bar colors
   geom_text(data = counts, aes(x = Combination, y = n, label = n),
-            vjust = -0.5, size = 3.5, family = "Times") +  # Add count labels
+            vjust = -0.5, size = 3.5) +  # Add count labels
   scale_x_upset(n_intersections = 31) +
   labs(
     title = paste("UpSet Plot of Exon Candidates (", Sys.Date(), ")", sep = ""),
     x = "Exon Combinations",
     y = "Count"
   ) +
-  theme_minimal(base_family = "Times") +  # Professional font
+  theme_minimal() +  # Professional font
   theme(
     plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
     axis.title = element_text(size = 12),
@@ -1748,6 +2991,7 @@ tao_shared<-tao_exon_combination_tab[tao_exon_combination_tab$EVENT %in% shared_
 lyu_shared<-lyu_exon_combination_tab[lyu_exon_combination_tab$EVENT %in% shared_events,]
 zhang_shared<-zhang_exon_combination_tab[zhang_exon_combination_tab$EVENT %in% shared_events,]
 christopher_shared<-christopher_exon_combination_tab[christopher_exon_combination_tab$EVENT %in% shared_events,]
+dominic_shared<-dominic_exon_combination_tab[dominic_exon_combination_tab$EVENT %in% shared_events,]
 
 
 combined_data <- bind_rows(
@@ -1755,6 +2999,7 @@ combined_data <- bind_rows(
   lyu_shared %>% mutate(Source = "lyu_shared"),
   zhang_shared %>% mutate(Source = "zhang_shared"),
   christopher_shared %>% mutate(Source = "christopher_shared"),
+  dominic_shared<-dominic_exon_combination_tab[dominic_exon_combination_tab$EVENT %in% shared_events,]
 )
 
 # Calculate average per EVENT
@@ -1838,8 +3083,9 @@ write.csv(final_exon_list,
 ```
 ## Event Densities
 
-```{r densities_per_event, fig.width=14, fig.height=10, out.width="100%"}
-plots <- lapply(1:nrow(final_exon_list), function(i) {
+```{r densities_per_event, fig.width=14, fig.height=10, out.width="100%", warning=FALSE, message=FALSE}
+# Adjust your plotting function
+plots <- lapply(1:12, function(i) {
   eventID <- final_exon_list$EVENT[i]
   geneName <- final_exon_list$GENE[i]
   
@@ -1857,23 +3103,57 @@ plots <- lapply(1:nrow(final_exon_list), function(i) {
   
   # Modify the plot with ggtitle using the GENE and EVENT from the row
   plot_with_title <- tdensities + 
-  theme_minimal() + 
-  theme(
-    plot.title = element_text(size = 16),  # Increase title size
-    axis.text = element_text(size = 12),  # Increase axis label size
-    axis.title = element_text(size = 14)  # Increase axis text size
-  ) + 
-  ggtitle(paste(geneName, eventID))
+    theme_minimal(base_family = font) + 
+    theme(
+      plot.title = element_text(size = 14, face = "bold"),  # Increase title size
+      axis.text = element_text(size = 12),  # Increase axis label size
+      axis.title = element_text(size = 14),  # Increase axis text size
+      axis.text.y = element_blank(),  # Remove Y-axis text
+      axis.title.y = element_blank(),  # Remove Y-axis title
+      axis.ticks.y = element_blank()   # Remove Y-axis tick
+    ) + 
+    ggtitle(paste(geneName, eventID))
   
   return(plot_with_title)
 })
 
-# Combine all 8 plots into one figure using patchwork
-final_figure <- wrap_plots(plots, ncol = 2)
+# Adjust the number of columns for wrapping and add the Y-axis once per row
+final_figure <- wrap_plots(plots, ncol = 3, byrow = TRUE) + 
+  plot_layout(guides = 'collect') + 
+  theme(plot.margin = margin(0, 0, 0, 0))  # Adjust margins for consistent spacing
 
 # Display the combined figure
 final_figure
 
 ```
+
+
+# Gene Ontology of Filtered Splicing Events
+```{r gene ontology}
+gene_entrez <- bitr(union(final_exon_list$GENE, final_intron_list$GENE), fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+
+# GO Enrichment Analysis
+go_enrich <- enrichGO(gene = gene_entrez$ENTREZID,
+                      OrgDb = org.Mm.eg.db,
+                      ont = "ALL",
+                      pAdjustMethod = "BH",
+                      pvalueCutoff = 0.05,
+                      qvalueCutoff = 0.05)
+
+# KEGG Pathway Enrichment
+kegg_enrich <- enrichKEGG(gene = gene_entrez$ENTREZID,
+                          organism = "mmu",
+                          pAdjustMethod = "BH",
+                          pvalueCutoff = 0.05)
+
+# Reactome Pathway Enrichment Guangchuang Yu, Qing-Yu He. ReactomePA: an R/Bioconductor package for reactome pathway analysis and visualization. Molecular BioSystems 2016, 12(2):477-479
+reactome_enrich <- enrichPathway(gene = gene_entrez$ENTREZID,
+                                 organism = "mouse",
+                                 pAdjustMethod = "BH",
+                                 pvalueCutoff = 0.05)
+# Dot plot for GO terms
+dotplot(go_enrich, showCategory = 20) + ggtitle("GO Enrichment Analysis")
+```
+
 
 
