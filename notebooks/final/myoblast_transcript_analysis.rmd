@@ -5,7 +5,7 @@ author: "Andrés Gordo Ortiz @Al Jord Lab CRG"
 date: "`r Sys.Date()`"
 output: 
   rmarkdown::html_document:
-    code_folding: show
+    code_folding: hide
     code_download: false  
     df_print: paged
     theme: flatly
@@ -234,10 +234,20 @@ christopher_events <- getEvents(christopher_data, tool = "vast-tools") # Extract
 christopher_events <- alternativeEvents(christopher_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
 christopher_exons <- filterEvents(christopher_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 3)
 christopher_introns <- filterEvents(christopher_events, types = c("IR"), N = 5)
+
+
+# Dominic Data
+dominic_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Dominic_Frontiers_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
+dominic_events <- getEvents(dominic_data, tool = "vast-tools") # Extract alternative splicing events
+dominic_events <- alternativeEvents(dominic_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
+dominic_exons <- filterEvents(dominic_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 3)
+dominic_introns <- filterEvents(dominic_events, types = c("IR"), N = 5)
 ```
 
 
 ## Metadata { .tabset}
+
+### Zhang
 
 ```{r metadata zhang}
 # Load metadata file containing sample information
@@ -245,11 +255,14 @@ metadata_zhang <- read.csv(paste0(getwd(),"/metadata/zhang_metadata.csv"), sep =
 DT::datatable(metadata_zhang, options = list(pageLength = nrow(metadata_zhang), scrollX = TRUE))
 ```
 
+### Lyu
+
 ```{r metadata lyu}
 # Load metadata file containing sample information
 metadata_lyu <- read.csv(paste0(getwd(),"/metadata/lyu_metadata.csv"), sep = ",")
 DT::datatable(metadata_lyu, options = list(pageLength = nrow(metadata_lyu), scrollX = TRUE))
 ```
+### Tao
 
 ```{r metadata tao}
 # Load metadata file containing sample information
@@ -257,11 +270,22 @@ metadata_tao <- read.csv(paste0(getwd(),"/metadata/tao_metadata.csv"), sep = ","
 DT::datatable(metadata_tao, options = list(pageLength = nrow(metadata_tao), scrollX = TRUE))
 ```
 
+### Christopher
+
 ```{r metadata christopher}
 # Load metadata file containing sample information
 metadata_christopher <- read.csv(paste0(getwd(),"/metadata/christopher_metadata.csv"), sep = ",")
 DT::datatable(metadata_christopher, options = list(pageLength = nrow(metadata_christopher), scrollX = TRUE))
 ```
+
+### Dominic
+
+```{r metadata dominic}
+# Load metadata file containing sample information
+metadata_dominic <- read.csv(paste0(getwd(),"/metadata/dominic_metadata.csv"), sep = ",")
+DT::datatable(metadata_dominic, options = list(pageLength = nrow(metadata_dominic), scrollX = TRUE))
+```
+
 
 ---
 
@@ -444,6 +468,47 @@ plot2 <- bigPictureIntrons +
 plot1 + plot2
 ```
 
+```{r dominic distro plots}
+# Create the first plot for exon inclusion levels
+bigPicturePlotExons <- bigPicturePlot(table = dominic_exons$PSI)
+
+# Customize the first plot for professional reporting
+plot1 <- bigPicturePlotExons +
+  ggtitle("Exon Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    panel.grid.major = element_line(color = "gray90", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.25)
+  )
+
+# Create a second plot for a hypothetical dataframe
+# Replace 'hypothetical_data$PSI' with your actual dataframe and column
+bigPictureIntrons <- bigPicturePlot(table = dominic_introns$PSI)
+
+# Customize the second plot
+plot2 <- bigPictureIntrons +
+  ggtitle("Introns Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    panel.background = element_rect(fill = "lightblue"),  # Set background color
+    panel.grid.major = element_line(color = "gray90", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.25)
+  )
+
+# Combine both plots into one figure using patchwork
+plot1 + plot2
+```
+
 ## PCA Plot
 
 ```{r pca calculation}
@@ -452,16 +517,19 @@ pca_zhang <- zhang_data[, c("EVENT",zhang_events$Samples)]
 pca_tao <- tao_data[,  c("EVENT",tao_events$Samples)]
 pca_lyu <- lyu_data[,  c("EVENT",lyu_events$Samples)]
 pca_christopher <- christopher_data[,  c("EVENT",christopher_events$Samples)]
+pca_dominic <- dominic_data[,  c("EVENT",dominic_events$Samples)]
+
 # merge pca data columns by row names
 merged_pca <- pca_zhang %>%
   left_join(pca_tao, by = "EVENT") %>%
   left_join(pca_lyu, by = "EVENT") %>%
   left_join(pca_christopher, by="EVENT") %>%
+  left_join(pca_dominic, by="EVENT") %>%
   na.omit()
 rownames(merged_pca)<- merged_pca$EVENT
 merged_pca<-t(merged_pca[,-1])
 
-metadata_merged<-tibble(sample=c(metadata_zhang$run_accession,metadata_tao$run_accession,metadata_lyu$run_accession,metadata_christopher$run_accession),experiment_title=c(metadata_zhang$experiment_title,metadata_tao$experiment_title,metadata_lyu$experiment_title,metadata_christopher$experiment_title))
+metadata_merged<-tibble(sample=c(metadata_zhang$run_accession,metadata_tao$run_accession,metadata_lyu$run_accession,metadata_christopher$run_accession,metadata_dominic$run_accession),experiment_title=c(metadata_zhang$experiment_title,metadata_tao$experiment_title,metadata_lyu$experiment_title,metadata_christopher$experiment_title,metadata_dominic$experiment_title))
 
 # Reorder metadata_merged$experiment_title based on the row names of merged_pca
 condition_pca <- metadata_merged$experiment_title[match(rownames(merged_pca), metadata_merged$sample)]
@@ -473,7 +541,7 @@ pca_result <- prcomp(merged_pca)  # Perform PCA
 pca_data <- as.data.frame(pca_result$x)
 pca_data$Sample <- rownames(pca_data)
 pca_data$condition<-condition_pca
-pca_data$data_origin<-c(rep("Zhang",ncol(pca_zhang)-1),rep("Tao",ncol(pca_tao)-1),rep("Lyu",ncol(pca_lyu)-1),rep("Christopher",ncol(pca_christopher)-1))
+pca_data$data_origin<-c(rep("Zhang",ncol(pca_zhang)-1),rep("Tao",ncol(pca_tao)-1),rep("Lyu",ncol(pca_lyu)-1),rep("Christopher",ncol(pca_christopher)-1),rep("Dominic",ncol(pca_dominic)-1))
 ```
 
 ```{r pca plotting}
@@ -498,9 +566,9 @@ pca_plot
 
 ```{r splicing events barplot stacked}
 # Create a stacked bar plot of splicing events
-splicing_events<-tibble(event_type=names(zhang_events$EventsPerType), zhang=zhang_events$EventsPerType, tao=tao_events$EventsPerType, lyu=lyu_events$EventsPerType, christopher=christopher_events$EventsPerType)
+splicing_events<-tibble(event_type=names(zhang_events$EventsPerType), zhang=zhang_events$EventsPerType, tao=tao_events$EventsPerType, lyu=lyu_events$EventsPerType, christopher=christopher_events$EventsPerType, dominic=dominic_events$EventsPerType)
 
-splicing_events_long<-splicing_events %>% pivot_longer(cols=c(zhang, tao, lyu, christopher), names_to="study", values_to="count")
+splicing_events_long<-splicing_events %>% pivot_longer(cols=c(zhang, tao, lyu, christopher, dominic), names_to="study", values_to="count")
 
 # Combine specific event types and update the dataset
 splicing_events_long <- splicing_events_long %>%
@@ -561,7 +629,9 @@ samples_lyu <- metadata_lyu$run_accession
 # Christopher
 groups_christopher <- unique(metadata_christopher[, groupingVariable])
 samples_christopher <- metadata_christopher$run_accession
-
+# Dominic
+groups_dominic <- unique(metadata_dominic[, groupingVariable])
+samples_dominic <- metadata_dominic$run_accession
 
 
 random_colors=c("#D8D97AFF", "#95C36EFF", "#74C8C3FF", "#5A97C1FF", "#295384FF", "#0A2E57FF")
@@ -604,7 +674,15 @@ groupList_lyu <- lapply(1:length(groups_lyu), function(i) {
 })
 names(groupList_lyu) <- groups_lyu
 
-
+# Create group list with metadata
+groupList_dominic <- lapply(1:length(groups_dominic), function(i) {
+  list(
+    name = groups_dominic[i],
+    samples = samples_dominic[metadata_dominic[, groupingVariable] == groups_dominic[i]],
+    color = random_colors[i]
+  )
+})
+names(groupList_dominic) <- groups_dominic
 ```
 
 ```{r groups_auxiliary}
@@ -613,6 +691,7 @@ groupA    <- "Myoblasts"
 groupB    <- "Myotubes"
 groupA_tao<-"0_days"
 groupB_tao<-"7_days"
+
 # Define samples inside each group
 # Zhang
 samplesA_zhang    <- groupList_zhang[[groupA]]$samples
@@ -638,6 +717,11 @@ samplesB_lyu <- groupList_lyu[[groupB]]$samples
 colsGroupA_lyu <- convertCols(lyu_exons$PSI, samplesA_lyu)
 colsGroupB_lyu <- convertCols(lyu_exons$PSI, samplesB_lyu)
 
+# Dominic
+samplesA_dominic    <- groupList_dominic[[groupA]]$samples
+samplesB_dominic   <- groupList_dominic[[groupB]]$samples
+colsGroupA_dominic   <- convertCols(dominic_exons$PSI, samplesA_dominic)
+colsGroupB_dominic    <- convertCols(dominic_exons$PSI, samplesB_dominic)
 
 set.seed(42) #Setting seed for downstream simulations of the beta distribution
 ```
@@ -710,6 +794,20 @@ lyu_pdiff_exons <- prepareTableVolcano(
   CoverageWeight = FALSE
 )
 
+# Preprae table for dominic
+dominic_pdiff_exons <- prepareTableVolcano(
+  psitable = dominic_exons$PSI,
+  qualtable = dominic_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_dominic,
+  colsB = colsGroupB_dominic,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed=TRUE, 
+  CoverageWeight = FALSE)
 ```
 
 ```{r f-stat}
@@ -776,9 +874,23 @@ lyu_fstat_exons <- prepareTableVolcanoFstat(
   CoverageWeight = FALSE
 )
 
+# Preprae table for dominic
+dominic_fstat_exons <- prepareTableVolcanoFstat(
+  psitable = dominic_exons$PSI,
+  qualtable = dominic_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_dominic,
+  colsB = colsGroupB_dominic,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100, 
+  seed=TRUE, 
+  CoverageWeight = FALSE)
 ```
 
-```{r FDR}
+```{r FDR calculations}
 # Preprae table for zhang
 zhang_fdr_exons <- prepareTableVolcanoFDR(
   psitable = zhang_exons$PSI,
@@ -846,6 +958,21 @@ lyu_fdr_exons <- prepareTableVolcanoFDR(
   CoverageWeight = FALSE
 )
 
+# Preprae table for dominic
+dominic_fdr_exons <- prepareTableVolcanoFDR(
+  psitable = dominic_exons$PSI,
+  qualtable = dominic_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_dominic,
+  colsB = colsGroupB_dominic,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  nsim = 100, 
+  seed=TRUE, 
+  CoverageWeight = FALSE) 
 ```
 
 ```{r multigroup ANOVA tao}
@@ -896,6 +1023,16 @@ plotVolcanoFDR(betasTable =filter(tao_fdr_exons,!is.na(EVENT)),
 
 ```{r christopher fdr volcano}
 plotVolcanoFDR(betasTable =filter(christopher_fdr_exons,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") 
+```
+
+#### Dominic
+
+```{r dominic fdr volcano}
+plotVolcanoFDR(betasTable =filter(dominic_fdr_exons,!is.na(EVENT)),
                             labA = groupA,
                             labB = groupB,
                             basalColor = "#89C0AE",
