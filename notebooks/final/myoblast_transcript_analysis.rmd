@@ -19,38 +19,101 @@ output:
 editor_options: 
   markdown: 
     wrap: 72
-    
+
 # NOTE: To run this R Markdown file correctly, set the Knit Directory to the Project Directory.
 # You can do this by navigating to the gear icon next to the Knit button in RStudio,
 # and selecting "Project Directory" as the option. This ensures paths resolve correctly. Also, to download libraries in the same version as mine, you can use the following code:
 # install.packages("renv")
 # renv::init()
 # renv::restore()
+
+header-includes:
+  - '<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville&family=Publico+Headline:wght@700&display=swap" rel="stylesheet">'
+  - '<style>
+        #logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        #logos img {
+            height: 80px;
+            margin: 0 15px;
+        }
+     </style>'
 ---
+
+```{r, results='asis', echo=FALSE}
+cat('
+<div id="logos">
+  <img src="https://sciencemediacentre.es/sites/default/files/images/biysc_crg_logo.jpg%20%284%29_0.png" alt="Logo 1">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Bist_logo.png" alt="Logo 2">
+</div>
+')
+```
 
 ```{css, echo=FALSE}
 /* Custom CSS to enhance styling */
 body {
-  font-family: 'Gill Sans', sans-serif;
+  font-family: 'Libre Baskerville', serif; /* Body text font */
+  color: #000; /* Ensure good contrast with the blue */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Publico Headline', serif; /* Headers font */
+  font-weight: bold;
+  color: #0099CD; /* Signature blue color for headers */
 }
 
 h1 {
-  color: #2c3e50;
-  font-family: 'Ubuntu', sans-serif; /* Set header font to Ubuntu */
+  font-size: 2.5em; /* Adjust for better visibility */
 }
 
 h2 {
-  color: #3498db;
-  font-family: 'Ubuntu', sans-serif; /* Set header font to Ubuntu */
+  font-size: 2em;
 }
 
 h3 {
-  color: #7DE2D1;
-  font-family: 'Ubuntu', sans-serif; /* Set header font to Ubuntu */
+  font-size: 1.75em;
 }
+
 p {
   text-align: justify;
 }
+
+/* Additional styling for tables, links, and other elements */
+a {
+  color: #0099CD; /* Link color matching signature color */
+}
+
+a:hover {
+  color: #005F8C; /* Slightly darker on hover */
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+table th, table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+table th {
+  background-color: #0099CD;
+  color: white;
+  text-align: center;
+}
+
+table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+table tr:hover {
+  background-color: #ddd;
+}
+
 ```
 
 ```{r setup, include=FALSE}
@@ -1325,6 +1388,101 @@ write.csv(tao_exon_combination_tab,
           row.names = FALSE)
 ```
 
+#### Dominic
+
+```{r dominic table making}
+dominic_pdiff_exons_tab <- dominic_pdiff_exons[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(dominic_pdiff_exons_tab) <- 1:nrow(dominic_pdiff_exons_tab)
+
+dominic_fstat_exons_tab <- dominic_fstat_exons[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(dominic_fstat_exons_tab) <- 1:nrow(dominic_fstat_exons_tab)
+
+dominic_fdr_exons_tab <- dominic_fdr_exons[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))
+rownames(dominic_fdr_exons_tab) <- 1:nrow(zdominic_fdr_exons_tab)
+
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(dominic_pdiff_exons_tab$EVENT, dominic_fstat_exons_tab$EVENT, dominic_fdr_exons_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_exon_diff_tab <- dominic_pdiff_exons_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fstat_tab <- dominic_fstat_exons_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fdr_tab <- dominic_fdr_exons_tab %>% filter(EVENT %in% common_events)
+
+
+# Select only unique columns from each table
+filtered_exon_diff_tab <- filtered_exon_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_exon_fstat_tab <- filtered_exon_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_exon_fdr_tab <- filtered_exon_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+dominic_exon_combination_tab <- filtered_exon_diff_tab %>%
+  inner_join(filtered_exon_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_exon_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+```
+
+```{r zhang combination table}
+# Render DataTable with enhancements
+datatable(
+  dominic_exon_combination_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+
+write.csv(dominic_exon_combination_tab, 
+          file = file.path(output_dir, paste0("dominic_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
 #### Tao ANOVA Multigroup
 
 ```{r tao ANOVA combination table}
@@ -1481,6 +1639,7 @@ dataframes <- list(
   tao = tao_exon_combination_tab,
   lyu = lyu_exon_combination_tab,
   zhang= zhang_exon_combination_tab,
+  dominic=dominic_exon_combination_tabs,
   tao_anova=tao_multgroups_exons
 )
 
@@ -1660,7 +1819,7 @@ write.csv(final_exon_list,
 ```
 ## Event Densities
 
-```{r densities_per_event, fig.width=8, fig.height=4, warning=F}
+```{r densities_per_event, fig.width=14, fig.height=10, out.width="100%"}
 plots <- lapply(1:nrow(final_exon_list), function(i) {
   eventID <- final_exon_list$EVENT[i]
   geneName <- final_exon_list$GENE[i]
@@ -1679,8 +1838,13 @@ plots <- lapply(1:nrow(final_exon_list), function(i) {
   
   # Modify the plot with ggtitle using the GENE and EVENT from the row
   plot_with_title <- tdensities + 
-    theme_minimal() + 
-    ggtitle(paste(geneName, eventID))
+  theme_minimal() + 
+  theme(
+    plot.title = element_text(size = 16),  # Increase title size
+    axis.text = element_text(size = 12),  # Increase axis label size
+    axis.title = element_text(size = 14)  # Increase axis text size
+  ) + 
+  ggtitle(paste(geneName, eventID))
   
   return(plot_with_title)
 })
