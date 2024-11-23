@@ -8,7 +8,7 @@ data/raw/*
 *.vcf
 *.sam
 *.csv
-*.tsv
+data/*.tsv
 *.h5
 *.Rproj
 .RData
