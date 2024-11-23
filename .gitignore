@@ -12,6 +12,7 @@ data/*.tsv
 *.h5
 *.Rproj
 .RData
+*.sif
 # Ignore temporary and intermediate files
 *tmp/
 *to_combine/
