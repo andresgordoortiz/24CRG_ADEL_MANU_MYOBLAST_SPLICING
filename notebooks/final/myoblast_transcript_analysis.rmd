@@ -26,6 +26,7 @@ editor_options:
 # install.packages("renv")
 # renv::init()
 # renv::restore()
+# Finally, you must have the Mus musculus (mm10 build) EVENT_INFO-mm10.tab and SPLICE_SITE_SCORES-mm10.tab files downloaded and unzipped in the root folder of this project repository. You can download them here:https://vastdb.crg.eu/wiki/Downloads
 
 header-includes:
   - '<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">'
@@ -695,29 +696,37 @@ plot_proportion <- ggplot(splicing_events_long, aes(fill = event_type, y = count
   ) +
   scale_fill_paletteer_d("MetBrewer::Hokusai3")
 
+splicing_events_long_sum<-splicing_events_long %>%
+  dplyr::group_by(study) %>%
+  summarize(count = sum(count))
+  
+
 # Absolute counts plot
-plot_absolute <- ggplot(splicing_events_long, aes(y = count, x = study)) + 
-  geom_point(color = "#C70039", size = 3) +  # Dots
+plot_absolute <- ggplot(splicing_events_long_sum, aes(y = count, x = study)) + 
+  geom_point(color = "#C70039", size = 3) +  
   geom_line(color = "#FF5733", size = 1) + 
+  geom_text(aes(label = count), vjust = -1, size = 4, check_overlap = TRUE) + 
   labs(
     x = "Study",
-    y = "Number of Events"
+    y = "Number of Events",
+    caption = "Data source: Splicing Event Dataset"
   ) +
   theme_minimal(base_family = font) +
   theme(
     legend.position = "none",
     axis.title.x = element_text(margin = margin(t = 10)),
-    panel.background = element_rect(fill = "gray98"),
-    panel.grid.major = element_line(color = "gray90", size = 0.5),
-    panel.grid.minor = element_blank()
+    axis.text.x = element_text( size=15),
+    panel.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(color = "gray80", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.3)
   ) +
-  scale_y_continuous(expand = expansion(mult = c(0.1, 0.2))) + # Extend y-range
-  scale_colour_paletteer_d("MetBrewer::Hokusai3")
+  scale_y_continuous(expand = expansion(mult = c(0.1, 0.2)))
+
 
 # Combine plots
 combined_plot <- plot_proportion / plot_absolute +
   plot_layout(heights = c(1, 0.5)) & 
-  theme(plot.margin = margin(0, 0, 0, 0))
+  theme(plot.margin = margin(5,5, 0, 5))
 
 # Display combined plot
 combined_plot
@@ -2866,6 +2875,104 @@ write.csv(final_exon_list,
           file = file.path(output_dir, paste0("final_exon_list_unsorted_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
+
+# Sorting Out according to features
+
+```{r loading data from vastdb}
+events_info<-read.table("EVENT_INFO-mm10.tab", header = TRUE, sep = "\t")
+splice_scores<-read.table("SPLICE_SITE_SCORES-mm10.tab", header = FALSE, sep = "\t")
+```
+
+```{r gc content function}
+calculate_GC_percent <- function(df, sequence_column) {
+  # Ensure the specified column exists
+  if (!sequence_column %in% colnames(df)) {
+    stop("The specified column does not exist in the dataframe.")
+  }
+  
+  # Function to calculate GC content for a single sequence
+  gc_content <- function(sequence) {
+    # Count G and C in the sequence
+    gc_count <- sum(tolower(strsplit(sequence, NULL)[[1]]) %in% c('g', 'c'))
+    # Calculate the GC percentage
+    gc_percentage <- (gc_count / nchar(sequence)) * 100
+    return(gc_percentage)
+  }
+  
+  # Apply the GC content function to each row's sequence
+  df$GC_percent <- sapply(df[[sequence_column]], gc_content)
+  
+  return(df)
+}
+```
+
+```{r splice score site extraction function}
+# Function to extract V3 values based on EVENT
+extract_V3_for_event <- function(event_value, splice_scores) {
+  # Filter rows where V1 matches the event_value
+  filtered_rows <- splice_scores %>%
+    filter(V1 == event_value)
+  
+  # Extract the V3 column and return as a list
+  return(list(filtered_rows$V3))
+}
+
+```
+
+
+```{r final list features extraction}
+# Exon List features
+final_exon_list$length<-events_info$LE_n[match(final_exon_list$EVENT, events_info$EVENT)]
+final_exon_list$sequence<-events_info$Seq_A[match(final_exon_list$EVENT, events_info$EVENT)]
+
+final_exon_list$splice_scores <- apply(final_exon_list, 1, function(row) {
+  # Get the event value from the current row
+  event_value <- row["EVENT"]
+  
+  # Call the function to extract the V3 values
+  extract_V3_for_event(event_value, splice_scores)
+})
+
+# Unnest the list in V3_values into two separate columns
+final_exon_list <- final_exon_list %>%
+  unnest(cols = splice_scores) %>%
+  separate(splice_scores, into = c("slice_score_3", "splice_score_5"), sep = ",")
+
+# If necessary, clean up the new columns
+final_exon_list$slice_score_3 <- gsub("[c()]", "", final_exon_list$slice_score_3)
+final_exon_list$splice_score_5 <- gsub("[c()]", "", final_exon_list$splice_score_5)
+final_exon_list$slice_score_3 <- as.numeric(final_exon_list$slice_score_3)
+final_exon_list$splice_score_5 <- as.numeric(final_exon_list$splice_score_5)
+
+final_exon_list<-calculate_GC_percent(final_exon_list,"sequence")
+
+# Intron List features
+final_intron_list$length<-events_info$LE_n[match(final_intron_list$EVENT, events_info$EVENT)]
+final_intron_list$sequence<-events_info$Seq_A[match(final_intron_list$EVENT, events_info$EVENT)]
+
+final_intron_list$splice_scores <- apply(final_intron_list, 1, function(row) {
+  # Get the event value from the current row
+  event_value <- row["EVENT"]
+  
+  # Call the function to extract the V3 values
+  extract_V3_for_event(event_value, splice_scores)
+})
+
+# Unnest the list in V3_values into two separate columns
+final_intron_list <- final_intron_list %>%
+  unnest(cols = splice_scores) %>%
+  separate(splice_scores, into = c("slice_score_3", "splice_score_5"), sep = ",")
+
+# If necessary, clean up the new columns
+final_intron_list$slice_score_3 <- gsub("[c()]", "", final_intron_list$slice_score_3)
+final_intron_list$splice_score_5 <- gsub("[c()]", "", final_intron_list$splice_score_5)
+final_intron_list$slice_score_3 <- as.numeric(final_intron_list$slice_score_3)
+final_intron_list$splice_score_5 <- as.numeric(final_intron_list$splice_score_5)
+
+final_intron_list<-calculate_GC_percent(final_intron_list,"sequence")
+
+```
+
 
 ## Event Densities
 
