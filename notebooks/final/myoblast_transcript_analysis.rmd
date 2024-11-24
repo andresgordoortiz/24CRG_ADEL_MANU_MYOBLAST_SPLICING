@@ -3096,7 +3096,7 @@ final_intron_list$GroupC <- ifelse(final_intron_list$ENTREZID %in% groupC_geneli
 ```{r final arrange}
 final_exon_list <- final_exon_list[!duplicated(final_exon_list$EVENT), ] %>%
   arrange(desc(GroupA), GroupC,desc(abs(avg_deltapsi)))
-final_intron_list<-arrange(final_intron_list, desc(Final_Score))
+final_intron_list<-arrange(final_intron_list, desc(GroupA), GroupC,desc(abs(avg_deltapsi)))
 ```
 
 
