@@ -3151,6 +3151,27 @@ final_plot_exons <- wrap_plots(plots, ncol = 4, byrow = TRUE) +
 final_plot_exons
 ```
 
+#### Explanation
+
+**Itga7:**
+An isoform switch is observed between exons MmuEX0024625 (excluded) and MmuEX0024626 (included) during myogenesis, with similar ΔPSI values within the same module. The Itga7 gene encodes a protein of the integrin alpha chain family, functioning as a receptor for laminin-1 and playing roles in cell migration, differentiation, and morphogenesis. The lost exon (MmuEX0024625) has over 70% GC content, making it a "hard" exon. Its exclusion may be linked to the reduced number of nuclear speckles during myogenesis, which disrupts their fine-tuned structural support. The gained exon (MmuEX0024626) has lower GC content (49%), making it "soft." Notably, these exons are non-overlapping.
+
+**Rbfox2:**
+This gene encodes an RNA-binding protein that regulates alternative splicing via binding to the UGCAUG motif. During myogenesis, an isoform switch occurs (MmuEX0039029 > MmuEX0039030), with equivalent ΔPSI values in the module. The excluded exon (MmuEX0039029) has higher GC content (47%) and a lower splice site score (4.5) than the included exon (MmuEX0039030, 37% GC, 10 ssc). These findings suggest that the exclusion of "hard" exons and inclusion of "soft" exons may be associated with speckle disruption during myogenesis. Both exons are short (~45 bp), and the excluded exon disrupts the ORF, enabling functional protein expression. Additionally, exon MmuEX0039032 is excluded in this context.
+
+**Myo18a:**
+The included exon (MmuEX0030454) shows a high ΔPSI (0.595), low splice site scores (3 and -2.9), and high GC content (64%). This gene encodes a protein involved in Golgi-cytoskeleton interactions and lamellar actomyosin bundle assembly, which are critical for cell migration. Flanking exons (MmuEX0030453 upstream and MmuEX0030449 downstream) are also included. Both are short (MmuEX0030449, 36 bp) and exhibit weak splice site scores and high GC content (~72%).
+
+**Trip10:**
+This gene encodes a protein linked to actin cytoskeleton organization, endocytosis, and signal transduction, with implications as a biomarker for Huntington’s disease. The included exon has a high ΔPSI (0.433), low splice site scores (1.65 and 9.65), high GC content (65%), and is short (168 bp). It is part of the Group A list.
+
+**Ehbp1l1:**
+The included exon (ΔPSI: 0.314) is short (183 bp), exhibits high GC content (62.8%), and has weak splice site scores (-1.08 and 9.46). This gene is associated with actin cytoskeleton organization and is located in Group A.
+
+Negative Control:
+
+Tpm1: Assigned to Group C.
+
 ### Introns
 
 ```{r densities_per_event introns, out.width="100%", warning=FALSE, message=FALSE}
@@ -3196,6 +3217,12 @@ final_plot_introns <- wrap_plots(plots) +
 final_plot_introns
 
 ```
+
+#### Explanation
+
+**Usp5 (MmuINT0172005):**
+The intron of Usp5 (ubiquitin-specific peptidase 5) shows significant splicing activity during myogenesis, with a splicing increase of over 50%. It has a weak 3' splice site score (4.56) and a GC content above 50%. Gene Ontology (GO) annotations link Usp5 to membraneless organelles. Previous studies, including the Science paper and findings on its human ortholog (USP42), highlight its relevance to nuclear speckle-associated splicing. Knockdown (KD) of USP42 was shown to reduce SC35 nuclear speckle markers (see PMC8329168). Inclusion of this intron disrupts the open reading frame (ORF), suggesting a functional impact. This intron represents a promising candidate for further investigation.
+
 # Final Candidates List Sorted 
 
 ## Exons
