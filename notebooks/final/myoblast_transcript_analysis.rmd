@@ -638,7 +638,8 @@ pca_plot <- ggplot(pca_data, aes(x = PC1, y = PC2, color = as.factor(condition),
   labs(
     title = "<b style='font-size:18px;'>PCA of Samples (PSI Data)</b>",
     x = paste("PC1 (", round(100 * summary(pca_result)$importance[2, 1], 1), "%)", sep = ""),
-    y = paste("PC2 (", round(100 * summary(pca_result)$importance[2, 2], 1), "%)", sep = "")
+    y = paste("PC2 (", round(100 * summary(pca_result)$importance[2, 2], 1), "%)", sep = ""),
+    caption = paste0("Created by AG on ", Sys.Date()), size=3
   ) +
   theme_minimal(base_family = "roboto") +
   theme(
@@ -714,7 +715,7 @@ plot_absolute <- ggplot(splicing_events_long_sum, aes(y = count, x = study)) +
   labs(
     x = "Study",
     y = "Number of Events",
-    caption = "Data source: Splicing Event Dataset"
+    caption = paste0("Created by AG on ", Sys.Date()), size=3
   ) +
   theme_minimal(base_family = font) +
   theme(
@@ -2561,7 +2562,7 @@ upset_intron_plot<-introns_candidates %>%
   ggplot(aes(x = Combination)) +
   geom_bar(fill = "#D8D97AFF", color = "black") +  # Polished bar colors
   geom_text(data = counts, aes(x = Combination, y = n, label = n),
-            vjust = -0.5, size = 3.5) +  # Add count labels
+            vjust = -0.5, size = 4) +  # Add count labels
   scale_x_upset(n_intersections = 31) +
   labs(
     title = paste("UpSet Plot of Intron Candidates (", Sys.Date(), ")", sep = ""),
@@ -2767,7 +2768,7 @@ upset_exon_plot<-exons_candidates %>%
   ggplot(aes(x = Combination)) +
   geom_bar(fill = "#D8D97AFF", color = "black") +  # Polished bar colors
   geom_text(data = counts, aes(x = Combination, y = n, label = n),
-            vjust = -0.5, size = 3.5) +  # Add count labels
+            vjust = -0.5, size = 4) +  # Add count labels
   scale_x_upset(n_intersections = 31) +
   labs(
     title = paste("UpSet Plot of Exon Candidates (", Sys.Date(), ")", sep = ""),
@@ -3088,7 +3089,7 @@ final_intron_list$GroupB <- ifelse(final_intron_list$ENTREZID %in% groupB_geneli
 ```{r calculate score}
 # Coefficients for each factor
 deltapsi_coef<- 5000
-fstat_coef<-0.8
+fstat_coef<-600
 gc_coef <- 1.2 # Weight for GC content
 length_coef <- -0.0005 # Weight for length (inverse relation)
 splice_site_coef <- -0.8 # Weight for splice site score (inverse relation)
@@ -3166,7 +3167,10 @@ plots <- lapply(1:6, function(i) {
 # Adjust the number of columns for wrapping and add the Y-axis once per row
 final_figure_exons <- wrap_plots(plots, ncol = 3, byrow = TRUE) + 
   plot_layout(guides = 'collect') + 
-  theme(plot.margin = margin(0, 0, 0, 0))  # Adjust margins for consistent spacing
+  plot_annotation(
+    caption = paste0("Created by AG on ", Sys.Date())
+  ) +
+  theme(plot.margin = margin(0, 0, 0, 0))   # Adjust margins for consistent spacing
 
 # Display the combined figure
 final_figure_exons
@@ -3212,6 +3216,9 @@ plots <- lapply(1:6, function(i) {
 # Adjust the number of columns for wrapping and add the Y-axis once per row
 final_figure_introns <- wrap_plots(plots, ncol = 3, byrow = TRUE) + 
   plot_layout(guides = 'collect') + 
+  plot_annotation(
+    caption = paste0("Created by AG on ", Sys.Date())
+  ) +
   theme(plot.margin = margin(0, 0, 0, 0))  # Adjust margins for consistent spacing
 
 # Display the combined figure
