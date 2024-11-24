@@ -27,6 +27,8 @@ editor_options:
 # renv::init()
 # renv::restore()
 # Finally, you must have the Mus musculus (mm10 build) EVENT_INFO-mm10.tab and SPLICE_SITE_SCORES-mm10.tab files downloaded and unzipped in the root folder of this project repository. You can download them here:https://vastdb.crg.eu/wiki/Downloads
+# The supplementary tables from Wu et al. 2024 are also needed in the root idirectory: https://www.science.org/doi/suppl/10.1126/sciadv.adp7727/suppl_file/sciadv.adp7727_tables_s1_to_s6.zip
+
 
 header-includes:
   - '<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">'
@@ -156,8 +158,11 @@ install_load("paletteer")
 install_load("ggupset")
 install_load("showtext")
 install_load("ggtext")
+install_load("readxl")
+install_load("biomaRt")
 library("patchwork")
 library("org.Mm.eg.db")
+install_load("org.Hs.eg.db")
 library("enrichplot")
 library("DOSE")
 library("clusterProfiler")
@@ -2578,6 +2583,13 @@ upset_intron_plot<-introns_candidates %>%
 upset_intron_plot
 ```
 ```{r shared events final list intron}
+dataframes <- list(
+  christopher = christopher_intron_combination_tab,
+  tao = tao_intron_combination_tab,
+  lyu = lyu_intron_combination_tab,
+  # zhang= zhang_intron_combination_tab,
+  dominic=dominic_intron_combination_tab
+)
 # Extract the shared events in all dataframes
 shared_events <- Reduce(intersect, lapply(dataframes, function(df) df$EVENT))
 
@@ -2591,9 +2603,9 @@ dominic_shared<-dominic_intron_combination_tab[dominic_intron_combination_tab$EV
 combined_data <- bind_rows(
   tao_shared %>% mutate(Source = "tao_shared"),
   lyu_shared %>% mutate(Source = "lyu_shared"),
-  zhang_shared %>% mutate(Source = "zhang_shared"),
+  # zhang_shared %>% mutate(Source = "zhang_shared"),
   christopher_shared %>% mutate(Source = "christopher_shared"),
-  dominic_shared<-dominic_intron_combination_tab[dominic_intron_combination_tab$EVENT %in% shared_events,]
+  dominic_shared %>% mutate(Source = "dominic_shared")
 )
 
 # Calculate average per EVENT
@@ -2793,7 +2805,7 @@ combined_data <- bind_rows(
   lyu_shared %>% mutate(Source = "lyu_shared"),
   zhang_shared %>% mutate(Source = "zhang_shared"),
   christopher_shared %>% mutate(Source = "christopher_shared"),
-  dominic_shared<-dominic_exon_combination_tab[dominic_exon_combination_tab$EVENT %in% shared_events,]
+    dominic_shared %>% mutate(Source = "dominic_shared")
 )
 
 # Calculate average per EVENT
@@ -2936,12 +2948,12 @@ final_exon_list$splice_scores <- apply(final_exon_list, 1, function(row) {
 # Unnest the list in V3_values into two separate columns
 final_exon_list <- final_exon_list %>%
   unnest(cols = splice_scores) %>%
-  separate(splice_scores, into = c("slice_score_3", "splice_score_5"), sep = ",")
+  separate(splice_scores, into = c("splice_score_3", "splice_score_5"), sep = ",")
 
 # If necessary, clean up the new columns
-final_exon_list$slice_score_3 <- gsub("[c()]", "", final_exon_list$slice_score_3)
+final_exon_list$splice_score_3 <- gsub("[c()]", "", final_exon_list$splice_score_3)
 final_exon_list$splice_score_5 <- gsub("[c()]", "", final_exon_list$splice_score_5)
-final_exon_list$slice_score_3 <- as.numeric(final_exon_list$slice_score_3)
+final_exon_list$splice_score_3 <- as.numeric(final_exon_list$splice_score_3)
 final_exon_list$splice_score_5 <- as.numeric(final_exon_list$splice_score_5)
 
 final_exon_list<-calculate_GC_percent(final_exon_list,"sequence")
@@ -2961,24 +2973,165 @@ final_intron_list$splice_scores <- apply(final_intron_list, 1, function(row) {
 # Unnest the list in V3_values into two separate columns
 final_intron_list <- final_intron_list %>%
   unnest(cols = splice_scores) %>%
-  separate(splice_scores, into = c("slice_score_3", "splice_score_5"), sep = ",")
+  separate(splice_scores, into = c("splice_score_3", "splice_score_5"), sep = ",")
 
 # If necessary, clean up the new columns
-final_intron_list$slice_score_3 <- gsub("[c()]", "", final_intron_list$slice_score_3)
+final_intron_list$splice_score_3 <- gsub("[c()]", "", final_intron_list$splice_score_3)
 final_intron_list$splice_score_5 <- gsub("[c()]", "", final_intron_list$splice_score_5)
-final_intron_list$slice_score_3 <- as.numeric(final_intron_list$slice_score_3)
+final_intron_list$splice_score_3 <- as.numeric(final_intron_list$splice_score_3)
 final_intron_list$splice_score_5 <- as.numeric(final_intron_list$splice_score_5)
 
 final_intron_list<-calculate_GC_percent(final_intron_list,"sequence")
 
 ```
 
+## Gene Ontology of Filtered Splicing Events
 
-## Event Densities
+```{r gene ontology}
+exon_go <- bitr(final_exon_list$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+names(exon_go)<-c("GENE","ENTREZID")
+final_exon_list <- final_exon_list %>%
+  left_join(as.data.frame(exon_go), by = "GENE")
+
+
+# GO Enrichment Analysis
+go_enrich_exon <- enrichGO(gene = exon_go$ENTREZID,
+                      OrgDb = org.Mm.eg.db,
+                      ont = "ALL",
+                      pAdjustMethod = "BH",
+                      pvalueCutoff = 0.05,
+                      qvalueCutoff = 0.05)
+speckle_related_genes<-strsplit(head(go_enrich_exon)[1, "geneID"], "/")[[1]]
+final_exon_list$GO_speckle<-ifelse(final_exon_list$ENTREZID %in% speckle_related_genes, "TRUE", "FALSE")
+
+intron_go <- bitr(final_intron_list$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+names(intron_go)<-c("GENE","ENTREZID")
+final_intron_list <- final_intron_list %>%
+  left_join(as.data.frame(intron_go), by = "GENE")
+
+
+# GO Enrichment Analysis
+go_enrich_intron <- enrichGO(gene = intron_go$ENTREZID,
+                      OrgDb = org.Mm.eg.db,
+                      ont = "ALL",
+                      pAdjustMethod = "BH",
+                      pvalueCutoff = 0.05,
+                      qvalueCutoff = 0.05)
+speckle_related_genes<-strsplit(head(go_enrich_intron)[5, "geneID"], "/")[[1]]
+final_intron_list$GO_speckle<-ifelse(final_intron_list$ENTREZID %in% speckle_related_genes, "TRUE", "FALSE")
+
+
+
+gene_entrez <- bitr(union(final_exon_list$GENE, final_intron_list$GENE), fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+gene_entrez_go <- enrichGO(gene = gene_entrez$ENTREZID,
+                      OrgDb = org.Mm.eg.db,
+                      ont = "ALL",
+                      pAdjustMethod = "BH",
+                      pvalueCutoff = 0.05,
+                      qvalueCutoff = 0.05)
+# KEGG Pathway Enrichment
+kegg_enrich <- enrichKEGG(gene = gene_entrez$ENTREZID,
+                          organism = "mmu",
+                          pAdjustMethod = "BH",
+                          pvalueCutoff = 0.05)
+
+# Reactome Pathway Enrichment Guangchuang Yu, Qing-Yu He. ReactomePA: an R/Bioconductor package for reactome pathway analysis and visualization. Molecular BioSystems 2016, 12(2):477-479
+reactome_enrich <- enrichPathway(gene = gene_entrez$ENTREZID,
+                                 organism = "mouse",
+                                 pAdjustMethod = "BH",
+                                 pvalueCutoff = 0.05)
+# Dot plot for GO terms
+dotplot(gene_entrez_go, showCategory = 20) + ggtitle("GO Enrichment Analysis")
+```
+
+## Speckle Gene Groups
+
+```{r Wun et al. list of genes}
+groupA_genelist <- read_excel("Table S1_GroupABC gene list.xlsx", 
+    sheet = "Group A", skip = 1)[,-1]$Geneid %>%
+  lapply(function(x) gsub("\\.\\d+", "", x)) %>%
+  unlist()
+
+groupB_genelist <- read_excel("Table S1_GroupABC gene list.xlsx", 
+    sheet = "Group B")[,-1]$Geneid %>%
+  lapply(function(x) gsub("\\.\\d+", "", x)) %>%
+  unlist()
+
+
+
+human = useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+attributes = c("ensembl_gene_id", "mmusculus_homolog_ensembl_gene", "mmusculus_homolog_perc_id_r1")
+orth.mouse = getBM(attributes, values=TRUE, mart = human, uniqueRows=TRUE)
+
+groupA_genelist_mouse <- orth.mouse[orth.mouse$ensembl_gene_id %in% groupA_genelist, "mmusculus_homolog_ensembl_gene"] %>%
+  unlist() 
+groupB_genelist_mouse <- orth.mouse[orth.mouse$ensembl_gene_id %in% groupB_genelist, "mmusculus_homolog_ensembl_gene"] %>%
+  unlist() 
+
+
+groupA_genelist_mouse <- bitr(groupA_genelist_mouse, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+groupB_genelist_mouse <- bitr(groupB_genelist_mouse, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+
+# Exon list analysis
+final_exon_list$GroupA <- ifelse(final_exon_list$ENTREZID %in% groupA_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+
+final_exon_list$GroupB <- ifelse(final_exon_list$ENTREZID %in% groupB_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+
+# Intron list analysis
+final_intron_list$GroupA <- ifelse(final_intron_list$ENTREZID %in% groupA_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+
+final_intron_list$GroupB <- ifelse(final_intron_list$ENTREZID %in% groupB_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+
+```
+
+
+```{r calculate score}
+# Coefficients for each factor
+deltapsi_coef<- 5000
+fstat_coef<-0.8
+gc_coef <- 1.2 # Weight for GC content
+length_coef <- -0.0005 # Weight for length (inverse relation)
+splice_site_coef <- -0.8 # Weight for splice site score (inverse relation)
+go_bonus <- 3 # Bonus for Gene ontology related
+experiment_bonus_A <- 5.5 # Bonus for found experimentally
+experiment_bonus_B <- 2 # Bonus for found experimentally
+
+# Linear model calculation Introns
+final_intron_list$Final_Score <- (gc_coef * final_intron_list$GC_percent) +
+  (length_coef * (final_intron_list$length)) +
+  (splice_site_coef * final_intron_list$splice_score_3) +
+  (splice_site_coef * final_intron_list$splice_score_5) +
+  (ifelse(final_intron_list$GO_speckle, go_bonus, 0)) +
+  (ifelse(final_intron_list$GroupA, experiment_bonus_A, 0)) +
+  (ifelse(final_intron_list$GroupB, experiment_bonus_B, 0)) +
+  (deltapsi_coef * abs(final_intron_list$avg_deltapsi)) +
+  (fstat_coef * final_intron_list$avg_Fstat) 
+
+# Linear model calculation Exons
+final_exon_list$Final_Score <- (gc_coef * final_exon_list$GC_percent) +
+  (length_coef * (final_exon_list$length)) +
+  (splice_site_coef * final_exon_list$splice_score_3) +
+  (splice_site_coef * final_exon_list$splice_score_5) +
+  (ifelse(final_exon_list$GO_speckle, go_bonus, 0)) +
+  (ifelse(final_exon_list$GroupA, experiment_bonus_A, 0)) +
+  (ifelse(final_exon_list$GroupB, experiment_bonus_B, 0)) +
+  (deltapsi_coef * abs(final_exon_list$avg_deltapsi)) +
+  (fstat_coef * final_exon_list$avg_Fstat)
+
+final_exon_list <- final_exon_list[!duplicated(final_exon_list$EVENT), ] %>%
+  arrange(desc(Final_Score))
+final_intron_list<-arrange(final_intron_list, desc(Final_Score))
+```
+
+
+
+## Event Densities { .tabset}
+
+### Exons
 
 ```{r densities_per_event, fig.width=14, fig.height=10, out.width="100%", warning=FALSE, message=FALSE}
 # Adjust your plotting function
-plots <- lapply(1:12, function(i) {
+plots <- lapply(1:6, function(i) {
   eventID <- final_exon_list$EVENT[i]
   geneName <- final_exon_list$GENE[i]
   
@@ -3011,43 +3164,57 @@ plots <- lapply(1:12, function(i) {
 })
 
 # Adjust the number of columns for wrapping and add the Y-axis once per row
-final_figure <- wrap_plots(plots, ncol = 3, byrow = TRUE) + 
+final_figure_exons <- wrap_plots(plots, ncol = 3, byrow = TRUE) + 
   plot_layout(guides = 'collect') + 
   theme(plot.margin = margin(0, 0, 0, 0))  # Adjust margins for consistent spacing
 
 # Display the combined figure
-final_figure
+final_figure_exons
 
 ```
 
+### Introns
 
-# Gene Ontology of Filtered Splicing Events
+```{r densities_per_event introns, fig.width=14, fig.height=10, out.width="100%", warning=FALSE, message=FALSE}
+# Adjust your plotting function
+plots <- lapply(1:6, function(i) {
+  eventID <- final_intron_list$EVENT[i]
+  geneName <- final_intron_list$GENE[i]
+  
+  # Create the plot for each row using the provided parameters
+  tdensities <- plotIndividualDensitiesList(
+    eventID = eventID,
+    npoints = 500,
+    psitable = tao_introns$PSI,
+    qualtable = tao_introns$Qual,
+    groupList = groupList_tao,
+    maxDevTable = maxDevSimulationN100, 
+    seed = TRUE, 
+    CoverageWeight = FALSE
+  )
+  
+  # Modify the plot with ggtitle using the GENE and EVENT from the row
+  plot_with_title <- tdensities + 
+    theme_minimal(base_family = font) + 
+    theme(
+      plot.title = element_text(size = 14, face = "bold"),  # Increase title size
+      axis.text = element_text(size = 12),  # Increase axis label size
+      axis.title = element_text(size = 14),  # Increase axis text size
+      axis.text.y = element_blank(),  # Remove Y-axis text
+      axis.title.y = element_blank(),  # Remove Y-axis title
+      axis.ticks.y = element_blank()   # Remove Y-axis tick
+    ) + 
+    ggtitle(paste(geneName, eventID))
+  
+  return(plot_with_title)
+})
 
-```{r gene ontology}
-gene_entrez <- bitr(union(final_exon_list$GENE, final_intron_list$GENE), fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+# Adjust the number of columns for wrapping and add the Y-axis once per row
+final_figure_introns <- wrap_plots(plots, ncol = 3, byrow = TRUE) + 
+  plot_layout(guides = 'collect') + 
+  theme(plot.margin = margin(0, 0, 0, 0))  # Adjust margins for consistent spacing
 
-# GO Enrichment Analysis
-go_enrich <- enrichGO(gene = gene_entrez$ENTREZID,
-                      OrgDb = org.Mm.eg.db,
-                      ont = "ALL",
-                      pAdjustMethod = "BH",
-                      pvalueCutoff = 0.05,
-                      qvalueCutoff = 0.05)
+# Display the combined figure
+final_figure_introns
 
-# KEGG Pathway Enrichment
-kegg_enrich <- enrichKEGG(gene = gene_entrez$ENTREZID,
-                          organism = "mmu",
-                          pAdjustMethod = "BH",
-                          pvalueCutoff = 0.05)
-
-# Reactome Pathway Enrichment Guangchuang Yu, Qing-Yu He. ReactomePA: an R/Bioconductor package for reactome pathway analysis and visualization. Molecular BioSystems 2016, 12(2):477-479
-reactome_enrich <- enrichPathway(gene = gene_entrez$ENTREZID,
-                                 organism = "mouse",
-                                 pAdjustMethod = "BH",
-                                 pvalueCutoff = 0.05)
-# Dot plot for GO terms
-dotplot(go_enrich, showCategory = 20) + ggtitle("GO Enrichment Analysis")
 ```
-
-
-
