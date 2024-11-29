@@ -1081,6 +1081,16 @@ dominic_fdr_exons <- prepareTableVolcanoFDR(
 ```
 
 
+```{r table_multgroups exons}
+tao_anova_multgroups_exons <- prepareTableVolcanoMultipleGroups(psitable = tao_exons$PSI,
+                                                 qualtable = tao_exons$Qual,
+                                                 groupList = groupList_tao,
+                                                 npoints = 500,
+                                                 maxDevTable = maxDevSimulationN100, seed=TRUE, CoverageWeight = F)
+
+
+```
+
 
 ### FDR Volcano Plots { .tabset}
 
@@ -1897,7 +1907,15 @@ dominic_fdr_introns <- prepareTableVolcanoFDR(
   CoverageWeight = FALSE) 
 ```
 
+```{r table_multgroups introns}
+tao_anova_multgroups_introns <- prepareTableVolcanoMultipleGroups(psitable = tao_introns$PSI,
+                                                 qualtable = tao_introns$Qual,
+                                                 groupList = groupList_tao,
+                                                 npoints = 500,
+                                                 maxDevTable = maxDevSimulationN100, seed=TRUE, CoverageWeight = F)
 
+
+```
 
 ### FDR Volcano Plots { .tabset}
 
