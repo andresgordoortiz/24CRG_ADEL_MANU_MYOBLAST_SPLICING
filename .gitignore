@@ -13,6 +13,9 @@ data/*.tsv
 *.Rproj
 .RData
 *.sif
+*.png
+*.svg
+*.csv
 # Ignore temporary and intermediate files
 *tmp/
 *to_combine/
