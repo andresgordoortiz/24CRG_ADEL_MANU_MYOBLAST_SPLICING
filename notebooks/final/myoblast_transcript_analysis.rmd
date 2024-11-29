@@ -1080,7 +1080,6 @@ dominic_fdr_exons <- prepareTableVolcanoFDR(
   CoverageWeight = FALSE) 
 ```
 
-
 ```{r table_multgroups exons}
 tao_anova_multgroups_exons <- prepareTableVolcanoMultipleGroups(psitable = tao_exons$PSI,
                                                  qualtable = tao_exons$Qual,
@@ -1656,7 +1655,66 @@ write.csv(christopher_exon_combination_tab,
           row.names = FALSE)
 ```
 
+#### ANOVA Multigroup
 
+```{r anova exons making}
+tao_anova_multgroups_exons_tab <- tao_anova_multgroups_exons[, c("GENE", "EVENT", "COORD", "Pdiff", "deltaAbsolute","Fstat","medianBetweens")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltaAbsolute)))  # Sort by Pdiff and abs(deltapsi)
+rownames(tao_anova_multgroups_exons_tab) <- 1:nrow(tao_anova_multgroups_exons_tab)
+
+# Render DataTable with enhancements
+datatable(
+  tao_anova_multgroups_exons_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltaAbsolute",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+write.csv(tao_anova_multgroups_exons_tab, 
+          file = file.path(output_dir, paste0("tao_anova_multgroups_exons_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
 
 ## Intron Lists
 
@@ -2478,6 +2536,67 @@ datatable(
 
 write.csv(christopher_intron_combination_tab, 
           file = file.path(output_dir, paste0("christopher_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
+#### ANOVA Multigroup
+
+```{r anova introns making}
+tao_anova_multgroups_introns_tab <- tao_anova_multgroups_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltaAbsolute","Fstat","medianBetweens")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltaAbsolute)))  # Sort by Pdiff and abs(deltapsi)
+rownames(tao_anova_multgroups_introns_tab) <- 1:nrow(tao_anova_multgroups_introns_tab)
+
+# Render DataTable with enhancements
+datatable(
+  tao_anova_multgroups_introns_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltaAbsolute",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+write.csv(tao_anova_multgroups_introns_tab, 
+          file = file.path(output_dir, paste0("tao_anova_multgroups_introns_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
 
@@ -3335,4 +3454,53 @@ datatable(
 write.csv(final_intron_list, 
           file = file.path(output_dir, paste0("sorted_final_intron_list_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
+```
+
+
+
+
+```{r }
+# Generate individual plots for every unique event in the EVENT column
+unique_event_names <- unique(tao_anova_multgroups_exons_tab$EVENT)  # Get unique events
+
+# Loop over each event and generate a plot
+for (eventID in unique_event_names) {
+  # Extract the corresponding gene name for the event
+  geneName <- final_exon_list$GENE[final_exon_list$EVENT == eventID]
+  
+  # Generate the plot
+  tdensities <- plotIndividualDensitiesList(
+    eventID = eventID,
+    npoints = 500,
+    psitable = tao_exons$PSI,
+    qualtable = tao_exons$Qual,
+    groupList = groupList_tao,
+    maxDevTable = maxDevSimulationN100,
+    seed = TRUE,
+    CoverageWeight = FALSE
+  )
+  
+  # Customize the plot
+  plot <- tdensities + 
+    theme_minimal(base_family = font) + 
+    theme(
+      plot.title = element_text(size = 14, face = "bold"),  # Title size
+      axis.text = element_text(size = 12),                # Axis label size
+      axis.title = element_text(size = 14),               # Axis text size
+      axis.text.y = element_blank(),                      # Remove Y-axis text
+      axis.title.y = element_blank(),                     # Remove Y-axis title
+      axis.ticks.y = element_blank()                      # Remove Y-axis tick
+    ) + 
+    ggtitle(paste(geneName, eventID))
+  
+  # Save the plot as a file
+  ggsave(
+    filename = paste0("plot_", eventID, ".png"),  # File name
+    plot = plot,
+    width = 8,                                   # Adjust width
+    height = 6,                                  # Adjust height
+    dpi = 300                                    # High-resolution
+  )
+}
+
 ```
