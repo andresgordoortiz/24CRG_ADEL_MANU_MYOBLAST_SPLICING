@@ -180,11 +180,11 @@ font="roboto"
 The primary aim is to identify a list of splicing events that meet the following criteria:
 1. **Differential Splicing**: Events are differentially spliced during myoblast differentiation.
 2. **Spatial Relevance**: Events occur near or around nuclear speckles.
+This analysis is structured into two distinct parts, the first performed in the Bash Command     Line, and the second in R. This report shows the second part.
 
-This analysis is structured into two distinct parts, the first performed in the Bash Command Line, and the second in R. This report shows the second part.
 ---
 
-## **Part 1: Upstream Analysis**
+## Part 1: Upstream Analysis
 
 The upstream analysis is performed on the CRG cluster using the Bash command line. This phase involves:
 
@@ -204,7 +204,7 @@ The upstream analysis is performed on the CRG cluster using the Bash command lin
 
 ---
 
-## **Part 2: Statistical Analysis**
+## Part 2: Statistical Analysis
 
 ### Objective
 To identify splicing events that are differentially spliced during myoblast differentiation, and sorting them out according to how likely they are found close to nuclear speckles.
@@ -1155,10 +1155,10 @@ plotVolcanoFDR(betasTable =filter(christopher_fdr_exons,!is.na(EVENT)),
                             interestColor = "#E69A9C") +
 theme(
   plot.title = element_text(size = 10),  # Title font size
-  axis.title = element_text(size = 10),  # Axis title font size
-  axis.text = element_text(size = 10),   # Axis text font size
-  legend.text = element_text(size = 10), # Legend text font size
-  legend.title = element_text(size = 10) # Legend title font size
+  axis.title = element_text(size = 20),  # Axis title font size
+  axis.text = element_text(size = 20),   # Axis text font size
+  legend.text = element_text(size = 20), # Legend text font size
+  legend.title = element_text(size = 20) # Legend title font size
 )
 ```
 
@@ -2543,7 +2543,7 @@ write.csv(christopher_intron_combination_tab,
 
 ```{r anova introns making}
 tao_anova_multgroups_introns_tab <- tao_anova_multgroups_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltaAbsolute","Fstat","medianBetweens")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  filter(!is.na(EVENT), Pdiff >= 0.90) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
   arrange(desc(Pdiff), desc(abs(deltaAbsolute)))  # Sort by Pdiff and abs(deltapsi)
 rownames(tao_anova_multgroups_introns_tab) <- 1:nrow(tao_anova_multgroups_introns_tab)
 
@@ -3105,9 +3105,68 @@ final_intron_list<-calculate_GC_percent(final_intron_list,"sequence")
 
 ```
 
+```{r final ANOVA list features extraction}
+# ANOVA Exon List features
+tao_anova_multgroups_exons_tab$length<-events_info$LE_n[match(tao_anova_multgroups_exons_tab$EVENT, events_info$EVENT)]
+tao_anova_multgroups_exons_tab$sequence<-events_info$Seq_A[match(tao_anova_multgroups_exons_tab$EVENT, events_info$EVENT)]
+
+tao_anova_multgroups_exons_tab$splice_scores <- apply(tao_anova_multgroups_exons_tab, 1, function(row) {
+  # Get the event value from the current row
+  event_value <- row["EVENT"]
+  
+  # Call the function to extract the V3 values
+  extract_V3_for_event(event_value, splice_scores)
+})
+
+# Unnest the list in V3_values into two separate columns
+tao_anova_multgroups_exons_tab <- tao_anova_multgroups_exons_tab %>%
+  unnest(cols = splice_scores) %>%
+  separate(splice_scores, into = c("splice_score_3", "splice_score_5"), sep = ",")
+
+# If necessary, clean up the new columns
+tao_anova_multgroups_exons_tab$splice_score_3 <- gsub("[c()]", "", tao_anova_multgroups_exons_tab$splice_score_3)
+tao_anova_multgroups_exons_tab$splice_score_5 <- gsub("[c()]", "", tao_anova_multgroups_exons_tab$splice_score_5)
+tao_anova_multgroups_exons_tab$splice_score_3 <- as.numeric(tao_anova_multgroups_exons_tab$splice_score_3)
+tao_anova_multgroups_exons_tab$splice_score_5 <- as.numeric(tao_anova_multgroups_exons_tab$splice_score_5)
+
+tao_anova_multgroups_exons_tab<-calculate_GC_percent(tao_anova_multgroups_exons_tab,"sequence")
+
+# Look for unique events not in the pair-wise list
+unique_tao_anova_multgroups_exons_tab<-tao_anova_multgroups_exons_tab[!tao_anova_multgroups_exons_tab$EVENT %in% final_exon_list$EVENT,]
+
+# ANOVA Intron List features
+tao_anova_multgroups_introns_tab$length<-events_info$LE_n[match(tao_anova_multgroups_introns_tab$EVENT, events_info$EVENT)]
+tao_anova_multgroups_introns_tab$sequence<-events_info$Seq_A[match(tao_anova_multgroups_introns_tab$EVENT, events_info$EVENT)]
+
+tao_anova_multgroups_introns_tab$splice_scores <- apply(tao_anova_multgroups_introns_tab, 1, function(row) {
+  # Get the event value from the current row
+  event_value <- row["EVENT"]
+  
+  # Call the function to extract the V3 values
+  extract_V3_for_event(event_value, splice_scores)
+})
+
+# Unnest the list in V3_values into two separate columns
+tao_anova_multgroups_introns_tab <- tao_anova_multgroups_introns_tab %>%
+  unnest(cols = splice_scores) %>%
+  separate(splice_scores, into = c("splice_score_3", "splice_score_5"), sep = ",")
+
+# If necessary, clean up the new columns
+tao_anova_multgroups_introns_tab$splice_score_3 <- gsub("[c()]", "", tao_anova_multgroups_introns_tab$splice_score_3)
+tao_anova_multgroups_introns_tab$splice_score_5 <- gsub("[c()]", "", tao_anova_multgroups_introns_tab$splice_score_5)
+tao_anova_multgroups_introns_tab$splice_score_3 <- as.numeric(tao_anova_multgroups_introns_tab$splice_score_3)
+tao_anova_multgroups_introns_tab$splice_score_5 <- as.numeric(tao_anova_multgroups_introns_tab$splice_score_5)
+
+tao_anova_multgroups_introns_tab<-calculate_GC_percent(tao_anova_multgroups_introns_tab,"sequence")
+
+# Look for unique events not in the pair-wise list
+unique_tao_anova_multgroups_introns_tab<-tao_anova_multgroups_introns_tab[!tao_anova_multgroups_introns_tab$EVENT %in% final_intron_list$EVENT,]
+
+```
+
 ## Gene Ontology of Filtered Splicing Events
 
-```{r gene ontology}
+```{r gene ontology, fig.width=10, fig.height=8}
 exon_go <- bitr(final_exon_list$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
 names(exon_go)<-c("GENE","ENTREZID")
 final_exon_list <- final_exon_list %>%
@@ -3175,9 +3234,22 @@ go_plot <- dotplot(
   scale_y_discrete(guide = guide_axis(n.dodge = 1))  # Handle overlapping labels
 
 
-
 go_plot
 ```
+
+```{r ENTREZ ANOVA}
+exon_anova_go <- bitr(unique_tao_anova_multgroups_exons_tab$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+names(exon_anova_go)<-c("GENE","ENTREZID")
+unique_tao_anova_multgroups_exons_tab <- unique_tao_anova_multgroups_exons_tab %>%
+  left_join(as.data.frame(exon_anova_go), by = "GENE")
+
+intron_anova_go <- bitr(unique_tao_anova_multgroups_introns_tab$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+names(intron_anova_go)<-c("GENE","ENTREZID")
+unique_tao_anova_multgroups_introns_tab <- unique_tao_anova_multgroups_introns_tab %>%
+  left_join(as.data.frame(intron_anova_go), by = "GENE")
+
+```
+
 
 ## Speckle Gene Groups
 
@@ -3227,13 +3299,33 @@ final_intron_list$GroupB <- ifelse(final_intron_list$ENTREZID %in% groupB_geneli
 
 final_intron_list$GroupC <- ifelse(final_intron_list$ENTREZID %in% groupC_genelist_mouse$ENTREZID, "TRUE", "FALSE")
 
+
+# ANOVA Exon list analysis
+unique_tao_anova_multgroups_exons_tab$GroupA <- ifelse(unique_tao_anova_multgroups_exons_tab$ENTREZID %in% groupA_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+
+unique_tao_anova_multgroups_exons_tab$GroupB <- ifelse(unique_tao_anova_multgroups_exons_tab$ENTREZID %in% groupB_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+
+unique_tao_anova_multgroups_exons_tab$GroupC <- ifelse(unique_tao_anova_multgroups_exons_tab$ENTREZID %in% groupC_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+
+
+# ANOVA intron list analysis
+unique_tao_anova_multgroups_introns_tab$GroupA <- ifelse(unique_tao_anova_multgroups_introns_tab$ENTREZID %in% groupA_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+
+unique_tao_anova_multgroups_introns_tab$GroupB <- ifelse(unique_tao_anova_multgroups_introns_tab$ENTREZID %in% groupB_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+
+unique_tao_anova_multgroups_introns_tab$GroupC <- ifelse(unique_tao_anova_multgroups_introns_tab$ENTREZID %in% groupC_genelist_mouse$ENTREZID, "TRUE", "FALSE")
 ```
 
 
 ```{r final arrange}
 final_exon_list <- final_exon_list[!duplicated(final_exon_list$EVENT), ] %>%
   arrange(desc(GroupA), GroupC,desc(abs(avg_deltapsi)))
+
 final_intron_list<-arrange(final_intron_list, desc(GroupA), GroupC,desc(abs(avg_deltapsi)))
+
+unique_tao_anova_multgroups_introns_tab<-arrange(unique_tao_anova_multgroups_introns_tab, desc(GroupA), GroupC,desc(abs(medianBetweens)))
+
+unique_tao_anova_multgroups_exons_tab<-arrange(unique_tao_anova_multgroups_exons_tab, desc(GroupA), GroupC,desc(abs(medianBetweens)))
 ```
 
 
@@ -3242,7 +3334,7 @@ final_intron_list<-arrange(final_intron_list, desc(GroupA), GroupC,desc(abs(avg_
 
 ### Exons
 
-```{r densities_per_event, out.width="100%", warning=FALSE, message=FALSE}
+```{r densities_per_event, warning=FALSE, message=FALSE, fig.width=16, fig.height=8}
 event_names <- c("MmuEX0024626", "MmuEX0024625", "MmuEX0039030", 
                  "MmuEX0039029", "MmuEX0030454", "MmuEX0048979", 
                  "MmuEX1009295", "MmuEX0034296")
@@ -3312,7 +3404,7 @@ Tpm1: Assigned to Group C.
 ### Introns
 
 ```{r densities_per_event introns, out.width="100%", warning=FALSE, message=FALSE}
-event_names <- c("MmuINT0172005", "MmuINT1033613")
+event_names <- c("MmuINT0172005", "MmuINT0168360")
 
 # Generate individual plots and store them in a list
 plots <- lapply(event_names, function(eventID) {
@@ -3360,14 +3452,110 @@ final_plot_introns
 **Usp5 (MmuINT0172005):**
 The intron of Usp5 (ubiquitin-specific peptidase 5) shows significant splicing activity during myogenesis, with a splicing increase of over 50%. It has a weak 3' splice site score (4.56) and a GC content above 50%. Gene Ontology (GO) annotations link Usp5 to membraneless organelles. Previous studies, including the Science paper and findings on its human ortholog (USP42), highlight its relevance to nuclear speckle-associated splicing. Knockdown (KD) of USP42 was shown to reduce SC35 nuclear speckle markers (see PMC8329168). Inclusion of this intron disrupts the open reading frame (ORF), suggesting a functional impact. This intron represents a promising candidate for further investigation.
 
-# Final Candidates List Sorted 
+### ANOVA Exons
+
+```{r densities_per_event ANOVA exons, fig.width=16, fig.height=8, warning=FALSE, message=FALSE}
+event_names <- c("MmuEX0034298","MmuEX0034278","MmuEX0034277","MmuEX0007973", "MmuEX0044362","MmuEX0044363","MmuEX0048341", "MmuEX0005349")
+
+# Generate individual plots and store them in a list
+plots <- lapply(event_names, function(eventID) {
+  # Extract the corresponding gene name for the event
+  geneName <- unique_tao_anova_multgroups_exons_tab$GENE[unique_tao_anova_multgroups_exons_tab$EVENT == eventID]
+  
+  # Generate the plot
+  tdensities <- plotIndividualDensitiesList(
+    eventID = eventID,
+    npoints = 500,
+    psitable = tao_exons$PSI,
+    qualtable = tao_exons$Qual,
+    groupList = groupList_tao,
+    maxDevTable = maxDevSimulationN100,
+    seed = TRUE,
+    CoverageWeight = FALSE
+  )
+  
+  # Add titles and themes
+  tdensities + 
+    theme_minimal(base_family = font) + 
+    theme(
+      plot.title = element_text(size = 14, face = "bold"),  # Title size
+      axis.text = element_text(size = 12),                # Axis label size
+      axis.title = element_text(size = 14),               # Axis text size
+      axis.text.y = element_blank(),                      # Remove Y-axis text
+      axis.title.y = element_blank(),                     # Remove Y-axis title
+      axis.ticks.y = element_blank()                      # Remove Y-axis tick
+    ) + 
+    ggtitle(paste(geneName, eventID))
+})
+
+# Combine all plots with patchwork
+final_plot_anova_exons <- wrap_plots(plots, ncol = 4, byrow = TRUE) + 
+  plot_layout(guides = 'collect') + 
+  plot_annotation(
+    caption = paste0("Created by AG on ", Sys.Date())
+  ) 
+# Display the combined plot
+final_plot_anova_exons
+
+```
+
+
+
+### ANOVA Introns
+
+```{r densities_per_event ANOVA introns, out.width="100%", warning=FALSE, message=FALSE}
+event_names <- c("MmuINT0015093","MmuINT1026524")
+
+# Generate individual plots and store them in a list
+plots <- lapply(event_names, function(eventID) {
+  # Extract the corresponding gene name for the event
+  geneName <- unique_tao_anova_multgroups_introns_tab$GENE[unique_tao_anova_multgroups_introns_tab$EVENT == eventID]
+  
+  # Generate the plot
+  tdensities <- plotIndividualDensitiesList(
+    eventID = eventID,
+    npoints = 500,
+    psitable = tao_introns$PSI,
+    qualtable = tao_introns$Qual,
+    groupList = groupList_tao,
+    maxDevTable = maxDevSimulationN100,
+    seed = TRUE,
+    CoverageWeight = FALSE
+  )
+  
+  # Add titles and themes
+  tdensities + 
+    theme_minimal(base_family = font) + 
+    theme(
+      plot.title = element_text(size = 14, face = "bold"),  # Title size
+      axis.text = element_text(size = 12),                # Axis label size
+      axis.title = element_text(size = 14),               # Axis text size
+      axis.text.y = element_blank(),                      # Remove Y-axis text
+      axis.title.y = element_blank(),                     # Remove Y-axis title
+      axis.ticks.y = element_blank()                      # Remove Y-axis tick
+    ) + 
+    ggtitle(paste(geneName, eventID))
+})
+
+# Combine all plots with patchwork
+final_plot_anova_introns <- wrap_plots(plots, ncol = 2, byrow = TRUE) + 
+  plot_layout(guides = 'collect') + 
+  plot_annotation(
+    caption = paste0("Created by AG on ", Sys.Date())
+  ) 
+# Display the combined plot
+final_plot_anova_introns
+
+```
+
+# Final Candidates List Sorted { .tabset}
 
 ## Exons
 
 ```{r final sorted exons table}
 # Render DataTable with enhancements
 datatable(
-  select(final_exon_list, -ENTREZID,-sequence, -avg_Pdiff, -avg_FDR),
+  select(final_exon_list, -ENTREZID,-sequence, -avg_Pdiff, -avg_FDR, -COORD),
   options = list(
     pageLength = 10,                      # Rows per page
     autoWidth = TRUE,                     # Adjust column widths automatically
@@ -3414,7 +3602,7 @@ write.csv(final_exon_list,
 ```{r final sorted intron table}
 # Render DataTable with enhancements
 datatable(
-  select(final_intron_list, -ENTREZID,-sequence, -avg_Pdiff, -avg_FDR),
+  select(final_intron_list, -ENTREZID,-sequence, -avg_Pdiff, -avg_FDR, -COORD),
   options = list(
     pageLength = 10,                      # Rows per page
     autoWidth = TRUE,                     # Adjust column widths automatically
@@ -3456,51 +3644,105 @@ write.csv(final_intron_list,
           row.names = FALSE)
 ```
 
+## ANOVA Exons
+
+```{r final sorted anova exons table}
+# Render DataTable with enhancements
+datatable(
+  select(unique_tao_anova_multgroups_exons_tab, -ENTREZID,-sequence, -Pdiff, -COORD),
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) 
 
 
-
-```{r }
-# Generate individual plots for every unique event in the EVENT column
-unique_event_names <- unique(tao_anova_multgroups_exons_tab$EVENT)  # Get unique events
-
-# Loop over each event and generate a plot
-for (eventID in unique_event_names) {
-  # Extract the corresponding gene name for the event
-  geneName <- final_exon_list$GENE[final_exon_list$EVENT == eventID]
-  
-  # Generate the plot
-  tdensities <- plotIndividualDensitiesList(
-    eventID = eventID,
-    npoints = 500,
-    psitable = tao_exons$PSI,
-    qualtable = tao_exons$Qual,
-    groupList = groupList_tao,
-    maxDevTable = maxDevSimulationN100,
-    seed = TRUE,
-    CoverageWeight = FALSE
-  )
-  
-  # Customize the plot
-  plot <- tdensities + 
-    theme_minimal(base_family = font) + 
-    theme(
-      plot.title = element_text(size = 14, face = "bold"),  # Title size
-      axis.text = element_text(size = 12),                # Axis label size
-      axis.title = element_text(size = 14),               # Axis text size
-      axis.text.y = element_blank(),                      # Remove Y-axis text
-      axis.title.y = element_blank(),                     # Remove Y-axis title
-      axis.ticks.y = element_blank()                      # Remove Y-axis tick
-    ) + 
-    ggtitle(paste(geneName, eventID))
-  
-  # Save the plot as a file
-  ggsave(
-    filename = paste0("plot_", eventID, ".png"),  # File name
-    plot = plot,
-    width = 8,                                   # Adjust width
-    height = 6,                                  # Adjust height
-    dpi = 300                                    # High-resolution
-  )
-}
-
+write.csv(unique_tao_anova_multgroups_exons_tab, 
+          file = file.path(output_dir, paste0("sorted_final_anova_exons_list_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
 ```
+
+
+## ANOVA Introns
+
+```{r final sorted anova introns table}
+# Render DataTable with enhancements
+datatable(
+  select(unique_tao_anova_multgroups_introns_tab, -ENTREZID,-sequence, -Pdiff, -COORD),
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) 
+
+
+write.csv(unique_tao_anova_multgroups_introns_tab, 
+          file = file.path(output_dir, paste0("sorted_final_anova_introns_list_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
+# System Settings
+
+```{r session info}
+sessionInfo()
+```
+
+
