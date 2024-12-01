@@ -11,7 +11,7 @@ data/raw/*
 data/*.tsv
 *.h5
 *.Rproj
-.RData
+.RData*
 *.sif
 *.png
 *.svg
