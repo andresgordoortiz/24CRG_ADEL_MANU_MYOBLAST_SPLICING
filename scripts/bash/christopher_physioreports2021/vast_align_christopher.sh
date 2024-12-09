@@ -49,18 +49,20 @@ file1=${files[$SLURM_ARRAY_TASK_ID]}
 basename=$(basename "$file1" .fastq.gz)
 mkdir -p $PWD/data/processed/christopher_physioreports/vast_out
 
-# Initialize conda
-source ~/miniconda3/etc/profile.d/conda.sh
-conda activate vasttools
-/users/mirimia/projects/vast-tools/vast-tools align \
+
+singularity_image="docker://andresgordoortiz/vast-tools:latest"
+VASTDB_PATH=$1
+# Run vast-tools align using Singularity
+singularity exec --bind $VASTDB_PATH:/usr/local/vast-tools/VASTDB \
+    --bind $PWD/data/processed/christopher_physioreports/vast_out:/vast_out \
+    $singularity_image vast-tools align \
     "$file1" \
     -sp mm10 \
-    -o $PWD/data/processed/christopher_physioreports/vast_out \
+    -o /vast_out \
     --IR_version 2 \
     -c 8 \
     -n "$basename"
 
-conda deactivate
 
 ###############
 # end message #
