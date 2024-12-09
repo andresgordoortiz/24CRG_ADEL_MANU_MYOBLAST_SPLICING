@@ -48,9 +48,11 @@ singularity exec --bind $PWD/data/raw/christopher_physioreports \
 ################
 # run multiqc  #
 ################
+singularity exec --bind $PWD/data/processed/christopher_physioreports:/christopher_physioreports \
+    docker://multiqc/multiqc:latest \
+    /bin/bash -c "cd /christopher_physioreports && multiqc . -n christopher_physioreports_multiqc_report.html"
+
 cd $PWD/data/processed/christopher_physioreports
-module load MultiQC/1.22.3-foss-2023b
-multiqc . -n christopher_physioreports_multiqc_report.html
 
 # Zip every file containing fastqc in the processed folder
 zip $PWD/fastQC_results_christopher.zip *fastqc*
