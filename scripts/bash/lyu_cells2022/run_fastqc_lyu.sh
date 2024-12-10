@@ -38,23 +38,20 @@ set -o pipefail
 ################
 # run fastqc   #
 ################
-mkdir -p $PWD/data/processed/lyu_cells2022
+mkdir -p $PWD/data/processed/lyu_cells2022/fastqc
 # Run FastQC using Singularity
 singularity exec --bind $PWD/data/raw/lyu_cells2022 \
     docker://biocontainers/fastqc:v0.11.9_cv8 \
     fastqc -t 8 $PWD/data/raw/lyu_cells2022/*.fastq.gz \
-    --outdir $PWD/data/processed/lyu_cells2022
+    --outdir $PWD/data/processed/lyu_cells2022/fastqc
 
 ################
 # run multiqc  #
 ################
-cd $PWD/data/processed/lyu_cells2022
-module load MultiQC/1.22.3-foss-2023b
-multiqc . -n lyu_cells_multiqc_report.html
 
-# Zip every file containing fastqc in the processed folder
-zip $PWD/fastQC_results_lyu.zip *fastqc*
-rm *fastqc*
+singularity exec --bind $PWD/data/processed/lyu_cells2022:/lyu_cells2022 \
+    docker://multiqc/multiqc:latest \
+    /bin/bash -c "cd /lyu_cells2022 && multiqc . -n lyu_cells2022_multiqc_report.html"
 
 ###############
 # end message #
