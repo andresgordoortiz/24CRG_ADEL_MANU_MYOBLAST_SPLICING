@@ -38,23 +38,19 @@ set -o pipefail
 ################
 # run fastqc   #
 ################
-mkdir -p $PWD/data/processed/dominic_frontiers2024
+mkdir -p $PWD/data/processed/dominic_frontiers2024/fastqc
 # Run FastQC using Singularity
 singularity exec --bind $PWD/data/raw/dominic_frontiers2024 \
     docker://biocontainers/fastqc:v0.11.9_cv8 \
     fastqc -t 8 $PWD/data/raw/dominic_frontiers2024/*.fastq.gz \
-    --outdir $PWD/data/processed/dominic_frontiers2024
+    --outdir $PWD/data/processed/dominic_frontiers2024/fastqc
 
 ################
 # run multiqc  #
 ################
-cd $PWD/data/processed/dominic_frontiers2024
-module load MultiQC/1.22.3-foss-2023b
-multiqc . -n dominic_frontiers_multiqc_report.html
-
-# Zip every file containing fastqc in the processed folder
-zip $PWD/fastQC_results_dominic.zip *fastqc*
-rm *fastqc*
+singularity exec --bind $PWD/data/processed/dominic_frontiers2024:/dominic_frontiers2024 \
+    docker://multiqc/multiqc:latest \
+    /bin/bash -c "cd /dominic_frontiers2024 && multiqc . -n dominic_frontiers2024_multiqc_report.html"
 
 ###############
 # end message #
