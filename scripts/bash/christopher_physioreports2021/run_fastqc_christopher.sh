@@ -38,12 +38,12 @@ set -o pipefail
 ################
 # run fastqc   #
 ################
-mkdir -p $PWD/data/processed/christopher_physioreports
+mkdir -p $PWD/data/processed/christopher_physioreports/fastqc
 # Run FastQC using Singularity
 singularity exec --bind $PWD/data/raw/christopher_physioreports \
     docker://biocontainers/fastqc:v0.11.9_cv8 \
     fastqc -t 8 $PWD/data/raw/christopher_physioreports/*.fastq.gz \
-    --outdir $PWD/data/processed/christopher_physioreports
+    --outdir $PWD/data/processed/christopher_physioreports/fastqc
 
 ################
 # run multiqc  #
@@ -51,12 +51,6 @@ singularity exec --bind $PWD/data/raw/christopher_physioreports \
 singularity exec --bind $PWD/data/processed/christopher_physioreports:/christopher_physioreports \
     docker://multiqc/multiqc:latest \
     /bin/bash -c "cd /christopher_physioreports && multiqc . -n christopher_physioreports_multiqc_report.html"
-
-cd $PWD/data/processed/christopher_physioreports
-
-# Zip every file containing fastqc in the processed folder
-zip $PWD/fastQC_results_christopher.zip *fastqc*
-rm *fastqc*
 
 ###############
 # end message #
