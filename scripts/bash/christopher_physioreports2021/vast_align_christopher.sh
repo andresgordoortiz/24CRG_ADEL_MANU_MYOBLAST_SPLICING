@@ -17,7 +17,7 @@
 #SBATCH --requeue
 
 # memory (MB)
-#SBATCH --mem=10G
+#SBATCH --mem=20G
 #SBATCH --cpus-per-task=8
 
 # job name
