@@ -35,25 +35,21 @@ set -e
 set -u
 set -o pipefail
 
-
 ###############
 # run command #
 ###############
-# Store current working directory
-current_dir=$PWD
-cd $PWD/data/processed/christopher_physioreports/vast_out/to_combine
 
-# Initialize conda
-source ~/miniconda3/etc/profile.d/conda.sh
-conda activate vasttools
+VASTDB_PATH=$1
 
-/users/mirimia/projects/vast-tools/vast-tools combine \
-    -sp mm10 \
-    -o $current_dir/data/processed/christopher_physioreports/vast_out
-conda deactivate
+# Define Singularity image path
+singularity_image="docker://andresgordoortiz/vast-tools:latest"
 
-cd $current_dir
-mv $PWD/data/processed/christopher_physioreports/vast_out/INCLUSION_LEVELS_FULL-mm10-6.tab $PWD/data/processed/christopher_physioreports/vast_out/Christopher_Physioreports_INCLUSION_LEVELS_FULL-mm10.tab
+# Run vast-tools align using Singularity
+singularity exec --bind $VASTDB_PATH:/usr/local/vast-tools/VASTDB \
+    --bind $PWD/data/processed/christopher_physioreports:/christopher_physioreports \
+    $singularity_image bash -c "vast-tools combine /christopher_physioreports/vast_out/to_combine -sp mm10 -o /christopher_physioreports/vast_out"
+
+mv $PWD/data/processed/christopher_physioreports/vast_out/INCLUSION_LEVELS_FULL* $PWD/notebooks/inclusion_tables/Christopher_Physioreports_INCLUSION_LEVELS_FULL-mm10.tab
 
 ###############
 # end message #
