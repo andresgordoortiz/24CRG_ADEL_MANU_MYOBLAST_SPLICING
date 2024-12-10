@@ -1,47 +1,60 @@
-# Ignore raw data except README.md
-data/raw/*
+# ---------------------------
+# Specific Files to Keep
+# ---------------------------
 !data/raw/README.md  # Keep an empty README to explain where raw files go
 
-# Ignore compressed and large dataset files
-*.gz
+# ---------------------------
+# Data Files
+# ---------------------------
+# Raw and processed data
+*.fastq.gz
 *.bam
 *.vcf
 *.sam
-*.csv
-data/*.tsv
 *.h5
-*.Rproj
-.RData*
-*.sif
-*.png
-*.svg
-*.csv
-# Ignore temporary and intermediate files
-*tmp/
-*to_combine/
-*.txt
-*downloads/
-*logs/
-*.html
-*.zip
-*.json
+*.gz*
 *.tab
-# Ignore large result files
+data/processed/*
+/downloads
+
+# File groups and specific data folders
+*to_combine/
+*tmp/
+*gtf
+*fasta
+*fa
+*star_index/
+*multiqc_data/
+# ---------------------------
+# Results and Analysis
+# ---------------------------
+# Result files
 results/**/*.pdf
 results/**/*.png
+/results/*
 
-# Ignore temporary files and logs
+# Notebooks and temporary outputs
+/notebooks/oocyte_transcript_analysis_files/*
+*combination_table*
+# ---------------------------
+# Temporary and Log Files
+# ---------------------------
 *.log
-*.tmp
+*tmp*
 *.swp
 *.bak
 .DS_Store
+*.err
+*.out
 
-# Ignore container and config files specific to environment
+# ---------------------------
+# Environment and Config Files
+# ---------------------------
+# Container and environment configs
 config/docker/*
+VASTDB/*
 
-# Ignore compiled files and environments
-/tmp
+# Compiled files and environments
 __pycache__/
 *.Rhistory
 *.Rproj.user
