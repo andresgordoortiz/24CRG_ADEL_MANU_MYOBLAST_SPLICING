@@ -45,9 +45,9 @@ set -o pipefail
 
 # Define file list and select the file for the current array job
 files=($PWD/data/raw/christopher_physioreports/*.fastq.gz)
-file1=${files[$SLURM_ARRAY_TASK_ID]}
+file=${files[$SLURM_ARRAY_TASK_ID]}
 
-basename=$(basename "$file1" .fastq.gz)
+basename=$(basename "$file" .fastq.gz)
 mkdir -p $PWD/data/processed/christopher_physioreports/vast_out
 
 
@@ -57,7 +57,7 @@ VASTDB_PATH=$1
 singularity exec --bind $VASTDB_PATH:/usr/local/vast-tools/VASTDB \
     --bind $PWD/data/processed/christopher_physioreports/vast_out:/vast_out \
     $singularity_image vast-tools align \
-    "$file1" \
+    "$file" \
     -sp mm10 \
     -o /vast_out \
     --IR_version 2 \
