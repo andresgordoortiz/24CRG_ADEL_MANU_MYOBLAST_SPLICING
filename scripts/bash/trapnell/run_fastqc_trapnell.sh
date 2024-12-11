@@ -38,23 +38,20 @@ set -o pipefail
 ################
 # run fastqc   #
 ################
-mkdir -p $PWD/data/processed/trapnell2010
+mkdir -p $PWD/data/processed/trapnell2010/fastqc
 # Run FastQC using Singularity
 singularity exec --bind $PWD/data/raw/trapnell2010 \
     docker://biocontainers/fastqc:v0.11.9_cv8 \
     fastqc -t 8 $PWD/data/raw/trapnell2010/*.fastq.gz \
-    --outdir $PWD/data/processed/trapnell2010
+    --outdir $PWD/data/processed/trapnell2010/fastqc
 
 ################
 # run multiqc  #
 ################
-cd $PWD/data/processed/trapnell2010
-module load MultiQC/1.22.3-foss-2023b
-multiqc . -n trapnell_naturebiotech_multiqc_report.html
+singularity exec --bind $PWD/data/processed/trapnell2010:/trapnell2010 \
+    docker://multiqc/multiqc:latest \
+    /bin/bash -c "cd /trapnell2010 && multiqc . -n trapnell2010_molbiotech_multiqc_report.html"
 
-# Zip every file containing fastqc in the processed folder
-zip $PWD/fastQC_results_trapnell.zip *fastqc*
-rm *fastqc*
 
 ###############
 # end message #
