@@ -39,23 +39,18 @@ set -o pipefail
 ###############
 # run command #
 ###############
-# Store current working directory
-current_dir=$PWD
-cd $PWD/data/processed/tao_molbiotech/vast_out/to_combine
 
-# Initialize conda
-source ~/miniconda3/etc/profile.d/conda.sh
-conda activate vasttools
+VASTDB_PATH=$1
 
-/users/mirimia/projects/vast-tools/vast-tools combine \
-    -sp mm10 \
-    -o $current_dir/data/processed/tao_molbiotech/vast_out
+# Define Singularity image path
+singularity_image="docker://andresgordoortiz/vast-tools:latest"
 
-cd $current_dir
-mv $PWD/data/processed/tao_molbiotech/vast_out/INCLUSION_LEVELS_FULL-mm10-12.tab $PWD/data/processed/tao_molbiotech/vast_out/Tao_INCLUSION_LEVELS_FULL-mm10.tab
+# Run vast-tools align using Singularity
+singularity exec --bind $VASTDB_PATH:/usr/local/vast-tools/VASTDB \
+    --bind $PWD/data/processed/tao_molbiotech:/tao_molbiotech \
+    $singularity_image bash -c "vast-tools combine /tao_molbiotech/vast_out/to_combine -sp mm10 -o /tao_molbiotech/vast_out"
 
-conda deactivate
-
+mv $PWD/data/processed/tao_molbiotech/vast_out/INCLUSION_LEVELS_FULL* $PWD/notebooks/final/inclusion_tables/Tao_INCLUSION_LEVELS_FULL-mm10.tab
 
 
 ###############
