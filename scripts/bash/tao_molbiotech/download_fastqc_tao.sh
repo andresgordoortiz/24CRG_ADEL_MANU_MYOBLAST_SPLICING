@@ -43,13 +43,8 @@ set -o pipefail
 mkdir -p $PWD/data/raw/tao_molbiotech
 cd $PWD/data/raw/tao_molbiotech
 
-# Check if there are less than 24 fastq.gz files
-file_count=$(ls -1 *.fastq.gz 2>/dev/null | wc -l)
-if [ "$file_count" -lt 24 ]; then
-    sed "$((SLURM_ARRAY_TASK_ID + 1))q;d" "$PWD/$1" | bash
-else
-    echo "There are already 24 or more fastq.gz files in the directory."
-fi
+echo "Running command from file:"
+sed "$((SLURM_ARRAY_TASK_ID + 1))q;d" fastq_files_tao.sh | bash
 
 ###############
 # end message #
