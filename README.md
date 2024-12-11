@@ -58,6 +58,8 @@ In order to run this repo without forking and modifying it, you will need access
 3. Run the RMarkdown Notebook
    ```bash
    sbatch scripts/R/run_notebook.sh
+   ```
+
 
 ## Docker Containers used
 1. Rmarkdown Processing: [andresgordoortiz/splicing_analysis_r_crg:v1.2](https://hub.docker.com/layers/andresgordoortiz/splicing_analysis_r_crg/v1.2/images/sha256-67fd933eb88fbb9e3fe099c18eef9926bcaf916f92ff0f1fd5f9e876f78fd726?context=repo)
