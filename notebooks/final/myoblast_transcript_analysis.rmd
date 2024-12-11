@@ -20,12 +20,7 @@ editor_options:
   markdown: 
     wrap: 72
 
-# NOTE: To run this R Markdown file correctly, set the Knit Directory to the Project Directory.
-# You can do this by navigating to the gear icon next to the Knit button in RStudio,
-# and selecting "Project Directory" as the option. This ensures paths resolve correctly. Also, to download libraries in the same version as mine, you can use the following code:
-# install.packages("renv")
-# renv::init()
-# renv::restore()
+
 # Finally, you must have the Mus musculus (mm10 build) EVENT_INFO-mm10.tab and SPLICE_SITE_SCORES-mm10.tab files downloaded and unzipped in the root folder of this project repository. You can download them here:https://vastdb.crg.eu/wiki/Downloads
 # The supplementary tables from Wu et al. 2024 are also needed in the root idirectory: https://www.science.org/doi/suppl/10.1126/sciadv.adp7727/suppl_file/sciadv.adp7727_tables_s1_to_s6.zip
 
@@ -137,36 +132,29 @@ knitr::opts_chunk$set(
   message = FALSE
 )
 
-# Function to install and load packages dynamically.
-install_load <- function(pkg) {
-  if (!require(pkg, character.only = TRUE)) {
-    install.packages(pkg, dependencies = TRUE)
-    library(pkg, character.only = TRUE)
-  }
-}
 
 # Load required libraries
-install_load("betAS")
-install_load("ggplot2")
-install_load("plotly")
-install_load("dplyr")
-install_load("tidyverse")
-install_load("cowplot")
-install_load("DT")
-install_load("paletteer")
-install_load("paletteer")
-install_load("ggupset")
-install_load("showtext")
-install_load("ggtext")
-install_load("readxl")
-install_load("biomaRt")
+library("betAS")
+library("ggplot2")
+library("plotly")
+library("dplyr")
+library("tidyverse")
+library("cowplot")
+library("DT")
+library("paletteer")
+library("ggupset")
+library("showtext")
+library("ggtext")
+library("readxl")
+library("biomaRt")
 library("patchwork")
 library("org.Mm.eg.db")
-install_load("org.Hs.eg.db")
+library("org.Hs.eg.db")
 library("enrichplot")
 library("DOSE")
 library("clusterProfiler")
 library("ReactomePA")
+
 # Register Google fonts
 showtext_auto()
 font_add_google("Roboto", "roboto")
