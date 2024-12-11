@@ -155,6 +155,9 @@ library("DOSE")
 library("clusterProfiler")
 library("ReactomePA")
 library("ComplexHeatmap")
+library("enrichR")
+library("colorRamp2")
+library("dendextend")
 # Register Google fonts
 showtext_auto()
 font_add_google("Roboto", "roboto")
@@ -3227,7 +3230,7 @@ go_plot
 ## Enrichment Analysis with EnrichR of Candidate Genes { .tabset}
 
 ```{r pladb enrichr}
-enrichdata<-enrichr(unique(final_exon_list$GENE, final_intron_list$GENE), databases = c("GO_Biological_Process_2023","GO_Cellular_Component_2023","GO_Molecular_Function_2023"))
+enrichdata<-enrichr(unique(c(final_exon_list$GENE, final_intron_list$GENE)), databases = c("GO_Biological_Process_2023","GO_Cellular_Component_2023","GO_Molecular_Function_2023"))
 ```
 
 ### GO Biological Process
@@ -3750,6 +3753,39 @@ write.csv(unique_tao_anova_multgroups_introns_tab,
           file = file.path(output_dir, paste0("sorted_final_anova_introns_list_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
+
+# Splicing Dynamics Heatmap
+
+```{r heatmap prep}
+# Extract all events
+tao_all <- filterEvents(tao_events, types = c("C1", "C2", "C3", "S", "MIC","IR"), N = 3)
+tao_matrix<-tao_all$PSI[,7:18]%>%
+  as.matrix()
+rownames(tao_matrix) <- tao_all$PSI$EVENT
+filtered_events<-unique(c(final_exon_list$EVENT, final_intron_list$EVENT,unique_tao_anova_multgroups_exons_tab$EVENT, unique_tao_anova_multgroups_introns_tab$EVENT ))
+tao_matrix<-tao_matrix[rownames(tao_matrix) %in% filtered_events,]
+```
+
+```{r heatmap plot}
+col_dend=as.dendrogram(hclust(dist(t(tao_matrix))))
+col_dend = color_branches(col_dend, k = 4) # `color_branches()` returns a dendrogram object
+# Check if row names contain "EX"
+contains_EX <- grepl("EX", rownames(tao_matrix))
+
+# Assign colors based on the condition
+row_colors <- ifelse(contains_EX, "lightblue", "pink")
+Heatmap(tao_matrix, name = "mat", 
+    clustering_distance_rows = "pearson",
+    cluster_columns  = col_dend,
+    column_title = "robust_dist",
+    row_names_gp = gpar(col =row_colors),
+    column_names_rot = 45, column_names_side = "top",
+    column_dend_side = "bottom",
+    row_km = 6
+    )
+```
+
+
 
 # System Settings
 
