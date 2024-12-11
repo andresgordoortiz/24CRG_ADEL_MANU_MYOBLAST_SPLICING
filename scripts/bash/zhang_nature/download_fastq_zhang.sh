@@ -10,7 +10,7 @@
 #SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
 # time limit in minutes
-#SBATCH --time=3
+#SBATCH --time=10
 
 # queue
 #SBATCH --qos=vshort
@@ -43,13 +43,8 @@ set -o pipefail
 mkdir -p $PWD/data/raw/zhang_nature
 cd $PWD/data/raw/zhang_nature
 
-# Check if there are less than 24 fastq.gz files
-file_count=$(ls -1 *.fastq.gz 2>/dev/null | wc -l)
-if [ "$file_count" -lt 12 ]; then
-    sed "$((SLURM_ARRAY_TASK_ID + 1))q;d" "$PWD/$1" | bash
-else
-    echo "There are already 12 or more fastq.gz files in the directory."
-fi
+echo "Running command from file:"
+sed "$((SLURM_ARRAY_TASK_ID + 1))q;d" zhang_fasta_files.sh | bash
 
 ###############
 # end message #
