@@ -38,24 +38,21 @@ set -o pipefail
 ################
 # run fastqc   #
 ################
-mkdir -p $PWD/data/processed/tao_molbiotech
+mkdir -p $PWD/data/processed/tao_molbiotech/fastqc
 # Run FastQC using Singularity
 singularity exec --bind $PWD/data/raw/tao_molbiotech \
     docker://biocontainers/fastqc:v0.11.9_cv8 \
     fastqc -t 8 $PWD/data/raw/tao_molbiotech/*.fastq.gz \
-    --outdir $PWD/data/processed/tao_molbiotech
+    --outdir $PWD/data/processed/tao_molbiotech/fastqc
 
 ################
 # run multiqc  #
 ################
-cd $PWD/data/processed/tao_molbiotech
-module load MultiQC/1.22.3-foss-2023b
-multiqc . -n tao_molbiotech_multiqc_report.html
 
-# Zip every file containing fastqc in the processed folder
-zip $PWD/fastQC_results_tao.zip *fastqc*
-rm *fastqc*
-rm vast_out/tmp -r
+singularity exec --bind $PWD/data/processed/tao_molbiotech:/tao_molbiotech \
+    docker://multiqc/multiqc:latest \
+    /bin/bash -c "cd /tao_molbiotech && multiqc . -n tao_molbiotech_multiqc_report.html"
+
 # end message #
 ###############
 end_epoch=`date +%s`
