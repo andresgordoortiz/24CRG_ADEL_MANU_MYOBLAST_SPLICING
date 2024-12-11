@@ -49,7 +49,7 @@ singularity exec --bind $VASTDB_PATH:/usr/local/vast-tools/VASTDB \
     --bind $PWD/data/processed/dominic_frontiers2024:/dominic_frontiers2024 \
     $singularity_image bash -c "vast-tools combine /dominic_frontiers2024/vast_out/to_combine -sp mm10 -o /dominic_frontiers2024/vast_out"
 
-mv $PWD/data/processed/dominic_frontiers2024/vast_out/INCLUSION_LEVELS_FULL* $PWD/notebooks/inclusion_tables/Dominic_Frontiers_INCLUSION_LEVELS_FULL-mm10.tab
+mv $PWD/data/processed/dominic_frontiers2024/vast_out/INCLUSION_LEVELS_FULL* $PWD/notebooks/final/inclusion_tables/Dominic_Frontiers_INCLUSION_LEVELS_FULL-mm10.tab
 
 ###############
 # end message #
