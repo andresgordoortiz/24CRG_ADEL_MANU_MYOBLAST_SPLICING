@@ -39,21 +39,17 @@ set -o pipefail
 ###############
 # run command #
 ###############
-# Store current working directory
-current_dir=$PWD
-cd $PWD/data/processed/trapnell2010/vast_out/to_combine
+VASTDB_PATH=$1
 
-# Initialize conda
-source ~/miniconda3/etc/profile.d/conda.sh
-conda activate vasttools
+# Define Singularity image path
+singularity_image="docker://andresgordoortiz/vast-tools:latest"
 
-/users/mirimia/projects/vast-tools/vast-tools combine \
-    -sp mm10 \
-    -o $current_dir/data/processed/trapnell2010/vast_out
-conda deactivate
+# Run vast-tools align using Singularity
+singularity exec --bind $VASTDB_PATH:/usr/local/vast-tools/VASTDB \
+    --bind $PWD/data/processed/trapnell2010:/trapnell2010 \
+    $singularity_image bash -c "vast-tools combine /trapnell2010/vast_out/to_combine -sp mm10 -o /trapnell2010/vast_out"
 
-cd $current_dir
-mv $PWD/data/processed/trapnell2010/vast_out/INCLUSION_LEVELS_FULL-mm10-10.tab $PWD/data/processed/trapnell2010/vast_out/Trapnell_Naturebiotech_INCLUSION_LEVELS_FULL-mm10.tab
+mv $PWD/data/processed/trapnell2010/vast_out/INCLUSION_LEVELS_FULL* $PWD/notebooks/final/inclusion_tables/Trapnell_INCLUSION_LEVELS_FULL-mm10.tab
 
 ###############
 # end message #
