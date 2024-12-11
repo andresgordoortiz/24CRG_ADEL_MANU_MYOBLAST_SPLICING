@@ -39,22 +39,18 @@ set -o pipefail
 ###############
 # run command #
 ###############
-# Store current working directory
-current_dir=$PWD
-cd $PWD/data/processed/zhang_nature/vast_out/to_combine
 
-# Initialize conda
-source ~/miniconda3/etc/profile.d/conda.sh
-conda activate vasttools
+VASTDB_PATH=$1
 
-/users/mirimia/projects/vast-tools/vast-tools combine \
-    -sp mm10 \
-    -o $current_dir/data/processed/zhang_nature/vast_out
+# Define Singularity image path
+singularity_image="docker://andresgordoortiz/vast-tools:latest"
 
-conda deactivate
+# Run vast-tools align using Singularity
+singularity exec --bind $VASTDB_PATH:/usr/local/vast-tools/VASTDB \
+    --bind $PWD/data/processed/zhang_nature:/zhang_nature \
+    $singularity_image bash -c "vast-tools combine /zhang_nature/vast_out/to_combine -sp mm10 -o /zhang_nature/vast_out"
 
-cd $current_dir
-mv $PWD/data/processed/zhang_nature/vast_out/INCLUSION_LEVELS_FULL-mm10-6.tab $PWD/data/processed/zhang_nature/vast_out/Zhang_INCLUSION_LEVELS_FULL-mm10.tab
+mv $PWD/data/processed/zhang_nature/vast_out/INCLUSION_LEVELS_FULL* $PWD/notebooks/final/inclusion_tables/Zhang_INCLUSION_LEVELS_FULL-mm10.tab
 
 ###############
 # end message #
