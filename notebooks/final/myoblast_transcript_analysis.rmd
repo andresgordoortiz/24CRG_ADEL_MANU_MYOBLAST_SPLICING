@@ -154,7 +154,7 @@ library("enrichplot")
 library("DOSE")
 library("clusterProfiler")
 library("ReactomePA")
-
+library("ComplexHeatmap")
 # Register Google fonts
 showtext_auto()
 font_add_google("Roboto", "roboto")
@@ -3224,6 +3224,30 @@ go_plot <- dotplot(
 
 go_plot
 ```
+## Enrichment Analysis with EnrichR of Candidate Genes { .tabset}
+
+```{r pladb enrichr}
+enrichdata<-enrichr(unique(final_exon_list$GENE, final_intron_list$GENE), databases = c("GO_Biological_Process_2023","GO_Cellular_Component_2023","GO_Molecular_Function_2023"))
+```
+
+### GO Biological Process
+
+```{r pladb bioprocess, fig.width=10, fig.height=8}
+plotEnrich(enrichdata[[1]])
+```
+
+### GO Cellular Component
+
+```{r pladb cellcomponent, fig.width=10, fig.height=8}
+plotEnrich(enrichdata[[2]])
+```
+
+### GO Molecular Function
+
+```{r pladb molfunction, fig.width=10, fig.height=8}
+plotEnrich(enrichdata[[3]])
+```
+
 
 ```{r ENTREZ ANOVA}
 exon_anova_go <- bitr(unique_tao_anova_multgroups_exons_tab$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
