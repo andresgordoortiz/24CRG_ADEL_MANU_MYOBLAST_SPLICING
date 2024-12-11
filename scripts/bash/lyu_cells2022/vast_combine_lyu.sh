@@ -49,7 +49,7 @@ singularity exec --bind $VASTDB_PATH:/usr/local/vast-tools/VASTDB \
     --bind $PWD/data/processed/lyu_cells2022:/lyu_cells2022 \
     $singularity_image bash -c "vast-tools combine /lyu_cells2022/vast_out/to_combine -sp mm10 -o /lyu_cells2022/vast_out"
 
-mv $PWD/data/processed/lyu_cells2022/vast_out/INCLUSION_LEVELS_FULL* $PWD/notebooks/inclusion_tables/Lyu_Cells_INCLUSION_LEVELS_FULL-mm10.tab
+mv $PWD/data/processed/lyu_cells2022/vast_out/INCLUSION_LEVELS_FULL* $PWD/notebooks/final/inclusion_tables/Lyu_Cells_INCLUSION_LEVELS_FULL-mm10.tab
 
 ###############
 # end message #
