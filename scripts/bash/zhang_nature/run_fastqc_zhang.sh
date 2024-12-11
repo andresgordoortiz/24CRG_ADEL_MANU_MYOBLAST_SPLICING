@@ -38,24 +38,20 @@ set -o pipefail
 ################
 # run fastqc   #
 ################
-mkdir -p $PWD/data/processed/zhang_nature
+mkdir -p $PWD/data/processed/zhang_nature/fastqc
 # Run FastQC using Singularity
 singularity exec --bind $PWD/data/raw/zhang_nature \
     docker://biocontainers/fastqc:v0.11.9_cv8 \
     fastqc -t 8 $PWD/data/raw/zhang_nature/*.fastq.gz \
-    --outdir $PWD/data/processed/zhang_nature
+    --outdir $PWD/data/processed/zhang_nature/fastqc
 
 ################
 # run multiqc  #
 ################
-cd $PWD/data/processed/zhang_nature
-module load MultiQC/1.22.3-foss-2023b
-multiqc . -n zhang_nature_multiqc_report.html
+singularity exec --bind $PWD/data/processed/zhang_nature:/zhang_nature \
+    docker://multiqc/multiqc:latest \
+    /bin/bash -c "cd /zhang_nature && multiqc . -n zhang_nature_molbiotech_multiqc_report.html"
 
-# Zip every file containing fastqc in the processed folder
-zip $PWD/fastQC_results_zhang.zip *fastqc*
-rm *fastqc*
-rm vast_out/tmp -r
 ###############
 # end message #
 ###############
