@@ -33,7 +33,7 @@ echo "...first job ID is $jid2"
 
 # Third job - align reads
 echo "Submitting second job: Align reads..."
-jid3=$(sbatch --dependency=afterok:$jid1 $PWD/scripts/bash/tao_molbiotech/vast_align_tao.sh $VASTDB_PATH  | tr -cd '[:digit:].')
+jid3=$(sbatch --dependency=afterok:$jid1 $PWD/scripts/bash/tao_molbiotech/vast_align_tao.sh $VASTDB_PATH | tr -cd '[:digit:].')
 echo "...second job ID is $jid3"
 
 # Fourth job - run vast combine (dependent on second job)
