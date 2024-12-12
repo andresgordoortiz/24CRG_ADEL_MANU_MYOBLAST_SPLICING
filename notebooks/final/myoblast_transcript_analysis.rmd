@@ -298,7 +298,7 @@ dominic_introns <- filterEvents(dominic_events, types = c("IR"), N = 5)
 
 ```{r metadata zhang}
 # Load metadata file containing sample information
-metadata_zhang <- read.csv(paste0(getwd(),"/metadata/zhang_metadata.csv"), sep = ",")
+metadata_zhang <- read.csv(paste0(getwd(),"/metadata/zhangnature_metadata.csv"), sep = ",")
 DT::datatable(metadata_zhang, options = list(pageLength = nrow(metadata_zhang), scrollX = TRUE))
 ```
 
