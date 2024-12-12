@@ -3756,36 +3756,125 @@ write.csv(unique_tao_anova_multgroups_introns_tab,
 
 # Splicing Dynamics Heatmap
 
-```{r heatmap prep}
+```{r heatmap prep, results='hide'}
 # Extract all events
-tao_all <- filterEvents(tao_events, types = c("C1", "C2", "C3", "S", "MIC","IR"), N = 3)
-tao_matrix<-tao_all$PSI[,7:18]%>%
+tao_all <- filterEvents(
+  tao_events,
+  types = c("C1", "C2", "C3", "S", "MIC", "IR"),
+  N = 3
+)
+
+# Convert PSI values to a matrix and set row names
+tao_matrix <- tao_all$PSI[, 7:18] %>%
   as.matrix()
 rownames(tao_matrix) <- tao_all$PSI$EVENT
-filtered_events<-unique(c(final_exon_list$EVENT, final_intron_list$EVENT,unique_tao_anova_multgroups_exons_tab$EVENT, unique_tao_anova_multgroups_introns_tab$EVENT ))
-tao_matrix<-tao_matrix[rownames(tao_matrix) %in% filtered_events,]
-```
 
-```{r heatmap plot}
-col_dend=as.dendrogram(hclust(dist(t(tao_matrix))))
-col_dend = color_branches(col_dend, k = 4) # `color_branches()` returns a dendrogram object
+# Filter rows based on the final event lists
+filtered_events <- unique(c(
+  final_exon_list$EVENT,
+  final_intron_list$EVENT,
+  unique_tao_anova_multgroups_exons_tab$EVENT,
+  unique_tao_anova_multgroups_introns_tab$EVENT
+))
+tao_matrix <- tao_matrix[rownames(tao_matrix) %in% filtered_events, ]
+
+# Arrange columns based on metadata
+metadata_tao <- arrange(metadata_tao, experiment_title)
+tao_matrix <- tao_matrix[, metadata_tao$run_accession]
+
+# Create a dendrogram for the columns
+col_dend <- hclust(dist(t(tao_matrix))) %>%
+  as.dendrogram() %>%
+  color_branches(k = 4) # Color branches with 4 clusters
+
 # Check if row names contain "EX"
 contains_EX <- grepl("EX", rownames(tao_matrix))
 
+# Define an improved color gradient for the heatmap
+col_fun <- colorRamp2(
+  c(0, 50, 100),
+  c("purple", "white", "orange")
+)
+
+number_splices<-12
+
 # Assign colors based on the condition
-row_colors <- ifelse(contains_EX, "lightblue", "pink")
-Heatmap(tao_matrix, name = "mat", 
-    clustering_distance_rows = "pearson",
-    cluster_columns  = col_dend,
-    column_title = "robust_dist",
-    row_names_gp = gpar(col =row_colors),
-    column_names_rot = 45, column_names_side = "top",
-    column_dend_side = "bottom",
-    row_km = 6
-    )
+ht<-Heatmap(tao_matrix, name = "PSI", 
+  clustering_distance_rows = "pearson",
+  col = col_fun,
+  cluster_columns  = col_dend,
+column_title = "C2C12 Samples at Different Stages", 
+     , row_names_gp = gpar(col =row_colors, fontsize = 10),
+  column_names_rot = 45,
+column_labels = metadata_tao$experiment_title,
+  column_dend_reorder=c(1,2,3,4,5,6,7,8,9,10,11,12),
+  row_km = number_splices,
+  row_dend_reorder = T,
+rect_gp = gpar(col = "white", lwd = 0.3),  column_names_gp = gpar(fontsize = 8)  )
+
+ht = draw(ht); clustered_events<-row_order(ht)
+
+reference_table<-data.frame(EVENT=c(final_exon_list$EVENT,
+  final_intron_list$EVENT,
+  unique_tao_anova_multgroups_exons_tab$EVENT,
+  unique_tao_anova_multgroups_introns_tab$EVENT),GENE=c(final_exon_list$GENE,
+  final_intron_list$GENE,
+  unique_tao_anova_multgroups_exons_tab$GENE,
+  unique_tao_anova_multgroups_introns_tab$GENE)) 
+
+text_list<-list()
+# Loop through clustered events and assign dynamic names
+for (i in 1:length(clustered_events)) {
+  enrich_events <- enrichr(
+    reference_table$GENE[reference_table$EVENT %in% rownames(tao_matrix)[clustered_events[[i]]]], 
+    databases = c("GO_Biological_Process_2023", "GO_Cellular_Component_2023", "GO_Molecular_Function_2023")
+  )
+  
+  # Assign the dynamic name and value
+  text_list[[paste0("text", i)]] <- paste(
+    enrich_events$GO_Cellular_Component_2023$Term[1], 
+    enrich_events$GO_Cellular_Component_2023$Term[2], 
+    enrich_events$GO_Cellular_Component_2023$Term[3], 
+    sep = "; \n"
+  )
+}
+
+ha = rowAnnotation(foo = anno_empty(border = FALSE, 
+    width = max_text_width(unlist(text_list)) + unit(4, "mm")))
+
 ```
 
+### Heatmap showcasing the PSI of every candidate EX and IN
 
+**Note**: Gene ontology of *Cellular Component* for each of the clustered blocks (splicing events that the *pearson* algorithm has found they behave similarly) appears on the right. 
+```{r heatmap_plot, fig.width=16, fig.height=12, out.width="100%", echo=TRUE,dpi=300}
+Heatmap(
+  tao_matrix, name = "PSI", 
+  clustering_distance_rows = "pearson",
+  col = col_fun,
+  cluster_columns  = col_dend,
+  column_title = "C2C12 Samples at Different Stages",
+  row_title = "Splicing Events",
+  column_names_rot = 45,
+  column_labels = metadata_tao$experiment_title,
+  column_dend_reorder = c(1:12),
+  row_km = number_splices,
+  row_dend_reorder = TRUE,
+  right_annotation = ha,
+  rect_gp = gpar(col = "white", lwd = 0.3),  
+  column_names_gp = gpar(fontsize = 12),
+  show_row_names = FALSE,
+  
+)
+
+for (i in seq_along(clustered_events)) {
+  decorate_annotation("foo", slice = i, {
+    grid.rect(x = 0, width = unit(2, "mm"), gp = gpar(fill = i, col = NA), just = "left")
+    grid.text(paste(text_list[[i]], collapse = "\n"), x = unit(4, "mm"), just = "left")
+  })
+}
+
+```
 
 # System Settings
 
