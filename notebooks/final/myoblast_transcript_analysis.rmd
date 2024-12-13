@@ -3,10 +3,10 @@ title: 'Force-based regulation of splicing during Myoblast differentiation'
 subtitle: "Stage 1: Bioinformatical Analysis of Myogenic Transcripts"
 author: "Andrés Gordo Ortiz @Al Jord Lab CRG"
 date: "`r Sys.Date()`"
-output: 
+output:
   rmarkdown::html_document:
     code_folding: hide
-    code_download: false  
+    code_download: false
     df_print: paged
     theme: flatly
     highlight: tango
@@ -16,8 +16,8 @@ output:
       smooth_scroll: true
     number_sections: true
 
-editor_options: 
-  markdown: 
+editor_options:
+  markdown:
     wrap: 72
 
 
@@ -127,8 +127,8 @@ table tr:hover {
 ```{r setup, include=FALSE}
 # Ensure a clean environment and load required libraries.
 knitr::opts_chunk$set(
-  echo = TRUE, 
-  warning = FALSE, 
+  echo = TRUE,
+  warning = FALSE,
   message = FALSE
 )
 
@@ -179,10 +179,10 @@ This analysis is structured into two distinct parts, the first performed in the 
 
 The upstream analysis is performed on the CRG cluster using the Bash command line. This phase involves:
 
-1. **Data Acquisition**: 
+1. **Data Acquisition**:
    - Downloading `*.fastq.gz` files from five different databases.
 
-2. **Alignment**: 
+2. **Alignment**:
    - Aligning the sequences to the latest mouse genome release (mm10) using **Bowtie2** through the [Vast-Tools align function](https://link.springer.com/protocol/10.1007/978-1-0716-2521-7_7).
 
 3. **Event Detection**:
@@ -202,7 +202,7 @@ To identify splicing events that are differentially spliced during myoblast diff
 
 ### Steps
 
-1. **Statistical Testing**: 
+1. **Statistical Testing**:
    - Use the [betAS package](https://rnajournal.cshlp.org/content/30/4/337) in R to perform:
      - **False Discovery Rate (FDR)**
      - **F-statistic**
@@ -558,12 +558,12 @@ plot2 <- bigPictureIntrons +
   )
 
 # Combine both plots into one figure using patchwork
-plot1 / plot2 
+plot1 / plot2
 ```
 
 ## PCA Plot
 
-As it can be seen, most dataframe sinclude only two conditions; *Myoblasts* or *Myotubes*, where Tao has different time points. However, all of them are clustered properly in the PCA plot. 
+As it can be seen, most dataframe sinclude only two conditions; *Myoblasts* or *Myotubes*, where Tao has different time points. However, all of them are clustered properly in the PCA plot.
 
 
 ```{r pca calculation}
@@ -632,30 +632,30 @@ pca_plot
 
 ## Total Splicing Events
 
-As it can be observed below, the dominic dataset has the highest number of splicing events, what can be explained by the higher number of reads (90M in myotubes and 140M in myoblasts). 
+As it can be observed below, the dominic dataset has the highest number of splicing events, what can be explained by the higher number of reads (90M in myotubes and 140M in myoblasts).
 
 
 ```{r splicing events barplot stacked}
 
 # Adjusted version of the script
 splicing_events <- tibble(
-  event_type = names(zhang_events$EventsPerType), 
-  zhang = zhang_events$EventsPerType, 
-  tao = tao_events$EventsPerType, 
-  lyu = lyu_events$EventsPerType, 
-  christopher = christopher_events$EventsPerType, 
+  event_type = names(zhang_events$EventsPerType),
+  zhang = zhang_events$EventsPerType,
+  tao = tao_events$EventsPerType,
+  lyu = lyu_events$EventsPerType,
+  christopher = christopher_events$EventsPerType,
   dominic = dominic_events$EventsPerType
 )
 
 splicing_events_long <- splicing_events %>%
-  pivot_longer(cols = c(zhang, tao, lyu, christopher, dominic), 
+  pivot_longer(cols = c(zhang, tao, lyu, christopher, dominic),
                names_to = "study", values_to = "count") %>%
   mutate(event_type = ifelse(event_type %in% c("C1", "C2", "C3", "ANN", "S", "MIC"), "EX", event_type)) %>%
   group_by(study, event_type) %>%
   summarize(count = sum(count, na.rm = TRUE), .groups = "drop")
 
 # Proportion bar plot
-plot_proportion <- ggplot(splicing_events_long, aes(fill = event_type, y = count, x = study)) + 
+plot_proportion <- ggplot(splicing_events_long, aes(fill = event_type, y = count, x = study)) +
   geom_bar(position = "fill", stat = "identity") +
   labs(
     title = "<b style='font-size:18px;'>Proportion of Splicing Events by Study</b>",
@@ -676,12 +676,12 @@ plot_proportion <- ggplot(splicing_events_long, aes(fill = event_type, y = count
 splicing_events_long_sum<-splicing_events_long %>%
   dplyr::group_by(study) %>%
   summarize(count = sum(count))
-  
+
 
 # Absolute counts plot
-plot_absolute <- ggplot(splicing_events_long_sum, aes(y = count, x = study)) + 
-  geom_point(color = "#C70039", size = 3) +  
-  geom_text(aes(label = count), vjust = -1, size = 4, check_overlap = TRUE) + 
+plot_absolute <- ggplot(splicing_events_long_sum, aes(y = count, x = study)) +
+  geom_point(color = "#C70039", size = 3) +
+  geom_text(aes(label = count), vjust = -1, size = 4, check_overlap = TRUE) +
   labs(
     x = "Study",
     y = "Number of Events",
@@ -701,7 +701,7 @@ plot_absolute <- ggplot(splicing_events_long_sum, aes(y = count, x = study)) +
 
 # Combine plots
 combined_plot <- plot_proportion / plot_absolute +
-  plot_layout(heights = c(1, 0.5)) & 
+  plot_layout(heights = c(1, 0.5)) &
   theme(plot.margin = margin(5,5, 0, 5))
 
 # Display combined plot
@@ -731,7 +731,7 @@ samples_dominic <- metadata_dominic$run_accession
 
 
 random_colors=c("#D8D97AFF", "#95C36EFF", "#74C8C3FF", "#5A97C1FF", "#295384FF", "#0A2E57FF")
-  
+
 # Create group list with metadata
 groupList_zhang <- lapply(1:length(groups_zhang), function(i) {
   list(
@@ -838,8 +838,8 @@ zhang_pdiff_exons <- prepareTableVolcano(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed=TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed=TRUE,
   CoverageWeight = FALSE)
 
 # Prepare table for Tao
@@ -853,8 +853,8 @@ tao_pdiff_exons <- prepareTableVolcano(
   labB = groupB_tao,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed = TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -869,8 +869,8 @@ christopher_pdiff_exons <- prepareTableVolcano(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed = TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -885,8 +885,8 @@ lyu_pdiff_exons <- prepareTableVolcano(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed = TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -901,8 +901,8 @@ dominic_pdiff_exons <- prepareTableVolcano(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed=TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed=TRUE,
   CoverageWeight = FALSE)
 ```
 
@@ -918,8 +918,8 @@ zhang_fstat_exons <- prepareTableVolcanoFstat(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed=TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed=TRUE,
   CoverageWeight = FALSE)
 
 # Prepare table for Tao
@@ -933,8 +933,8 @@ tao_fstat_exons <- prepareTableVolcanoFstat(
   labB = groupB_tao,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed = TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -949,8 +949,8 @@ christopher_fstat_exons <- prepareTableVolcanoFstat(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed = TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -965,8 +965,8 @@ lyu_fstat_exons <- prepareTableVolcanoFstat(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed = TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -981,8 +981,8 @@ dominic_fstat_exons <- prepareTableVolcanoFstat(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed=TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed=TRUE,
   CoverageWeight = FALSE)
 ```
 
@@ -999,9 +999,9 @@ zhang_fdr_exons <- prepareTableVolcanoFDR(
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
   maxDevTable = maxDevSimulationN100,
-  nsim = 100, 
-  seed=TRUE, 
-  CoverageWeight = FALSE) 
+  nsim = 100,
+  seed=TRUE,
+  CoverageWeight = FALSE)
 
 # Prepare table for Tao
 tao_fdr_exons <- prepareTableVolcanoFDR(
@@ -1015,8 +1015,8 @@ tao_fdr_exons <- prepareTableVolcanoFDR(
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
   maxDevTable = maxDevSimulationN100,
-  nsim = 100, 
-  seed = TRUE, 
+  nsim = 100,
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -1033,7 +1033,7 @@ christopher_fdr_exons <- prepareTableVolcanoFDR(
   interestColor = "#E69A9C",
   maxDevTable = maxDevSimulationN100,
   nsim = 100,
-  seed = TRUE, 
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -1048,9 +1048,9 @@ lyu_fdr_exons <- prepareTableVolcanoFDR(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
+  maxDevTable = maxDevSimulationN100,
   nsim = 100,
-  seed = TRUE, 
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -1066,9 +1066,9 @@ dominic_fdr_exons <- prepareTableVolcanoFDR(
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
   maxDevTable = maxDevSimulationN100,
-  nsim = 100, 
-  seed=TRUE, 
-  CoverageWeight = FALSE) 
+  nsim = 100,
+  seed=TRUE,
+  CoverageWeight = FALSE)
 ```
 
 ```{r table_multgroups exons}
@@ -1092,7 +1092,7 @@ plotVolcanoFDR(betasTable =filter(zhang_fdr_exons,!is.na(EVENT)),
                             labB = groupB,
                             basalColor = "#89C0AE",
                             interestColor = "#E69A9C") +
-  
+
 theme(
   plot.title = element_text(size = 10),  # Title font size
   axis.title = element_text(size = 10),  # Axis title font size
@@ -1263,7 +1263,7 @@ datatable(
 
 output_dir <- file.path(getwd(), "results", "tables")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-write.csv(zhang_exon_combination_tab, 
+write.csv(zhang_exon_combination_tab,
           file = file.path(output_dir, paste0("zhang_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -1357,7 +1357,7 @@ datatable(
   fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
 )
 
-write.csv(lyu_exon_combination_tab, 
+write.csv(lyu_exon_combination_tab,
           file = file.path(output_dir, paste0("lyu_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -1451,7 +1451,7 @@ datatable(
   fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
 )
 
-write.csv(tao_exon_combination_tab, 
+write.csv(tao_exon_combination_tab,
           file = file.path(output_dir, paste0("tao_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -1546,7 +1546,7 @@ datatable(
 )
 
 
-write.csv(dominic_exon_combination_tab, 
+write.csv(dominic_exon_combination_tab,
           file = file.path(output_dir, paste0("dominic_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -1641,7 +1641,7 @@ datatable(
   fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
 )
 
-write.csv(christopher_exon_combination_tab, 
+write.csv(christopher_exon_combination_tab,
           file = file.path(output_dir, paste0("christopher_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -1702,7 +1702,7 @@ datatable(
   fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
 )
 
-write.csv(tao_anova_multgroups_exons_tab, 
+write.csv(tao_anova_multgroups_exons_tab,
           file = file.path(output_dir, paste0("tao_anova_multgroups_exons_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -1723,8 +1723,8 @@ zhang_pdiff_introns <- prepareTableVolcano(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed=TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed=TRUE,
   CoverageWeight = FALSE)
 
 # Prepare table for Tao
@@ -1738,8 +1738,8 @@ tao_pdiff_introns <- prepareTableVolcano(
   labB = groupB_tao,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed = TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -1754,8 +1754,8 @@ christopher_pdiff_introns <- prepareTableVolcano(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed = TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -1770,8 +1770,8 @@ lyu_pdiff_introns <- prepareTableVolcano(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed = TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -1786,8 +1786,8 @@ dominic_pdiff_introns <- prepareTableVolcano(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed=TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed=TRUE,
   CoverageWeight = FALSE)
 ```
 
@@ -1803,8 +1803,8 @@ zhang_fstat_introns <- prepareTableVolcanoFstat(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed=TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed=TRUE,
   CoverageWeight = FALSE)
 
 # Prepare table for Tao
@@ -1818,8 +1818,8 @@ tao_fstat_introns <- prepareTableVolcanoFstat(
   labB = groupB_tao,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed = TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -1834,8 +1834,8 @@ christopher_fstat_introns <- prepareTableVolcanoFstat(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed = TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -1850,8 +1850,8 @@ lyu_fstat_introns <- prepareTableVolcanoFstat(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed = TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -1866,8 +1866,8 @@ dominic_fstat_introns <- prepareTableVolcanoFstat(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
-  seed=TRUE, 
+  maxDevTable = maxDevSimulationN100,
+  seed=TRUE,
   CoverageWeight = FALSE)
 ```
 
@@ -1884,9 +1884,9 @@ zhang_fdr_introns <- prepareTableVolcanoFDR(
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
   maxDevTable = maxDevSimulationN100,
-  nsim = 100, 
-  seed=TRUE, 
-  CoverageWeight = FALSE) 
+  nsim = 100,
+  seed=TRUE,
+  CoverageWeight = FALSE)
 
 # Prepare table for Tao
 tao_fdr_introns <- prepareTableVolcanoFDR(
@@ -1900,8 +1900,8 @@ tao_fdr_introns <- prepareTableVolcanoFDR(
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
   maxDevTable = maxDevSimulationN100,
-  nsim = 100, 
-  seed = TRUE, 
+  nsim = 100,
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -1918,7 +1918,7 @@ christopher_fdr_introns <- prepareTableVolcanoFDR(
   interestColor = "#E69A9C",
   maxDevTable = maxDevSimulationN100,
   nsim = 100,
-  seed = TRUE, 
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -1933,9 +1933,9 @@ lyu_fdr_introns <- prepareTableVolcanoFDR(
   labB = groupB,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100, 
+  maxDevTable = maxDevSimulationN100,
   nsim = 100,
-  seed = TRUE, 
+  seed = TRUE,
   CoverageWeight = FALSE
 )
 
@@ -1951,9 +1951,9 @@ dominic_fdr_introns <- prepareTableVolcanoFDR(
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
   maxDevTable = maxDevSimulationN100,
-  nsim = 100, 
-  seed=TRUE, 
-  CoverageWeight = FALSE) 
+  nsim = 100,
+  seed=TRUE,
+  CoverageWeight = FALSE)
 ```
 
 ```{r table_multgroups introns}
@@ -1976,7 +1976,7 @@ plotVolcanoFDR(betasTable =filter(zhang_fdr_introns,!is.na(EVENT)),
                             labB = groupB,
                             basalColor = "#89C0AE",
                             interestColor = "#E69A9C") +
-  
+
 theme(
   plot.title = element_text(size = 10),  # Title font size
   axis.title = element_text(size = 10),  # Axis title font size
@@ -2147,7 +2147,7 @@ datatable(
 
 output_dir <- file.path(getwd(), "results", "tables")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-write.csv(zhang_intron_combination_tab, 
+write.csv(zhang_intron_combination_tab,
           file = file.path(output_dir, paste0("zhang_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -2241,7 +2241,7 @@ datatable(
   fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
 )
 
-write.csv(lyu_intron_combination_tab, 
+write.csv(lyu_intron_combination_tab,
           file = file.path(output_dir, paste0("lyu_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -2335,7 +2335,7 @@ datatable(
   fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
 )
 
-write.csv(tao_intron_combination_tab, 
+write.csv(tao_intron_combination_tab,
           file = file.path(output_dir, paste0("tao_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -2430,7 +2430,7 @@ datatable(
 )
 
 
-write.csv(dominic_intron_combination_tab, 
+write.csv(dominic_intron_combination_tab,
           file = file.path(output_dir, paste0("dominic_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -2525,7 +2525,7 @@ datatable(
   fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
 )
 
-write.csv(christopher_intron_combination_tab, 
+write.csv(christopher_intron_combination_tab,
           file = file.path(output_dir, paste0("christopher_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -2586,7 +2586,7 @@ datatable(
   fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
 )
 
-write.csv(tao_anova_multgroups_introns_tab, 
+write.csv(tao_anova_multgroups_introns_tab,
           file = file.path(output_dir, paste0("tao_anova_multgroups_introns_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -2612,13 +2612,13 @@ events_list <- lapply(dataframes, function(df) unique(df$EVENT))
 compute_shared_and_unique <- function(indices) {
   combo_names <- names(events_list)[indices]
   combined_events <- events_list[indices]
-  
+
   # Compute shared and unique values
   shared <- Reduce(intersect, combined_events)
   unique_events <- lapply(combined_events, function(events) {
     setdiff(events, unlist(combined_events[-which(combined_events == events)]))
   })
-  
+
   # Return result even if one combination is empty
   list(
     combination = combo_names, # Store as list of dataset names
@@ -2686,7 +2686,7 @@ upset_intron_plot<-introns_candidates %>%
     panel.background = element_rect(fill = "lightblue"),  # Set background color
     plot.background = element_rect(fill = "white"),
     strip.text = element_text(size = 12, face = "bold")
-  ) 
+  )
 
 upset_intron_plot
 ```
@@ -2729,7 +2729,7 @@ averaged_data <- combined_data %>%
     avg_FDR = mean(FDR, na.rm = TRUE)
   )
 
-final_intron_list<-averaged_data 
+final_intron_list<-averaged_data
 final_intron_list$GENE <- tao_shared$GENE[match(final_intron_list$EVENT, tao_shared$EVENT)]
 final_intron_list$COORD <- tao_shared$COORD[match(final_intron_list$EVENT, tao_shared$EVENT)]
 final_intron_list<- final_intron_list %>%
@@ -2794,7 +2794,7 @@ datatable(
 
 
 
-write.csv(final_intron_list, 
+write.csv(final_intron_list,
           file = file.path(output_dir, paste0("final_intron_list_unsorted_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -2821,13 +2821,13 @@ events_list <- lapply(dataframes, function(df) unique(df$EVENT))
 compute_shared_and_unique <- function(indices) {
   combo_names <- names(events_list)[indices]
   combined_events <- events_list[indices]
-  
+
   # Compute shared and unique values
   shared <- Reduce(intersect, combined_events)
   unique_events <- lapply(combined_events, function(events) {
     setdiff(events, unlist(combined_events[-which(combined_events == events)]))
   })
-  
+
   # Return result even if one combination is empty
   list(
     combination = combo_names, # Store as list of dataset names
@@ -2895,7 +2895,7 @@ upset_exon_plot<-exons_candidates %>%
     panel.background = element_rect(fill = "lightblue"),  # Set background color
     plot.background = element_rect(fill = "white"),
     strip.text = element_text(size = 12, face = "bold")
-  ) 
+  )
 
 upset_exon_plot
 ```
@@ -2929,7 +2929,7 @@ averaged_data <- combined_data %>%
     avg_FDR = mean(FDR, na.rm = TRUE)
   )
 
-final_exon_list<-averaged_data 
+final_exon_list<-averaged_data
 final_exon_list$GENE <- tao_shared$GENE[match(final_exon_list$EVENT, tao_shared$EVENT)]
 final_exon_list$COORD <- tao_shared$COORD[match(final_exon_list$EVENT, tao_shared$EVENT)]
 final_exon_list<- final_exon_list %>%
@@ -2994,7 +2994,7 @@ datatable(
 
 
 
-write.csv(final_exon_list, 
+write.csv(final_exon_list,
           file = file.path(output_dir, paste0("final_exon_list_unsorted_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -3012,7 +3012,7 @@ calculate_GC_percent <- function(df, sequence_column) {
   if (!sequence_column %in% colnames(df)) {
     stop("The specified column does not exist in the dataframe.")
   }
-  
+
   # Function to calculate GC content for a single sequence
   gc_content <- function(sequence) {
     # Count G and C in the sequence
@@ -3021,10 +3021,10 @@ calculate_GC_percent <- function(df, sequence_column) {
     gc_percentage <- (gc_count / nchar(sequence)) * 100
     return(gc_percentage)
   }
-  
+
   # Apply the GC content function to each row's sequence
   df$GC_percent <- sapply(df[[sequence_column]], gc_content)
-  
+
   return(df)
 }
 ```
@@ -3035,7 +3035,7 @@ extract_V3_for_event <- function(event_value, splice_scores) {
   # Filter rows where V1 matches the event_value
   filtered_rows <- splice_scores %>%
     filter(V1 == event_value)
-  
+
   # Extract the V3 column and return as a list
   return(list(filtered_rows$V3))
 }
@@ -3051,7 +3051,7 @@ final_exon_list$sequence<-events_info$Seq_A[match(final_exon_list$EVENT, events_
 final_exon_list$splice_scores <- apply(final_exon_list, 1, function(row) {
   # Get the event value from the current row
   event_value <- row["EVENT"]
-  
+
   # Call the function to extract the V3 values
   extract_V3_for_event(event_value, splice_scores)
 })
@@ -3076,7 +3076,7 @@ final_intron_list$sequence<-events_info$Seq_A[match(final_intron_list$EVENT, eve
 final_intron_list$splice_scores <- apply(final_intron_list, 1, function(row) {
   # Get the event value from the current row
   event_value <- row["EVENT"]
-  
+
   # Call the function to extract the V3 values
   extract_V3_for_event(event_value, splice_scores)
 })
@@ -3104,7 +3104,7 @@ tao_anova_multgroups_exons_tab$sequence<-events_info$Seq_A[match(tao_anova_multg
 tao_anova_multgroups_exons_tab$splice_scores <- apply(tao_anova_multgroups_exons_tab, 1, function(row) {
   # Get the event value from the current row
   event_value <- row["EVENT"]
-  
+
   # Call the function to extract the V3 values
   extract_V3_for_event(event_value, splice_scores)
 })
@@ -3132,7 +3132,7 @@ tao_anova_multgroups_introns_tab$sequence<-events_info$Seq_A[match(tao_anova_mul
 tao_anova_multgroups_introns_tab$splice_scores <- apply(tao_anova_multgroups_introns_tab, 1, function(row) {
   # Get the event value from the current row
   event_value <- row["EVENT"]
-  
+
   # Call the function to extract the V3 values
   extract_V3_for_event(event_value, splice_scores)
 })
@@ -3202,7 +3202,7 @@ gene_entrez_go <- enrichGO(gene = gene_entrez$ENTREZID,
 
 # Polished GO dot plot
 go_plot <- dotplot(
-  gene_entrez_go, 
+  gene_entrez_go,
   showCategory = 20
 ) +
   ggtitle("<b style='font-size:18px;'>GO Enrichment Analysis</b>") +
@@ -3269,17 +3269,17 @@ unique_tao_anova_multgroups_introns_tab <- unique_tao_anova_multgroups_introns_t
 ## Speckle Gene Groups
 
 ```{r Wun et al. list of genes}
-groupA_genelist <- read_excel("Table S1_GroupABC gene list.xlsx", 
+groupA_genelist <- read_excel("Table S1_GroupABC gene list.xlsx",
     sheet = "Group A", skip = 1)[,-1]$Geneid %>%
   lapply(function(x) gsub("\\.\\d+", "", x)) %>%
   unlist()
 
-groupB_genelist <- read_excel("Table S1_GroupABC gene list.xlsx", 
+groupB_genelist <- read_excel("Table S1_GroupABC gene list.xlsx",
     sheet = "Group B")[,-1]$Geneid %>%
   lapply(function(x) gsub("\\.\\d+", "", x)) %>%
   unlist()
 
-groupC_genelist <- read_excel("Table S1_GroupABC gene list.xlsx", 
+groupC_genelist <- read_excel("Table S1_GroupABC gene list.xlsx",
     sheet = "Group C")[,-1]$Geneid %>%
   lapply(function(x) gsub("\\.\\d+", "", x)) %>%
   unlist()
@@ -3290,11 +3290,11 @@ attributes = c("ensembl_gene_id", "mmusculus_homolog_ensembl_gene", "mmusculus_h
 orth.mouse = getBM(attributes, values=TRUE, mart = human, uniqueRows=TRUE)
 
 groupA_genelist_mouse <- orth.mouse[orth.mouse$ensembl_gene_id %in% groupA_genelist, "mmusculus_homolog_ensembl_gene"] %>%
-  unlist() 
+  unlist()
 groupB_genelist_mouse <- orth.mouse[orth.mouse$ensembl_gene_id %in% groupB_genelist, "mmusculus_homolog_ensembl_gene"] %>%
-  unlist() 
+  unlist()
 groupC_genelist_mouse <- orth.mouse[orth.mouse$ensembl_gene_id %in% groupC_genelist, "mmusculus_homolog_ensembl_gene"] %>%
-  unlist() 
+  unlist()
 
 groupA_genelist_mouse <- bitr(groupA_genelist_mouse, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
 groupB_genelist_mouse <- bitr(groupB_genelist_mouse, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
@@ -3350,15 +3350,15 @@ unique_tao_anova_multgroups_exons_tab<-arrange(unique_tao_anova_multgroups_exons
 ### Exons
 
 ```{r densities_per_event, warning=FALSE, message=FALSE, fig.width=16, fig.height=8}
-event_names <- c("MmuEX0024626", "MmuEX0024625", "MmuEX0039030", 
-                 "MmuEX0039029", "MmuEX0030454", "MmuEX0048979", 
+event_names <- c("MmuEX0024626", "MmuEX0024625", "MmuEX0039030",
+                 "MmuEX0039029", "MmuEX0030454", "MmuEX0048979",
                  "MmuEX1009295", "MmuEX0034296")
 
 # Generate individual plots and store them in a list
 plots <- lapply(event_names, function(eventID) {
   # Extract the corresponding gene name for the event
   geneName <- final_exon_list$GENE[final_exon_list$EVENT == eventID]
-  
+
   # Generate the plot
   tdensities <- plotIndividualDensitiesList(
     eventID = eventID,
@@ -3370,10 +3370,10 @@ plots <- lapply(event_names, function(eventID) {
     seed = TRUE,
     CoverageWeight = FALSE
   )
-  
+
   # Add titles and themes
-  tdensities + 
-    theme_minimal(base_family = font) + 
+  tdensities +
+    theme_minimal(base_family = font) +
     theme(
       plot.title = element_text(size = 14, face = "bold"),  # Title size
       axis.text = element_text(size = 12),                # Axis label size
@@ -3381,16 +3381,16 @@ plots <- lapply(event_names, function(eventID) {
       axis.text.y = element_blank(),                      # Remove Y-axis text
       axis.title.y = element_blank(),                     # Remove Y-axis title
       axis.ticks.y = element_blank()                      # Remove Y-axis tick
-    ) + 
+    ) +
     ggtitle(paste(geneName, eventID))
 })
 
 # Combine all plots with patchwork
-final_plot_exons <- wrap_plots(plots, ncol = 4, byrow = TRUE) + 
-  plot_layout(guides = 'collect') + 
+final_plot_exons <- wrap_plots(plots, ncol = 4, byrow = TRUE) +
+  plot_layout(guides = 'collect') +
   plot_annotation(
     caption = paste0("Created by AG on ", Sys.Date())
-  ) 
+  )
 # Display the combined plot
 final_plot_exons
 ```
@@ -3425,7 +3425,7 @@ event_names <- c("MmuINT0172005", "MmuINT0168360")
 plots <- lapply(event_names, function(eventID) {
   # Extract the corresponding gene name for the event
   geneName <- final_intron_list$GENE[final_intron_list$EVENT == eventID]
-  
+
   # Generate the plot
   tdensities <- plotIndividualDensitiesList(
     eventID = eventID,
@@ -3437,10 +3437,10 @@ plots <- lapply(event_names, function(eventID) {
     seed = TRUE,
     CoverageWeight = FALSE
   )
-  
+
   # Add titles and themes
-  tdensities + 
-    theme_minimal(base_family = font) + 
+  tdensities +
+    theme_minimal(base_family = font) +
     theme(
       plot.title = element_text(size = 14, face = "bold"),  # Title size
       axis.text = element_text(size = 12),                # Axis label size
@@ -3448,15 +3448,15 @@ plots <- lapply(event_names, function(eventID) {
       axis.text.y = element_blank(),                      # Remove Y-axis text
       axis.title.y = element_blank(),                     # Remove Y-axis title
       axis.ticks.y = element_blank()                      # Remove Y-axis tick
-    ) + 
+    ) +
     ggtitle(paste(geneName, eventID))
 })
 
 # Combine all plots with patchwork
-final_plot_introns <- wrap_plots(plots) + 
+final_plot_introns <- wrap_plots(plots) +
   plot_annotation(
     caption = paste0("Created by AG on ", Sys.Date())
-  ) 
+  )
 # Display the combined plot
 final_plot_introns
 
@@ -3476,7 +3476,7 @@ event_names <- c("MmuEX0034298","MmuEX0034278","MmuEX0034277","MmuEX0007973", "M
 plots <- lapply(event_names, function(eventID) {
   # Extract the corresponding gene name for the event
   geneName <- unique_tao_anova_multgroups_exons_tab$GENE[unique_tao_anova_multgroups_exons_tab$EVENT == eventID]
-  
+
   # Generate the plot
   tdensities <- plotIndividualDensitiesList(
     eventID = eventID,
@@ -3488,10 +3488,10 @@ plots <- lapply(event_names, function(eventID) {
     seed = TRUE,
     CoverageWeight = FALSE
   )
-  
+
   # Add titles and themes
-  tdensities + 
-    theme_minimal(base_family = font) + 
+  tdensities +
+    theme_minimal(base_family = font) +
     theme(
       plot.title = element_text(size = 14, face = "bold"),  # Title size
       axis.text = element_text(size = 12),                # Axis label size
@@ -3499,16 +3499,16 @@ plots <- lapply(event_names, function(eventID) {
       axis.text.y = element_blank(),                      # Remove Y-axis text
       axis.title.y = element_blank(),                     # Remove Y-axis title
       axis.ticks.y = element_blank()                      # Remove Y-axis tick
-    ) + 
+    ) +
     ggtitle(paste(geneName, eventID))
 })
 
 # Combine all plots with patchwork
-final_plot_anova_exons <- wrap_plots(plots, ncol = 4, byrow = TRUE) + 
-  plot_layout(guides = 'collect') + 
+final_plot_anova_exons <- wrap_plots(plots, ncol = 4, byrow = TRUE) +
+  plot_layout(guides = 'collect') +
   plot_annotation(
     caption = paste0("Created by AG on ", Sys.Date())
-  ) 
+  )
 # Display the combined plot
 final_plot_anova_exons
 
@@ -3525,7 +3525,7 @@ event_names <- c("MmuINT0015093","MmuINT1026524")
 plots <- lapply(event_names, function(eventID) {
   # Extract the corresponding gene name for the event
   geneName <- unique_tao_anova_multgroups_introns_tab$GENE[unique_tao_anova_multgroups_introns_tab$EVENT == eventID]
-  
+
   # Generate the plot
   tdensities <- plotIndividualDensitiesList(
     eventID = eventID,
@@ -3537,10 +3537,10 @@ plots <- lapply(event_names, function(eventID) {
     seed = TRUE,
     CoverageWeight = FALSE
   )
-  
+
   # Add titles and themes
-  tdensities + 
-    theme_minimal(base_family = font) + 
+  tdensities +
+    theme_minimal(base_family = font) +
     theme(
       plot.title = element_text(size = 14, face = "bold"),  # Title size
       axis.text = element_text(size = 12),                # Axis label size
@@ -3548,16 +3548,16 @@ plots <- lapply(event_names, function(eventID) {
       axis.text.y = element_blank(),                      # Remove Y-axis text
       axis.title.y = element_blank(),                     # Remove Y-axis title
       axis.ticks.y = element_blank()                      # Remove Y-axis tick
-    ) + 
+    ) +
     ggtitle(paste(geneName, eventID))
 })
 
 # Combine all plots with patchwork
-final_plot_anova_introns <- wrap_plots(plots, ncol = 2, byrow = TRUE) + 
-  plot_layout(guides = 'collect') + 
+final_plot_anova_introns <- wrap_plots(plots, ncol = 2, byrow = TRUE) +
+  plot_layout(guides = 'collect') +
   plot_annotation(
     caption = paste0("Created by AG on ", Sys.Date())
-  ) 
+  )
 # Display the combined plot
 final_plot_anova_introns
 
@@ -3604,10 +3604,10 @@ datatable(
   ),
   rownames = FALSE,                       # Disable row names
   extensions = "Buttons"                  # Enable export buttons
-) 
+)
 
 
-write.csv(final_exon_list, 
+write.csv(final_exon_list,
           file = file.path(output_dir, paste0("sorted_final_exon_list_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -3651,10 +3651,10 @@ datatable(
   ),
   rownames = FALSE,                       # Disable row names
   extensions = "Buttons"                  # Enable export buttons
-) 
+)
 
 
-write.csv(final_intron_list, 
+write.csv(final_intron_list,
           file = file.path(output_dir, paste0("sorted_final_intron_list_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -3698,10 +3698,10 @@ datatable(
   ),
   rownames = FALSE,                       # Disable row names
   extensions = "Buttons"                  # Enable export buttons
-) 
+)
 
 
-write.csv(unique_tao_anova_multgroups_exons_tab, 
+write.csv(unique_tao_anova_multgroups_exons_tab,
           file = file.path(output_dir, paste0("sorted_final_anova_exons_list_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -3746,10 +3746,10 @@ datatable(
   ),
   rownames = FALSE,                       # Disable row names
   extensions = "Buttons"                  # Enable export buttons
-) 
+)
 
 
-write.csv(unique_tao_anova_multgroups_introns_tab, 
+write.csv(unique_tao_anova_multgroups_introns_tab,
           file = file.path(output_dir, paste0("sorted_final_anova_introns_list_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
@@ -3799,11 +3799,11 @@ col_fun <- colorRamp2(
 number_splices<-12
 
 # Assign colors based on the condition
-ht<-Heatmap(tao_matrix, name = "PSI", 
+ht<-Heatmap(tao_matrix, name = "PSI",
   clustering_distance_rows = "pearson",
   col = col_fun,
   cluster_columns  = col_dend,
-column_title = "C2C12 Samples at Different Stages", 
+column_title = "C2C12 Samples at Different Stages",
      , row_names_gp = gpar(col =row_colors, fontsize = 10),
   column_names_rot = 45,
 column_labels = metadata_tao$experiment_title,
@@ -3820,40 +3820,40 @@ reference_table<-data.frame(EVENT=c(final_exon_list$EVENT,
   unique_tao_anova_multgroups_introns_tab$EVENT),GENE=c(final_exon_list$GENE,
   final_intron_list$GENE,
   unique_tao_anova_multgroups_exons_tab$GENE,
-  unique_tao_anova_multgroups_introns_tab$GENE)) 
+  unique_tao_anova_multgroups_introns_tab$GENE))
 
 text_list<-list()
 # Loop through clustered events and assign dynamic names
 for (i in 1:length(clustered_events)) {
   enrich_events <- enrichr(
-    reference_table$GENE[reference_table$EVENT %in% rownames(tao_matrix)[clustered_events[[i]]]], 
+    reference_table$GENE[reference_table$EVENT %in% rownames(tao_matrix)[clustered_events[[i]]]],
     databases = c("GO_Biological_Process_2023", "GO_Cellular_Component_2023", "GO_Molecular_Function_2023")
   )
-  
+
   # Assign the dynamic name and value
   text_list[[paste0("text", i)]] <- paste(
-    enrich_events$GO_Cellular_Component_2023$Term[1], 
-    enrich_events$GO_Cellular_Component_2023$Term[2], 
-    enrich_events$GO_Cellular_Component_2023$Term[3], 
+    enrich_events$GO_Cellular_Component_2023$Term[1],
+    enrich_events$GO_Cellular_Component_2023$Term[2],
+    enrich_events$GO_Cellular_Component_2023$Term[3],
     sep = "; \n"
   )
 }
 
-ha = rowAnnotation(foo = anno_empty(border = FALSE, 
+ha = rowAnnotation(foo = anno_empty(border = FALSE,
     width = max_text_width(unlist(text_list)) + unit(4, "mm")))
 
 ```
 
 ### Heatmap showcasing the PSI of every candidate EX and IN
 
-**Note**: Gene ontology of *Cellular Component* for each of the clustered blocks (splicing events that the *pearson* algorithm has found they behave similarly) appears on the right. 
+**Note**: Gene ontology of *Cellular Component* for each of the clustered blocks (splicing events that the *pearson* algorithm has found they behave similarly) appears on the right.
 ```{r heatmap_plot, fig.width=16, fig.height=12, out.width="100%", echo=TRUE,dpi=300}
 Heatmap(
-  tao_matrix, name = "PSI", 
+  tao_matrix, name = "PSI",
   clustering_distance_rows = "pearson",
   col = col_fun,
   cluster_columns  = col_dend,
-  column_title = "C2C12 Samples at Different Stages",
+  column_title = "C2C12 Samples at Different Stages of Development",
   row_title = "Splicing Events",
   column_names_rot = 45,
   column_labels = metadata_tao$experiment_title,
@@ -3861,10 +3861,10 @@ Heatmap(
   row_km = number_splices,
   row_dend_reorder = TRUE,
   right_annotation = ha,
-  rect_gp = gpar(col = "white", lwd = 0.3),  
+  rect_gp = gpar(col = "white", lwd = 0.3),
   column_names_gp = gpar(fontsize = 12),
   show_row_names = FALSE,
-  
+
 )
 
 for (i in seq_along(clustered_events)) {
