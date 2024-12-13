@@ -1996,7 +1996,7 @@ final_df <- bind_rows(dfs_with_metadata) %>%
   na.omit()# Adjust this line if other columns should be prioritized
 
 
-plot_psi_distribution <- ggplot(final_df, aes(x = deltapsi, fill = ifelse(deltapsi < 0, "Skipped", "Included"), col=Study, alpha=Study)) +
+plot_psi_distribution <- ggplot(final_df, aes(x = deltapsi, fill = ifelse(deltapsi < 0, "Skipped", "Included"),  alpha=Study)) +
   geom_histogram( bins = 100, position = "identity") +
   labs(
     title = "PSI Distribution",
