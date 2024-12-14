@@ -3813,7 +3813,7 @@ write.csv(unique_tao_anova_multgroups_introns_tab,
 
 # Splicing Dynamics Heatmap
 
-```{r heatmap prep, results='hide'}
+```{r heatmap prep, results='hide', fig.show='hide'}
 # Extract all events
 tao_all <- filterEvents(
   tao_events,
