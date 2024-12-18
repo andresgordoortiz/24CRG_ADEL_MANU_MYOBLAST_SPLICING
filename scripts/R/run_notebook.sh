@@ -42,11 +42,11 @@ URL3="https://vastdb.crg.eu/downloads/mm10/PROT_IMPACT-mm10-v3.tab.gz"
 
 FILE1="$PWD/notebooks/final/SPLICE_SITE_SCORES-mm10.tab.gz"
 FILE2="$PWD/notebooks/final/EVENT_INFO-mm10.tab.gz"
-FILE3="$PWD/notebooks/final/PROT_IMPACT-mm10-v3.tab.gz"
+FILE3="$PWD/notebooks/final/PROT_IMPACT-mm10-v2.3.tab.gz"
 
 UNZIPPED_FILE1="${FILE1%.gz}"
 UNZIPPED_FILE2="${FILE2%.gz}"
-UNZIPPED_FILE2="${FILE3%.gz}"
+UNZIPPED_FILE3="${FILE3%.gz}"
 
 # Create the directory if it doesn't exist
 mkdir -p "$PWD/notebooks/final"
@@ -64,6 +64,7 @@ if [ ! -f "$UNZIPPED_FILE1" ]; then
 else
     echo "$UNZIPPED_FILE1 already exists. Skipping download and unzip."
 fi
+
 
 # Check and download the second file if the unzipped version doesn't exist
 if [ ! -f "$UNZIPPED_FILE2" ]; then
