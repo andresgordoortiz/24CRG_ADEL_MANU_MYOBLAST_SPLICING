@@ -3897,6 +3897,9 @@ for (i in 1:length(clustered_events)) {
     enrich_events$GO_Cellular_Component_2023$Term[1],
     enrich_events$GO_Cellular_Component_2023$Term[2],
     enrich_events$GO_Cellular_Component_2023$Term[3],
+    enrich_events$GO_Molecular_Function_2023$Term[1],
+    enrich_events$GO_Molecular_Function_2023$Term[2],
+    enrich_events$GO_Molecular_Function_2023$Term[3],
     sep = "; \n"
   )
 }
@@ -3925,7 +3928,7 @@ final_impact <- protein_impact %>%
 left_annotation <- rowAnnotation(
   Impact = anno_points(
     final_impact$ONTO,
-    width = unit(4, "cm"),  # Adjusted width
+    width = unit(5, "cm"),  # Adjusted width
     size = unit(4, "mm"),   # Adjusted size of points
     axis_param = list(
       side = "top",
@@ -3938,7 +3941,7 @@ left_annotation <- rowAnnotation(
         "ORF disruption upon exclusion"
       ),
       labels_rot = 45, # Rotation of labels
-      gp = gpar(fontsize = 10) # Text style
+      gp = gpar(fontsize = 18) # Text style
     )
   )
 )
@@ -3956,7 +3959,7 @@ right_annotation <- rowAnnotation(
 
 **Note**: Gene ontology of *Cellular Component* for each of the clustered blocks (splicing events that the *pearson* algorithm has found they behave similarly) appears on the right.
 
-```{r heatmap_plot, fig.width=30, fig.height=15, echo=TRUE, out.width="100%"}
+```{r heatmap_plot, fig.width=30, fig.height=25, echo=TRUE, out.width="100%"}
 set.seed(45)
 
 ht <- Heatmap(
@@ -3966,7 +3969,7 @@ ht <- Heatmap(
   col = col_fun,
   cluster_columns = col_dend,
   column_title = "C2C12 Samples at Different Stages of Development",
-  column_title_gp = gpar(fontsize = 18, fontface = "bold"),
+  column_title_gp = gpar(fontsize = 25, fontface = "bold"),
   row_title = "Splicing Events",
   row_title_gp = gpar(fontsize = 16, fontface = "italic"),
   column_names_rot = 45,
@@ -3976,7 +3979,7 @@ ht <- Heatmap(
   left_annotation = left_annotation,   # Add the points on the left
   right_annotation = right_annotation, # Add foo on the right
   row_dend_reorder = TRUE,
-  column_names_gp = gpar(fontsize = 18, fontface = "bold", col = "darkblue"),
+  column_names_gp = gpar(fontsize = 22, fontface = "bold", col = "darkblue"),
   show_row_names = FALSE,
   row_gap = unit(6, "mm"), # Adjust the gap size between rows
   column_gap = unit(4, "mm"), # Adjust the gap size between columns
@@ -3996,7 +3999,7 @@ ht <- draw(ht)
 for (i in seq_along(clustered_events)) {
   decorate_annotation("foo", slice = i, {
     grid.rect(x = 0, width = unit(2, "mm"), gp = gpar(fill = i, col = NA), just = "left")
-    grid.text(paste(text_list[[i]], collapse = "\n"), x = unit(4, "mm"), just = "left", gp = gpar(fontsize = 12))
+    grid.text(paste(text_list[[i]], collapse = "\n"), x = unit(4, "mm"), just = "left", gp = gpar(fontsize = 15))
   })
 }
 ```
