@@ -97,7 +97,7 @@ singularity run --bind "$(pwd)/notebooks/final:/shared" \
   bash -c "cd /; Rscript -e \"rmarkdown::render('/shared/myoblast_transcript_analysis.rmd')\""
 
 mkdir -p $PWD/results/tables
-mv $PWD/notebooks/final/*.csv $PWD/results/tables
+mv $PWD/notebooks/final/results/tables $PWD/results/tables
 # end message #
 ###############
 end_epoch=`date +%s`
