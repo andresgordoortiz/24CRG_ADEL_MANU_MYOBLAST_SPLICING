@@ -563,10 +563,10 @@ plot1 / plot2
 
 ## PCA Plot
 
-As it can be seen, most dataframe sinclude only two conditions; *Myoblasts* or *Myotubes*, where Tao has different time points. However, all of them are clustered properly in the PCA plot.
+As it can be seen, most dataframe sinclude only two conditions; *Myoblasts* or *Myotubes*, where Tao has different time points. However, all of them are clustered properly in the PCA plot. PCA was done on the PSI matrix of each study as they come out from *Vast Combine*.
 
 
-```{r pca calculation}
+```{r pca calculation, results='hide'}
 # Subset and scale data
 pca_zhang <- zhang_data[, c("EVENT",zhang_events$Samples)]
 pca_tao <- tao_data[,  c("EVENT",tao_events$Samples)]
@@ -1085,6 +1085,8 @@ tao_anova_multgroups_exons <- prepareTableVolcanoMultipleGroups(psitable = tao_e
 
 ### FDR Volcano Plots { .tabset}
 
+Volcano Plots of the FDR corrected exons for each study. In pink are the exons with a deltaPSI>=0.1.
+
 #### Zhang
 
 ```{r zhang fdr volcano}
@@ -1172,6 +1174,8 @@ theme(
 ```
 
 ### Individual Combination Tables { .tabset}
+
+These tables show the Exons that show a FDR<=0.05 and PDiff (1-pvalue)>=0.95 in the pairwise comparison of Myotubes-Myoblasts, for each study.
 
 #### Zhang
 
@@ -1968,65 +1972,9 @@ tao_anova_multgroups_introns <- prepareTableVolcanoMultipleGroups(psitable = tao
 ```
 
 
-## PSI Distribution Plots { .tabset}
-
-```{r splicing distribution plot, fig.width=10}
-
-# List of dataframes with metadata
-dfs <- list(
-  list(df = dominic_pdiff_exons, group = "Exons", study = "Dominic"),
-  list(df = dominic_pdiff_introns, group = "Introns", study = "Dominic"),
-  list(df = christopher_pdiff_exons, group = "Exons", study = "Christopher"),
-  list(df = christopher_pdiff_introns, group = "Introns", study = "Christopher"),
-  list(df = lyu_pdiff_exons, group = "Exons", study = "Lyu"),
-  list(df = lyu_pdiff_introns, group = "Introns", study = "Lyu"),
-  list(df = tao_pdiff_exons, group = "Exons", study = "Tao"),
-  list(df = tao_pdiff_introns, group = "Introns", study = "Tao"),
-  list(df = zhang_pdiff_exons, group = "Exons", study = "Zhang"),
-  list(df = zhang_pdiff_introns, group = "Introns", study = "Zhang")
-)
-
-# Add metadata columns to each dataframe beforehand
-dfs_with_metadata <- lapply(dfs, function(x) {
-  x$df %>%
-    mutate(Group = x$group, Study = x$study)
-})
-
-# Combine all dataframes into one using bind_rows() for faster merging
-final_df <- bind_rows(dfs_with_metadata) %>%
-  select(EVENT, Group, Study, deltapsi) %>%
-  filter(abs(deltapsi)>=0.15) %>%
-  na.omit()# Adjust this line if other columns should be prioritized
-
-
-plot_psi_distribution <- ggplot(final_df, aes(x = deltapsi, fill = ifelse(deltapsi < 0, "Skipped", "Included"),  alpha=Study)) +
-  geom_histogram( bins = 100, position = "identity") +
-  labs(
-    title = "PSI Distribution",
-    x = "ΔPSI (Myotubes-Myoblasts)",
-    y = "Density",
-    fill = "|ΔPSI| >= 0.15",
-    caption = paste0("Created by AG on ", Sys.Date())
-  ) +
-  theme_minimal(base_family = font) +
-  theme(
-    legend.position = "right",
-    axis.title.x = element_text(margin = margin(t = 10)),
-    axis.text.x = element_text(size = 15),
-    panel.background = element_rect(fill = "white"),
-    panel.grid.major = element_line(color = "gray80", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.3),
-    strip.text = element_text(size = 14, face = "bold"),
-    panel.spacing = unit(1.5, "lines")  # Increase the distance between facets
-  ) +
-  scale_fill_brewer(palette = "Set1") +
-  facet_wrap(~Group)
-
-plot_psi_distribution
-```
-
-
 ### FDR Volcano Plots { .tabset}
+
+Volcano Plots of the FDR corrected introns for each study. In pink are the exons with a deltaPSI>=0.1.
 
 #### Zhang
 
@@ -2115,6 +2063,8 @@ theme(
 ```
 
 ### Individual Combination Tables { .tabset}
+
+These tables show the Introns that show a FDR<=0.05 and PDiff (1-pvalue)>=0.95 in the pairwise comparison of Myotubes-Myoblasts, for each study.
 
 #### Zhang
 
@@ -2651,9 +2601,68 @@ write.csv(tao_anova_multgroups_introns_tab,
           row.names = FALSE)
 ```
 
+# PSI Distribution Plots { .tabset}
 
+These plots aim to explore any enrichment of either (intron/exon) retention or (intron/exon) exclusion. Symmetric plots show that inclusion and retention are equally common between conditions. Only showing events with |dPSI|>=0.1 for higher clarity. Transparency shows different studies.
+
+```{r splicing distribution plot, fig.width=10}
+
+# List of dataframes with metadata
+dfs <- list(
+  list(df = dominic_pdiff_exons, group = "Exons", study = "Dominic"),
+  list(df = dominic_pdiff_introns, group = "Introns", study = "Dominic"),
+  list(df = christopher_pdiff_exons, group = "Exons", study = "Christopher"),
+  list(df = christopher_pdiff_introns, group = "Introns", study = "Christopher"),
+  list(df = lyu_pdiff_exons, group = "Exons", study = "Lyu"),
+  list(df = lyu_pdiff_introns, group = "Introns", study = "Lyu"),
+  list(df = tao_pdiff_exons, group = "Exons", study = "Tao"),
+  list(df = tao_pdiff_introns, group = "Introns", study = "Tao"),
+  list(df = zhang_pdiff_exons, group = "Exons", study = "Zhang"),
+  list(df = zhang_pdiff_introns, group = "Introns", study = "Zhang")
+)
+
+# Add metadata columns to each dataframe beforehand
+dfs_with_metadata <- lapply(dfs, function(x) {
+  x$df %>%
+    mutate(Group = x$group, Study = x$study)
+})
+
+# Combine all dataframes into one using bind_rows() for faster merging
+final_df <- bind_rows(dfs_with_metadata) %>%
+  select(EVENT, Group, Study, deltapsi) %>%
+  filter(abs(deltapsi)>=0.1) %>%
+  na.omit()# Adjust this line if other columns should be prioritized
+
+
+plot_psi_distribution <- ggplot(final_df, aes(x = deltapsi, fill = ifelse(deltapsi < 0, "Skipped", "Included"),  alpha=Study)) +
+  geom_histogram( bins = 100, position = "identity") +
+  labs(
+    title = "PSI Distribution",
+    x = "ΔPSI (Myotubes-Myoblasts)",
+    y = "Density",
+    fill = "|ΔPSI| >= 0.1",
+    caption = paste0("Created by AG on ", Sys.Date())
+  ) +
+  theme_minimal(base_family = font) +
+  theme(
+    legend.position = "right",
+    axis.title.x = element_text(margin = margin(t = 10)),
+    axis.text.x = element_text(size = 15),
+    panel.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(color = "gray80", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.3),
+    strip.text = element_text(size = 14, face = "bold"),
+    panel.spacing = unit(1.5, "lines")  # Increase the distance between facets
+  ) +
+  scale_fill_brewer(palette = "Set1") +
+  facet_wrap(~Group)
+
+plot_psi_distribution
+```
 
 # Unsorted Intron Candidates List
+
+This *UpSet* plots showcase the number of common introns found in the different studies. 
 
 ```{r merging final intron lists intron, warning=FALSE}
 # List of data frames to compare
@@ -2751,7 +2760,7 @@ upset_intron_plot<-introns_candidates %>%
 upset_intron_plot
 ```
 
-**Important**: Since merging all 5 dataframes result in only 5 candidates, I will merge only four (dominic, lyu, tao and christopher) to get a total of 15 candidates and gain statistical power.
+**Important**: Since merging all 5 dataframes result in only 5 candidates, I will merge only four (dominic, lyu, tao and christopher) to gain statistical power.
 
 ```{r shared events final list intron}
 dataframes <- list(
@@ -2801,6 +2810,8 @@ final_intron_list<- final_intron_list %>%
          avg_FDR = round(avg_FDR, 3))
 
 ```
+
+This table is composed of the merged intron candidates list based on whether they appear to be differenially spliced in the four studies proposed above.
 
 ```{r output final list intron}
 # Render DataTable with enhancements
@@ -2863,6 +2874,8 @@ write.csv(final_intron_list,
 
 
 # Unsorted Exon Candidates List
+
+These *UpSet* plots showcase the number of common exons found in the different studies. 
 
 ```{r merging final lists, warning=FALSE}
 # List of data frames to compare
@@ -3001,6 +3014,8 @@ final_exon_list<- final_exon_list %>%
          avg_FDR = round(avg_FDR, 3))
 
 ```
+
+This table is composed of the merged exon candidates list based on whether they appear to be differenially spliced in all the studies.
 
 ```{r output final list}
 # Render DataTable with enhancements
@@ -3625,6 +3640,9 @@ final_plot_anova_introns
 
 # Final Candidates List Sorted { .tabset}
 
+These final lists show all the events found to be significant in all studies (in a pairwise comparison, myotubes vs myoblasts) or using ANOVA (between multiple timepoints, only Tao). Moreover, they are sorted by their average dPSI (the of dPSI across studies) an the average F statistic, and features such as the event length, splice scores, GC percent, whether it has an ontology related to Speckles (according to Apex2 and ARTR-seq papers) and if the gene containing the event appears in the gene lists (GroupA: permanently closed to speckles, groupB: transiently closed to speckles, GroupC: never closed to speckles) found by *Wu, J. et al. Dynamics of RNA localization to nuclear speckles are connected to splicing efficiency. Science Advances 10, eadp7727 (2024)*.
+
+
 ## Exons
 
 ```{r final sorted exons table}
@@ -3957,7 +3975,7 @@ right_annotation <- rowAnnotation(
 
 ### Heatmap showcasing the PSI of every candidate EX and IN
 
-**Note**: Gene ontology of *Cellular Component* for each of the clustered blocks (splicing events that the *pearson* algorithm has found they behave similarly) appears on the right.
+**Note**: Gene ontology of *Cellular Component* and *Molecular Function* for each of the clustered blocks (splicing events that the *pearson* algorithm has found they behave similarly) appears on the right. The impact of that Event at protein level is shown on the left.
 
 ```{r heatmap_plot, fig.width=30, fig.height=25, echo=TRUE, out.width="100%"}
 set.seed(45)
