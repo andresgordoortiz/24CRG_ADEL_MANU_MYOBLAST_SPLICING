@@ -3648,7 +3648,7 @@ These final lists show all the events found to be significant in all studies (in
 ```{r final sorted exons table}
 # Render DataTable with enhancements
 datatable(
-  select(final_exon_list, -ENTREZID, -avg_Pdiff, -avg_FDR, -COORD),
+  select(final_exon_list, -ENTREZID, -avg_Pdiff, -sequence, -avg_FDR, -COORD),
   options = list(
     pageLength = 10,                      # Rows per page
     autoWidth = TRUE,                     # Adjust column widths automatically
@@ -3695,7 +3695,7 @@ write.csv(final_exon_list,
 ```{r final sorted intron table}
 # Render DataTable with enhancements
 datatable(
-  select(final_intron_list, -ENTREZID, -avg_Pdiff, -avg_FDR, -COORD),
+  select(final_intron_list, -ENTREZID, -avg_Pdiff, -sequence,-avg_FDR, -COORD),
   options = list(
     pageLength = 10,                      # Rows per page
     autoWidth = TRUE,                     # Adjust column widths automatically
@@ -3742,7 +3742,7 @@ write.csv(final_intron_list,
 ```{r final sorted anova exons table}
 # Render DataTable with enhancements
 datatable(
-  select(unique_tao_anova_multgroups_exons_tab, -ENTREZID, -Pdiff, -COORD),
+  select(unique_tao_anova_multgroups_exons_tab, -ENTREZID, -sequence, -Pdiff, -COORD),
   options = list(
     pageLength = 10,                      # Rows per page
     autoWidth = TRUE,                     # Adjust column widths automatically
@@ -3790,7 +3790,7 @@ write.csv(unique_tao_anova_multgroups_exons_tab,
 ```{r final sorted anova introns table}
 # Render DataTable with enhancements
 datatable(
-  select(unique_tao_anova_multgroups_introns_tab, -ENTREZID, -Pdiff, -COORD),
+  select(unique_tao_anova_multgroups_introns_tab, -ENTREZID, -sequence, -Pdiff, -COORD),
   options = list(
     pageLength = 10,                      # Rows per page
     autoWidth = TRUE,                     # Adjust column widths automatically
@@ -3878,22 +3878,6 @@ col_fun <- colorRamp2(
 
 number_splices<-8
 
-# Assign colors based on the condition
-ht<-Heatmap(tao_matrix, name = "PSI",
-  clustering_distance_rows = "pearson",
-  col = col_fun,
-  cluster_columns  = col_dend,
-column_title = "C2C12 Samples at Different Stages",
-     , row_names_gp = gpar(fontsize = 10),
-  column_names_rot = 45,
-column_labels = metadata_tao$experiment_title,
-  column_dend_reorder=c(1,2,3,4,5,6,7,8,9,10,11,12),
-  row_km = number_splices,
-  row_dend_reorder = T,
-rect_gp = gpar(col = "white", lwd = 0.3),  column_names_gp = gpar(fontsize = 8)  )
-
-ht = draw(ht); clustered_events<-row_order(ht)
-
 reference_table<-data.frame(EVENT=c(final_exon_list$EVENT,
   final_intron_list$EVENT,
   unique_tao_anova_multgroups_exons_tab$EVENT,
@@ -3902,6 +3886,25 @@ reference_table<-data.frame(EVENT=c(final_exon_list$EVENT,
   unique_tao_anova_multgroups_exons_tab$GENE,
   unique_tao_anova_multgroups_introns_tab$GENE))
 
+
+ht<-Heatmap(
+  tao_matrix, name = "PSI",
+  clustering_distance_rows = "pearson",
+  col = col_fun,
+  cluster_columns  = col_dend,
+  column_title = "Myoblast Samples at Different stages f development",
+  row_title = "Splicing Events",
+  column_names_rot = 45,
+  column_labels = metadata_tao$experiment_title,
+  column_dend_reorder = 1:12,
+  row_km = number_splices,
+  row_dend_reorder = F,
+  rect_gp = gpar(col = "white", lwd = 0.3),
+  column_names_gp = gpar(fontsize = 16),
+  show_row_names = FALSE,
+
+)
+ht = draw(ht); clustered_events<-row_order(ht)
 text_list<-list()
 # Loop through clustered events and assign dynamic names
 for (i in 1:length(clustered_events)) {
@@ -3925,43 +3928,40 @@ for (i in 1:length(clustered_events)) {
 protein_impact <- read.table("PROT_IMPACT-mm10-v2.3.tab", sep = "\t", 
                              header = TRUE, stringsAsFactors = FALSE, fill = TRUE, quote = "")
 
-events_for_impact<-rownames(tao_matrix[unlist(clustered_events, use.names = F),])
+events_for_impact<-rownames(tao_matrix)
 
 final_impact <- protein_impact %>%
   filter(EventID %in% events_for_impact) %>%
   arrange(match(EventID, events_for_impact)) %>%
-  mutate(ONTO = ifelse(grepl("isoform", ONTO, ignore.case = TRUE), "1", ONTO)) %>%
-  mutate(ONTO = ifelse(grepl("UTR", ONTO, ignore.case = TRUE), "-1", ONTO)) %>%
+  mutate(ONTO = ifelse(grepl("isoform", ONTO, ignore.case = TRUE), "-1", ONTO)) %>%
+  mutate(ONTO = ifelse(grepl("UTR", ONTO, ignore.case = TRUE), "-2", ONTO)) %>%
   mutate(ONTO = case_when(
     grepl("ORF", ONTO, ignore.case = TRUE) & grepl("inclusion", ONTO, ignore.case = TRUE) ~ "2",
-    grepl("ORF", ONTO, ignore.case = TRUE) & grepl("exclusion", ONTO, ignore.case = TRUE) ~ "-2",
+    grepl("ORF", ONTO, ignore.case = TRUE) & grepl("exclusion", ONTO, ignore.case = TRUE) ~ "1",
     TRUE ~ ONTO
   )) %>%
   mutate(ONTO = as.numeric(ONTO)) %>%
   replace_na(list(ONTO = 0))
 
-final_impact_string<-protein_impact %>%
-  filter(EventID %in% events_for_impact) %>%
-  arrange(match(EventID, events_for_impact))
 
 # Define the left annotation (points) with axis labels
 left_annotation <- rowAnnotation(
   Impact = anno_points(
     final_impact$ONTO,
-    width = unit(5, "cm"),  # Adjusted width
+    width = unit(4, "cm"),  # Adjusted width
     size = unit(4, "mm"),   # Adjusted size of points
     axis_param = list(
       side = "top",
-      at = c(2, 1, 0, -1, -2), # Numeric values to label
+      at = -2:2, # Numeric values to label
       labels = c(
-        "ORF disruption upon inclusion",
+        "Regulatory (5´UTR)",
         "Alternative Isoform",
         "Unknown/NonCoding",
-        "Regulatory",
-        "ORF disruption upon exclusion"
+        "ORF disruption upon exclusion",
+        "ORF disruption upon inclusion"
       ),
       labels_rot = 45, # Rotation of labels
-      gp = gpar(fontsize = 18) # Text style
+      gp = gpar(fontsize = 15) # Text style
     )
   )
 )
@@ -3998,14 +3998,14 @@ ht <- Heatmap(
   row_km = number_splices,
   left_annotation = left_annotation,   # Add the points on the left
   right_annotation = right_annotation, # Add foo on the right
-  row_dend_reorder = TRUE,
-  column_names_gp = gpar(fontsize = 22, fontface = "bold", col = "darkblue"),
+  row_dend_reorder = F,
+  column_names_gp = gpar(fontsize = 18, fontface = "bold", col = "darkblue"),
   show_row_names = FALSE,
   row_gap = unit(6, "mm"), # Adjust the gap size between rows
   column_gap = unit(4, "mm"), # Adjust the gap size between columns
   heatmap_legend_param = list(
     title = "PSI Value",
-    title_gp = gpar(fontsize = 12),
+    title_gp = gpar(fontsize = 40),
     labels_gp = gpar(fontsize = 10),
     legend_position = c(-20, 0),  # Move the legend closer to the center (x, y coordinates)
     legend_direction = "vertical" # Align the legend horizontally
@@ -4034,6 +4034,12 @@ cluster_index <- unlist(lapply(seq_along(row_order(ht)), function(i) rep(i, leng
 
 # Reorder the original matrix based on clustering
 clustered_matrix <- tao_matrix[row_order, col_order]
+final_impact_string<-protein_impact %>%
+  filter(EventID %in% events_for_impact) %>%
+  arrange(match(EventID, events_for_impact))
+final_impact_string<- final_impact_string[match(rownames(clustered_matrix),final_impact_string$EventID),]
+
+
 heatmap_dataframe<-tibble(EVENT=rownames(clustered_matrix), heatmap_cluster=cluster_index, protein_impact=final_impact_string$ONTO)
 heatmap_dataframe$GENE<-reference_table$GENE[match(heatmap_dataframe$EVENT, reference_table$EVENT)]
 heatmap_dataframe<-select(heatmap_dataframe, GENE, EVENT, protein_impact, heatmap_cluster)
