@@ -3648,7 +3648,7 @@ These final lists show all the events found to be significant in all studies (in
 ```{r final sorted exons table}
 # Render DataTable with enhancements
 datatable(
-  select(final_exon_list, -ENTREZID,-sequence, -avg_Pdiff, -avg_FDR, -COORD),
+  select(final_exon_list, -ENTREZID, -avg_Pdiff, -avg_FDR, -COORD),
   options = list(
     pageLength = 10,                      # Rows per page
     autoWidth = TRUE,                     # Adjust column widths automatically
@@ -3695,7 +3695,7 @@ write.csv(final_exon_list,
 ```{r final sorted intron table}
 # Render DataTable with enhancements
 datatable(
-  select(final_intron_list, -ENTREZID,-sequence, -avg_Pdiff, -avg_FDR, -COORD),
+  select(final_intron_list, -ENTREZID, -avg_Pdiff, -avg_FDR, -COORD),
   options = list(
     pageLength = 10,                      # Rows per page
     autoWidth = TRUE,                     # Adjust column widths automatically
@@ -3742,7 +3742,7 @@ write.csv(final_intron_list,
 ```{r final sorted anova exons table}
 # Render DataTable with enhancements
 datatable(
-  select(unique_tao_anova_multgroups_exons_tab, -ENTREZID,-sequence, -Pdiff, -COORD),
+  select(unique_tao_anova_multgroups_exons_tab, -ENTREZID, -Pdiff, -COORD),
   options = list(
     pageLength = 10,                      # Rows per page
     autoWidth = TRUE,                     # Adjust column widths automatically
@@ -3790,7 +3790,7 @@ write.csv(unique_tao_anova_multgroups_exons_tab,
 ```{r final sorted anova introns table}
 # Render DataTable with enhancements
 datatable(
-  select(unique_tao_anova_multgroups_introns_tab, -ENTREZID,-sequence, -Pdiff, -COORD),
+  select(unique_tao_anova_multgroups_introns_tab, -ENTREZID, -Pdiff, -COORD),
   options = list(
     pageLength = 10,                      # Rows per page
     autoWidth = TRUE,                     # Adjust column widths automatically
