@@ -2760,35 +2760,33 @@ upset_intron_plot<-introns_candidates %>%
 upset_intron_plot
 ```
 
-**Important**: Since merging all 5 dataframes result in only 5 candidates, I will merge only four (dominic, lyu, tao and christopher) to gain statistical power.
+**Important**: Since merging all 5 dataframes result in only 5 candidates, I will merge to obtain those EVENTS appearing in at least 4 studies.
 
 ```{r shared events final list intron}
-dataframes <- list(
-  christopher = christopher_intron_combination_tab,
-  tao = tao_intron_combination_tab,
-  lyu = lyu_intron_combination_tab,
-  # zhang= zhang_intron_combination_tab, # In order to increase statistical power, I will remove the zhang dataframe in the merge, as this will< increase from 5 to 15 the number of candidates
-  dominic=dominic_intron_combination_tab
-)
-# Extract the shared events in all dataframes
-shared_events <- Reduce(intersect, lapply(dataframes, function(df) df$EVENT))
+# Step 1: Combine all events into a single vector with their sources
+all_events <- unlist(lapply(dataframes, function(df) df$EVENT))
 
-tao_shared<-tao_intron_combination_tab[tao_intron_combination_tab$EVENT %in% shared_events,]
-lyu_shared<-lyu_intron_combination_tab[lyu_intron_combination_tab$EVENT %in% shared_events,]
-zhang_shared<-zhang_intron_combination_tab[zhang_intron_combination_tab$EVENT %in% shared_events,]
-christopher_shared<-christopher_intron_combination_tab[christopher_intron_combination_tab$EVENT %in% shared_events,]
-dominic_shared<-dominic_intron_combination_tab[dominic_intron_combination_tab$EVENT %in% shared_events,]
+# Step 2: Count occurrences of each event
+event_counts <- table(all_events)
 
+# Step 3: Identify events that appear in at least 4 dataframes
+events_at_least_4 <- names(event_counts[event_counts >= 4])
 
+# Step 4: Filter each dataframe to keep only these events
+tao_shared <- tao_intron_combination_tab[tao_intron_combination_tab$EVENT %in% events_at_least_4, ]
+lyu_shared <- lyu_intron_combination_tab[lyu_intron_combination_tab$EVENT %in% events_at_least_4, ]
+christopher_shared <- christopher_intron_combination_tab[christopher_intron_combination_tab$EVENT %in% events_at_least_4, ]
+dominic_shared <- dominic_intron_combination_tab[dominic_intron_combination_tab$EVENT %in% events_at_least_4, ]
+
+# Step 5: Combine the filtered dataframes with a source identifier
 combined_data <- bind_rows(
   tao_shared %>% mutate(Source = "tao_shared"),
   lyu_shared %>% mutate(Source = "lyu_shared"),
-  # zhang_shared %>% mutate(Source = "zhang_shared"),
   christopher_shared %>% mutate(Source = "christopher_shared"),
   dominic_shared %>% mutate(Source = "dominic_shared")
 )
 
-# Calculate average per EVENT
+# Step 6: Calculate average per EVENT
 averaged_data <- combined_data %>%
   group_by(EVENT) %>%
   summarise(
@@ -2798,16 +2796,21 @@ averaged_data <- combined_data %>%
     avg_FDR = mean(FDR, na.rm = TRUE)
   )
 
-final_intron_list<-averaged_data
+# Step 7: Add GENE and COORD information from tao_shared
+final_intron_list <- averaged_data
 final_intron_list$GENE <- tao_shared$GENE[match(final_intron_list$EVENT, tao_shared$EVENT)]
 final_intron_list$COORD <- tao_shared$COORD[match(final_intron_list$EVENT, tao_shared$EVENT)]
-final_intron_list<- final_intron_list %>%
+
+# Step 8: Reorder columns and finalize
+final_intron_list <- final_intron_list %>%
   select(GENE, EVENT, COORD, everything()) %>%
   arrange(desc(abs(avg_deltapsi))) %>%
-  mutate(avg_deltapsi = round(avg_deltapsi, 3),
-         avg_Fstat = round(avg_Fstat, 3),
-         avg_Pdiff = round(avg_Pdiff, 3),
-         avg_FDR = round(avg_FDR, 3))
+  mutate(
+    avg_deltapsi = round(avg_deltapsi, 3),
+    avg_Fstat = round(avg_Fstat, 3),
+    avg_Pdiff = round(avg_Pdiff, 3),
+    avg_FDR = round(avg_FDR, 3)
+  )
 
 ```
 
@@ -2974,25 +2977,34 @@ upset_exon_plot
 ```
 
 ```{r shared events final list}
-# Extract the shared events in all dataframes
-shared_events <- Reduce(intersect, lapply(dataframes, function(df) df$EVENT))
+# Step 1: Combine all events into a single vector with their sources
+all_events <- unlist(lapply(list(tao_exon_combination_tab, lyu_exon_combination_tab, 
+                                 zhang_exon_combination_tab, christopher_exon_combination_tab, 
+                                 dominic_exon_combination_tab), function(df) df$EVENT))
 
-tao_shared<-tao_exon_combination_tab[tao_exon_combination_tab$EVENT %in% shared_events,]
-lyu_shared<-lyu_exon_combination_tab[lyu_exon_combination_tab$EVENT %in% shared_events,]
-zhang_shared<-zhang_exon_combination_tab[zhang_exon_combination_tab$EVENT %in% shared_events,]
-christopher_shared<-christopher_exon_combination_tab[christopher_exon_combination_tab$EVENT %in% shared_events,]
-dominic_shared<-dominic_exon_combination_tab[dominic_exon_combination_tab$EVENT %in% shared_events,]
+# Step 2: Count occurrences of each event
+event_counts <- table(all_events)
 
+# Step 3: Identify events that appear in at least 4 dataframes
+events_at_least_4 <- names(event_counts[event_counts >= 4])
 
+# Step 4: Filter each dataframe to keep only these events
+tao_shared <- tao_exon_combination_tab[tao_exon_combination_tab$EVENT %in% events_at_least_4, ]
+lyu_shared <- lyu_exon_combination_tab[lyu_exon_combination_tab$EVENT %in% events_at_least_4, ]
+zhang_shared <- zhang_exon_combination_tab[zhang_exon_combination_tab$EVENT %in% events_at_least_4, ]
+christopher_shared <- christopher_exon_combination_tab[christopher_exon_combination_tab$EVENT %in% events_at_least_4, ]
+dominic_shared <- dominic_exon_combination_tab[dominic_exon_combination_tab$EVENT %in% events_at_least_4, ]
+
+# Step 5: Combine the filtered dataframes with a source identifier
 combined_data <- bind_rows(
   tao_shared %>% mutate(Source = "tao_shared"),
   lyu_shared %>% mutate(Source = "lyu_shared"),
   zhang_shared %>% mutate(Source = "zhang_shared"),
   christopher_shared %>% mutate(Source = "christopher_shared"),
-    dominic_shared %>% mutate(Source = "dominic_shared")
+  dominic_shared %>% mutate(Source = "dominic_shared")
 )
 
-# Calculate average per EVENT
+# Step 6: Calculate average per EVENT
 averaged_data <- combined_data %>%
   group_by(EVENT) %>%
   summarise(
@@ -3002,16 +3014,21 @@ averaged_data <- combined_data %>%
     avg_FDR = mean(FDR, na.rm = TRUE)
   )
 
-final_exon_list<-averaged_data
+# Step 7: Add GENE and COORD information from tao_shared
+final_exon_list <- averaged_data
 final_exon_list$GENE <- tao_shared$GENE[match(final_exon_list$EVENT, tao_shared$EVENT)]
 final_exon_list$COORD <- tao_shared$COORD[match(final_exon_list$EVENT, tao_shared$EVENT)]
-final_exon_list<- final_exon_list %>%
+
+# Step 8: Reorder columns and finalize
+final_exon_list <- final_exon_list %>%
   select(GENE, EVENT, COORD, everything()) %>%
   arrange(desc(abs(avg_deltapsi))) %>%
-  mutate(avg_deltapsi = round(avg_deltapsi, 3),
-         avg_Fstat = round(avg_Fstat, 3),
-         avg_Pdiff = round(avg_Pdiff, 3),
-         avg_FDR = round(avg_FDR, 3))
+  mutate(
+    avg_deltapsi = round(avg_deltapsi, 3),
+    avg_Fstat = round(avg_Fstat, 3),
+    avg_Pdiff = round(avg_Pdiff, 3),
+    avg_FDR = round(avg_FDR, 3)
+  )
 
 ```
 
@@ -3246,7 +3263,7 @@ go_enrich_exon <- enrichGO(gene = exon_go$ENTREZID,
                       pAdjustMethod = "BH",
                       pvalueCutoff = 0.05,
                       qvalueCutoff = 0.05)
-speckle_related_genes<-strsplit(head(go_enrich_exon)[which(head(go_enrich_exon)$Description=="non-membrane-bounded organelle assembly"), "geneID"], "/")[[1]]
+speckle_related_genes<-strsplit(go_enrich_exon@result[which(go_enrich_exon@result$Description=="non-membrane-bounded organelle assembly"), "geneID"], "/")[[1]]
 final_exon_list$GO_speckle<-ifelse(final_exon_list$ENTREZID %in% speckle_related_genes, "TRUE", "FALSE")
 
 intron_go <- bitr(final_intron_list$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
@@ -3255,15 +3272,38 @@ final_intron_list <- final_intron_list %>%
   left_join(as.data.frame(intron_go), by = "GENE")
 
 
-# GO Enrichment Analysis
-go_enrich_intron <- enrichGO(gene = intron_go$ENTREZID,
-                      OrgDb = org.Mm.eg.db,
-                      ont = "ALL",
-                      pAdjustMethod = "BH",
-                      pvalueCutoff = 0.05,
-                      qvalueCutoff = 0.05)
-speckle_related_genes<-strsplit(head(go_enrich_intron)[which(head(go_enrich_exon)$Description=="non-membrane-bounded organelle assembly"), "geneID"], "/")[[1]]
-final_intron_list$GO_speckle<-ifelse(final_intron_list$ENTREZID %in% speckle_related_genes, "TRUE", "FALSE")
+# GO Enrichment Analysis with Error Handling
+go_enrich_intron <- enrichGO(
+  gene = intron_go$ENTREZID,
+  OrgDb = org.Mm.eg.db,
+  ont = "ALL",
+  pAdjustMethod = "BH",
+  pvalueCutoff = 0.05,
+  qvalueCutoff = 0.05
+)
+
+# Check if there are significant GO results
+if (!is.null(go_enrich_intron) && nrow(go_enrich_intron@result) > 0) {
+  # Try to extract specific GO term genes
+  if ("non-membrane-bounded organelle assembly" %in% go_enrich_intron@result$Description) {
+    speckle_related_genes <- strsplit(
+      go_enrich_intron@result[which(go_enrich_intron@result$Description == "non-membrane-bounded organelle assembly"), "geneID"], 
+      "/"
+    )[[1]]
+  } else {
+    speckle_related_genes <- character(0) # No genes found for the specific term
+  }
+} else {
+  speckle_related_genes <- character(0) # No significant enrichment found
+}
+
+# Assign the boolean flag based on the GO enrichment
+final_intron_list$GO_speckle <- ifelse(
+  final_intron_list$ENTREZID %in% speckle_related_genes, 
+  "TRUE", 
+  "FALSE"
+)
+
 
 
 
@@ -3943,6 +3983,8 @@ final_impact <- protein_impact %>%
   mutate(ONTO = as.numeric(ONTO)) %>%
   replace_na(list(ONTO = 0))
 
+# Remove non-annotated EVENTS from tao_matrix
+tao_matrix <- tao_matrix[rownames(tao_matrix) %in% final_impact$EventID, ]
 
 # Define the left annotation (points) with axis labels
 left_annotation <- rowAnnotation(
