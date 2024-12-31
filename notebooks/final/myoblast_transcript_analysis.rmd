@@ -4100,7 +4100,7 @@ datatable(
 
 
 write.csv(heatmap_dataframe,
-          file = paste0("heatmap_cluster_events_", format(Sys.Date(), "%Y%m%d"), ".csv"),
+          file = file.path(output_dir, paste0("heatmap_cluster_events_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
 
