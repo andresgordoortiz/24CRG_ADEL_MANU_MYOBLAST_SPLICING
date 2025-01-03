@@ -289,6 +289,13 @@ dominic_events <- getEvents(dominic_data, tool = "vast-tools") # Extract alterna
 dominic_events <- alternativeEvents(dominic_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
 dominic_exons <- filterEvents(dominic_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 2)
 dominic_introns <- filterEvents(dominic_events, types = c("IR"), N = 2)
+
+# Dominic Data
+kan_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/kan_scientific_reports_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
+kan_events <- getEvents(kan_data, tool = "vast-tools") # Extract alternative splicing events
+kan_events <- alternativeEvents(kan_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
+kan_exons <- filterEvents(kan_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 2)
+kan_introns <- filterEvents(kan_events, types = c("IR"), N = 2)
 ```
 
 
@@ -333,6 +340,13 @@ metadata_dominic <- read.csv(paste0(getwd(),"/metadata/dominic_metadata.csv"), s
 DT::datatable(metadata_dominic, options = list(pageLength = nrow(metadata_dominic), scrollX = TRUE))
 ```
 
+### Kan
+
+```{r metadata kan}
+# Load metadata file containing sample information
+metadata_kan <- read.csv(paste0(getwd(),"/metadata/kan_metadata.csv"), sep = ",")
+DT::datatable(metadata_kan, options = list(pageLength = nrow(metadata_kan), scrollX = TRUE))
+```
 
 ---
 
@@ -561,6 +575,51 @@ plot2 <- bigPictureIntrons +
 plot1 / plot2
 ```
 
+
+### Kan
+
+
+```{r kan distro plots}
+# Create the first plot for exon inclusion levels
+bigPicturePlotExons <- bigPicturePlot(table = kan_exons$PSI)
+
+# Customize the first plot for professional reporting
+plot1 <- bigPicturePlotExons +
+  ggtitle("Exon Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    panel.grid.major = element_line(color = "gray90", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.25)
+  )
+
+# Create a second plot for a hypothetical dataframe
+# Replace 'hypothetical_data$PSI' with your actual dataframe and column
+bigPictureIntrons <- bigPicturePlot(table = kan_introns$PSI)
+
+# Customize the second plot
+plot2 <- bigPictureIntrons +
+  ggtitle("Introns Inclusion Levels") +
+  xlab("Samples") +
+  ylab("PSI Values") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    panel.background = element_rect(fill = "lightblue"),  # Set background color
+    panel.grid.major = element_line(color = "gray90", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.25)
+  )
+
+# Combine both plots into one figure using patchwork
+plot1 / plot2
+```
+
 ## PCA Plot
 
 As it can be seen, most dataframe sinclude only two conditions; *Myoblasts* or *Myotubes*, where Tao has different time points. However, all of them are clustered properly in the PCA plot. PCA was done on the PSI matrix of each study as they come out from *Vast Combine*.
@@ -573,6 +632,7 @@ pca_tao <- tao_data[,  c("EVENT",tao_events$Samples)]
 pca_lyu <- lyu_data[,  c("EVENT",lyu_events$Samples)]
 pca_christopher <- christopher_data[,  c("EVENT",christopher_events$Samples)]
 pca_dominic <- dominic_data[,  c("EVENT",dominic_events$Samples)]
+pca_kan <- kan_data[,  c("EVENT",kan_events$Samples)]
 
 # merge pca data columns by row names
 merged_pca <- pca_zhang %>%
@@ -580,11 +640,12 @@ merged_pca <- pca_zhang %>%
   left_join(pca_lyu, by = "EVENT") %>%
   left_join(pca_christopher, by="EVENT") %>%
   left_join(pca_dominic, by="EVENT") %>%
+  left_join(pca_kan, by="EVENT") %>%
   na.omit()
 rownames(merged_pca)<- merged_pca$EVENT
 merged_pca<-t(merged_pca[,-1])
 
-metadata_merged<-tibble(sample=c(metadata_zhang$run_accession,metadata_tao$run_accession,metadata_lyu$run_accession,metadata_christopher$run_accession,metadata_dominic$run_accession),experiment_title=c(metadata_zhang$experiment_title,metadata_tao$experiment_title,metadata_lyu$experiment_title,metadata_christopher$experiment_title,metadata_dominic$experiment_title))
+metadata_merged<-tibble(sample=c(metadata_zhang$run_accession,metadata_tao$run_accession,metadata_lyu$run_accession,metadata_christopher$run_accession,metadata_dominic$run_accession,metadata_kan$run_accession),experiment_title=c(metadata_zhang$experiment_title,metadata_tao$experiment_title,metadata_lyu$experiment_title,metadata_christopher$experiment_title,metadata_dominic$experiment_title,metadata_kan$experiment_title))
 
 # Reorder metadata_merged$experiment_title based on the row names of merged_pca
 condition_pca <- metadata_merged$experiment_title[match(rownames(merged_pca), metadata_merged$sample)]
@@ -596,7 +657,7 @@ pca_result <- prcomp(merged_pca)  # Perform PCA
 pca_data <- as.data.frame(pca_result$x)
 pca_data$Sample <- rownames(pca_data)
 pca_data$condition<-condition_pca
-pca_data$data_origin<-c(rep("Zhang",ncol(pca_zhang)-1),rep("Tao",ncol(pca_tao)-1),rep("Lyu",ncol(pca_lyu)-1),rep("Christopher",ncol(pca_christopher)-1),rep("Dominic",ncol(pca_dominic)-1))
+pca_data$data_origin<-c(rep("Zhang",ncol(pca_zhang)-1),rep("Tao",ncol(pca_tao)-1),rep("Lyu",ncol(pca_lyu)-1),rep("Christopher",ncol(pca_christopher)-1),rep("Dominic",ncol(pca_dominic)-1),rep("Kan",ncol(pca_kan)-1))
 ```
 
 ```{r pca plotting}
@@ -644,11 +705,12 @@ splicing_events <- tibble(
   tao = tao_events$EventsPerType,
   lyu = lyu_events$EventsPerType,
   christopher = christopher_events$EventsPerType,
-  dominic = dominic_events$EventsPerType
+  dominic = dominic_events$EventsPerType,
+  kan = kan_events$EventsPerType
 )
 
 splicing_events_long <- splicing_events %>%
-  pivot_longer(cols = c(zhang, tao, lyu, christopher, dominic),
+  pivot_longer(cols = c(zhang, tao, lyu, christopher, dominic, kan),
                names_to = "study", values_to = "count") %>%
   mutate(event_type = ifelse(event_type %in% c("C1", "C2", "C3", "ANN", "S", "MIC"), "EX", event_type)) %>%
   group_by(study, event_type) %>%
@@ -730,6 +792,9 @@ samples_christopher <- metadata_christopher$run_accession
 groups_dominic <- unique(metadata_dominic[, groupingVariable])
 samples_dominic <- metadata_dominic$run_accession
 
+# Kan
+groups_kan <- unique(metadata_kan[, groupingVariable])
+samples_kan <- metadata_kan$run_accession
 
 random_colors=c("#D8D97AFF", "#95C36EFF", "#74C8C3FF", "#5A97C1FF", "#295384FF", "#0A2E57FF")
 
@@ -780,6 +845,16 @@ groupList_dominic <- lapply(1:length(groups_dominic), function(i) {
   )
 })
 names(groupList_dominic) <- groups_dominic
+
+# Create group list with metadata
+groupList_kan <- lapply(1:length(groups_kan), function(i) {
+  list(
+    name = groups_kan[i],
+    samples = samples_kan[metadata_kan[, groupingVariable] == groups_kan[i]],
+    color = random_colors[i]
+  )
+})
+names(groupList_kan) <- groups_kan
 ```
 
 ```{r groups_auxiliary}
@@ -819,6 +894,12 @@ samplesA_dominic    <- groupList_dominic[[groupA]]$samples
 samplesB_dominic   <- groupList_dominic[[groupB]]$samples
 colsGroupA_dominic   <- convertCols(dominic_exons$PSI, samplesA_dominic)
 colsGroupB_dominic    <- convertCols(dominic_exons$PSI, samplesB_dominic)
+
+# Kan
+samplesA_kan   <- groupList_kan[[groupA]]$samples
+samplesB_kan   <- groupList_kan[[groupB]]$samples
+colsGroupA_kan   <- convertCols(kan_exons$PSI, samplesA_kan)
+colsGroupB_kan   <- convertCols(kan_exons$PSI, samplesB_kan)
 
 set.seed(42) #Setting seed for downstream simulations of the beta distribution
 ```
@@ -905,6 +986,21 @@ dominic_pdiff_exons <- prepareTableVolcano(
   maxDevTable = maxDevSimulationN100,
   seed=TRUE,
   CoverageWeight = FALSE)
+
+# Preprae table for kan
+kan_pdiff_exons <- prepareTableVolcano(
+  psitable = kan_exons$PSI,
+  qualtable = kan_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_kan,
+  colsB = colsGroupB_kan,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  seed=TRUE,
+  CoverageWeight = FALSE)
 ```
 
 ```{r f-stat}
@@ -978,6 +1074,21 @@ dominic_fstat_exons <- prepareTableVolcanoFstat(
   npoints = 500,
   colsA = colsGroupA_dominic,
   colsB = colsGroupB_dominic,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  seed=TRUE,
+  CoverageWeight = FALSE)
+
+# Preprae table for kan
+kan_fstat_exons <- prepareTableVolcanoFstat(
+  psitable = kan_exons$PSI,
+  qualtable = kan_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_kan,
+  colsB = colsGroupB_kan,
   labA = groupA,
   labB = groupB,
   basalColor = "#89C0AE",
@@ -1070,6 +1181,23 @@ dominic_fdr_exons <- prepareTableVolcanoFDR(
   nsim = 100,
   seed=TRUE,
   CoverageWeight = FALSE)
+
+# Preprae table for kan
+kan_fdr_exons <- prepareTableVolcanoFDR(
+  psitable = kan_exons$PSI,
+  qualtable = kan_exons$Qual,
+  npoints = 500,
+  colsA = colsGroupA_kan,
+  colsB = colsGroupB_kan,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  nsim = 100,
+  seed=TRUE,
+  CoverageWeight = FALSE)
+
 ```
 
 ```{r table_multgroups exons}
@@ -1160,6 +1288,23 @@ theme(
 
 ```{r dominic fdr volcano}
 plotVolcanoFDR(betasTable =filter(dominic_fdr_exons,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") +
+theme(
+  plot.title = element_text(size = 10),  # Title font size
+  axis.title = element_text(size = 10),  # Axis title font size
+  axis.text = element_text(size = 10),   # Axis text font size
+  legend.text = element_text(size = 10), # Legend text font size
+  legend.title = element_text(size = 10) # Legend title font size
+)
+```
+
+#### Kan
+
+```{r kan fdr volcano}
+plotVolcanoFDR(betasTable =filter(kan_fdr_exons,!is.na(EVENT)),
                             labA = groupA,
                             labB = groupB,
                             basalColor = "#89C0AE",
@@ -1557,6 +1702,102 @@ write.csv(dominic_exon_combination_tab,
 ```
 
 
+#### Kan
+
+```{r kan table making}
+kan_pdiff_exons_tab <- kan_pdiff_exons[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(kan_pdiff_exons_tab) <- 1:nrow(kan_pdiff_exons_tab)
+
+kan_fstat_exons_tab <- kan_fstat_exons[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(kan_fstat_exons_tab) <- 1:nrow(kan_fstat_exons_tab)
+
+kan_fdr_exons_tab <- kan_fdr_exons[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))
+rownames(kan_fdr_exons_tab) <- 1:nrow(kan_fdr_exons_tab)
+
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(kan_pdiff_exons_tab$EVENT, kan_fstat_exons_tab$EVENT, kan_fdr_exons_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_exon_diff_tab <- kan_pdiff_exons_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fstat_tab <- kan_fstat_exons_tab %>% filter(EVENT %in% common_events)
+filtered_exon_fdr_tab <- kan_fdr_exons_tab %>% filter(EVENT %in% common_events)
+
+
+# Select only unique columns from each table
+filtered_exon_diff_tab <- filtered_exon_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_exon_fstat_tab <- filtered_exon_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_exon_fdr_tab <- filtered_exon_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+kan_exon_combination_tab <- filtered_exon_diff_tab %>%
+  inner_join(filtered_exon_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_exon_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+```
+
+```{r kan combination table}
+# Render DataTable with enhancements
+datatable(
+  kan_exon_combination_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+
+write.csv(kan_exon_combination_tab,
+          file = file.path(output_dir, paste0("kan_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
+
+
 #### Christopher
 
 ```{r christopher table making}
@@ -1794,6 +2035,22 @@ dominic_pdiff_introns <- prepareTableVolcano(
   maxDevTable = maxDevSimulationN100,
   seed=TRUE,
   CoverageWeight = FALSE)
+
+# Preprae table for kan
+kan_pdiff_introns <- prepareTableVolcano(
+  psitable = kan_introns$PSI,
+  qualtable = kan_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_kan,
+  colsB = colsGroupB_kan,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  seed=TRUE,
+  CoverageWeight = FALSE)
+
 ```
 
 ```{r intron f-stat}
@@ -1874,6 +2131,22 @@ dominic_fstat_introns <- prepareTableVolcanoFstat(
   maxDevTable = maxDevSimulationN100,
   seed=TRUE,
   CoverageWeight = FALSE)
+
+# Preprae table for kan
+kan_fstat_introns <- prepareTableVolcanoFstat(
+  psitable = kan_introns$PSI,
+  qualtable = kan_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_kan,
+  colsB = colsGroupB_kan,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  seed=TRUE,
+  CoverageWeight = FALSE)
+
 ```
 
 ```{r FDR intron calculations}
@@ -1951,6 +2224,22 @@ dominic_fdr_introns <- prepareTableVolcanoFDR(
   npoints = 500,
   colsA = colsGroupA_dominic,
   colsB = colsGroupB_dominic,
+  labA = groupA,
+  labB = groupB,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  nsim = 100,
+  seed=TRUE,
+  CoverageWeight = FALSE)
+
+# Preprae table for kan
+kan_fdr_introns <- prepareTableVolcanoFDR(
+  psitable = kan_introns$PSI,
+  qualtable = kan_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_kan,
+  colsB = colsGroupB_kan,
   labA = groupA,
   labB = groupB,
   basalColor = "#89C0AE",
@@ -2049,6 +2338,23 @@ theme(
 
 ```{r dominic fdr intron volcano}
 plotVolcanoFDR(betasTable =filter(dominic_fdr_introns,!is.na(EVENT)),
+                            labA = groupA,
+                            labB = groupB,
+                            basalColor = "#89C0AE",
+                            interestColor = "#E69A9C") +
+theme(
+  plot.title = element_text(size = 10),  # Title font size
+  axis.title = element_text(size = 10),  # Axis title font size
+  axis.text = element_text(size = 10),   # Axis text font size
+  legend.text = element_text(size = 10), # Legend text font size
+  legend.title = element_text(size = 10) # Legend title font size
+)
+```
+
+#### Kan
+
+```{r kan fdr intron volcano}
+plotVolcanoFDR(betasTable =filter(kan_fdr_introns,!is.na(EVENT)),
                             labA = groupA,
                             labB = groupB,
                             basalColor = "#89C0AE",
@@ -2445,6 +2751,100 @@ write.csv(dominic_intron_combination_tab,
           row.names = FALSE)
 ```
 
+#### Kan
+
+```{r kan table intron making}
+kan_pdiff_introns_tab <- kan_pdiff_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
+  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(kan_pdiff_introns_tab) <- 1:nrow(kan_pdiff_introns_tab)
+
+kan_fstat_introns_tab <- kan_fstat_introns[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
+  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
+  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
+rownames(kan_fstat_introns_tab) <- 1:nrow(kan_fstat_introns_tab)
+
+kan_fdr_introns_tab <- kan_fdr_introns[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
+  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  arrange((FDR), desc(abs(deltapsi)))
+rownames(kan_fdr_introns_tab) <- 1:nrow(kan_fdr_introns_tab)
+
+# Find common EVENTs across all tables
+common_events <- Reduce(intersect, list(kan_pdiff_introns_tab$EVENT, kan_fstat_introns_tab$EVENT, kan_fdr_introns_tab$EVENT))
+
+# Filter each table to include only rows with common EVENTs
+filtered_intron_diff_tab <- kan_pdiff_introns_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fstat_tab <- kan_fstat_introns_tab %>% filter(EVENT %in% common_events)
+filtered_intron_fdr_tab <- kan_fdr_introns_tab %>% filter(EVENT %in% common_events)
+
+
+# Select only unique columns from each table
+filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
+filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+
+# Merge the data frames by EVENT
+kan_intron_combination_tab <- filtered_intron_diff_tab %>%
+  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
+  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
+  distinct() %>%
+  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
+```
+
+```{r kan combination intron table}
+# Render DataTable with enhancements
+datatable(
+  kan_intron_combination_tab,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center"),    # Center-align all columns
+      list(
+        targets = 3,  # Highlight significant Pdiff
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && parseFloat(data) > 0.99) {
+               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      ),
+      list(
+        targets = 4,  # Highlight large deltapsi values
+        render = JS(
+          "function(data, type, row) {
+             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
+               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
+             }
+             return data;
+           }"
+        )
+      )
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+) %>%
+  formatStyle(
+    columns = "Pdiff",
+    color = styleInterval(0.99, c("black", "green")),
+    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
+  ) %>%
+  formatStyle(
+  columns = "deltapsi",
+  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
+  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
+)
+
+
+write.csv(kan_intron_combination_tab,
+          file = file.path(output_dir, paste0("kan_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
 
 #### Christopher
 
@@ -2611,6 +3011,8 @@ These plots aim to explore any enrichment of either (intron/exon) retention or (
 dfs <- list(
   list(df = dominic_pdiff_exons, group = "Exons", study = "Dominic"),
   list(df = dominic_pdiff_introns, group = "Introns", study = "Dominic"),
+  list(df = kan_pdiff_exons, group = "Exons", study = "Kan"),
+  list(df = kan_pdiff_introns, group = "Introns", study = "Kan"),
   list(df = christopher_pdiff_exons, group = "Exons", study = "Christopher"),
   list(df = christopher_pdiff_introns, group = "Introns", study = "Christopher"),
   list(df = lyu_pdiff_exons, group = "Exons", study = "Lyu"),
@@ -2671,7 +3073,8 @@ dataframes <- list(
   tao = tao_intron_combination_tab,
   lyu = lyu_intron_combination_tab,
   zhang= zhang_intron_combination_tab,
-  dominic=dominic_intron_combination_tab
+  dominic=dominic_intron_combination_tab,
+  kan=kan_intron_combination_tab
 )
 
 # Extract unique EVENTS for each data frame
@@ -2777,13 +3180,15 @@ tao_shared <- tao_intron_combination_tab[tao_intron_combination_tab$EVENT %in% e
 lyu_shared <- lyu_intron_combination_tab[lyu_intron_combination_tab$EVENT %in% events_at_least_4, ]
 christopher_shared <- christopher_intron_combination_tab[christopher_intron_combination_tab$EVENT %in% events_at_least_4, ]
 dominic_shared <- dominic_intron_combination_tab[dominic_intron_combination_tab$EVENT %in% events_at_least_4, ]
+kan_shared <- kan_intron_combination_tab[kan_intron_combination_tab$EVENT %in% events_at_least_4, ]
 
 # Step 5: Combine the filtered dataframes with a source identifier
 combined_data <- bind_rows(
   tao_shared %>% mutate(Source = "tao_shared"),
   lyu_shared %>% mutate(Source = "lyu_shared"),
   christopher_shared %>% mutate(Source = "christopher_shared"),
-  dominic_shared %>% mutate(Source = "dominic_shared")
+  dominic_shared %>% mutate(Source = "dominic_shared"),
+  kan_shared %>% mutate(Source = "kan_shared")
 )
 
 # Step 6: Calculate average per EVENT
@@ -2887,7 +3292,8 @@ dataframes <- list(
   tao = tao_exon_combination_tab,
   lyu = lyu_exon_combination_tab,
   zhang= zhang_exon_combination_tab,
-  dominic=dominic_exon_combination_tab
+  dominic=dominic_exon_combination_tab,
+  kan=kan_exon_combination_tab
 )
 
 # Extract unique EVENTS for each data frame
@@ -2980,7 +3386,7 @@ upset_exon_plot
 # Step 1: Combine all events into a single vector with their sources
 all_events <- unlist(lapply(list(tao_exon_combination_tab, lyu_exon_combination_tab, 
                                  zhang_exon_combination_tab, christopher_exon_combination_tab, 
-                                 dominic_exon_combination_tab), function(df) df$EVENT))
+                                 dominic_exon_combination_tab,kan_exon_combination_tab), function(df) df$EVENT))
 
 # Step 2: Count occurrences of each event
 event_counts <- table(all_events)
@@ -2994,6 +3400,7 @@ lyu_shared <- lyu_exon_combination_tab[lyu_exon_combination_tab$EVENT %in% event
 zhang_shared <- zhang_exon_combination_tab[zhang_exon_combination_tab$EVENT %in% events_at_least_4, ]
 christopher_shared <- christopher_exon_combination_tab[christopher_exon_combination_tab$EVENT %in% events_at_least_4, ]
 dominic_shared <- dominic_exon_combination_tab[dominic_exon_combination_tab$EVENT %in% events_at_least_4, ]
+kan_shared <- kan_exon_combination_tab[kan_exon_combination_tab$EVENT %in% events_at_least_4, ]
 
 # Step 5: Combine the filtered dataframes with a source identifier
 combined_data <- bind_rows(
@@ -3001,7 +3408,8 @@ combined_data <- bind_rows(
   lyu_shared %>% mutate(Source = "lyu_shared"),
   zhang_shared %>% mutate(Source = "zhang_shared"),
   christopher_shared %>% mutate(Source = "christopher_shared"),
-  dominic_shared %>% mutate(Source = "dominic_shared")
+  dominic_shared %>% mutate(Source = "dominic_shared"),
+  kan_shared %>% mutate(Source = "kan_shared")
 )
 
 # Step 6: Calculate average per EVENT
@@ -3465,9 +3873,10 @@ unique_tao_anova_multgroups_exons_tab<-arrange(unique_tao_anova_multgroups_exons
 ### Exons
 
 ```{r densities_per_event, warning=FALSE, message=FALSE, fig.width=16, fig.height=8}
-event_names <- c("MmuEX0024626", "MmuEX0024625", "MmuEX0039030",
-                 "MmuEX0039029", "MmuEX0030454", "MmuEX0048979",
-                 "MmuEX1009295", "MmuEX0034296")
+event_names <- c("MmuEX0039029", "MmuEX0019078", "MmuEX0028567",
+                 "MmuEX0028566", "MmuEX0038772", "MmuEX0038771",
+                 "MmuEX0009114","MmuEX0034296","MmuEX0034278",
+                 "MmuEX0019782","MmuEX0030453","MmuEX0048979")
 
 # Generate individual plots and store them in a list
 plots <- lapply(event_names, function(eventID) {
@@ -3510,31 +3919,11 @@ final_plot_exons <- wrap_plots(plots, ncol = 4, byrow = TRUE) +
 final_plot_exons
 ```
 
-#### Explanation
-
-**Itga7:**
-An isoform switch is observed between exons MmuEX0024625 (excluded) and MmuEX0024626 (included) during myogenesis, with similar ΔPSI values within the same module. The Itga7 gene encodes a protein of the integrin alpha chain family, functioning as a receptor for laminin-1 and playing roles in cell migration, differentiation, and morphogenesis. The lost exon (MmuEX0024625) has over 70% GC content, making it a "hard" exon. Its exclusion may be linked to the reduced number of nuclear speckles during myogenesis, which disrupts their fine-tuned structural support. The gained exon (MmuEX0024626) has lower GC content (49%), making it "soft." Notably, these exons are non-overlapping.
-
-**Rbfox2:**
-This gene encodes an RNA-binding protein that regulates alternative splicing via binding to the UGCAUG motif. During myogenesis, an isoform switch occurs (MmuEX0039029 > MmuEX0039030), with equivalent ΔPSI values in the module. The excluded exon (MmuEX0039029) has higher GC content (47%) and a lower splice site score (4.5) than the included exon (MmuEX0039030, 37% GC, 10 ssc). These findings suggest that the exclusion of "hard" exons and inclusion of "soft" exons may be associated with speckle disruption during myogenesis. Both exons are short (~45 bp), and the excluded exon disrupts the ORF, enabling functional protein expression. Additionally, exon MmuEX0039032 is excluded in this context.
-
-**Myo18a:**
-The included exon (MmuEX0030454) shows a high ΔPSI (0.595), low splice site scores (3 and -2.9), and high GC content (64%). This gene encodes a protein involved in Golgi-cytoskeleton interactions and lamellar actomyosin bundle assembly, which are critical for cell migration. Flanking exons (MmuEX0030453 upstream and MmuEX0030449 downstream) are also included. Both are short (MmuEX0030449, 36 bp) and exhibit weak splice site scores and high GC content (~72%).
-
-**Trip10:**
-This gene encodes a protein linked to actin cytoskeleton organization, endocytosis, and signal transduction, with implications as a biomarker for Huntington’s disease. The included exon has a high ΔPSI (0.433), low splice site scores (1.65 and 9.65), high GC content (65%), and is short (168 bp). It is part of the Group A list.
-
-**Ehbp1l1:**
-The included exon (ΔPSI: 0.314) is short (183 bp), exhibits high GC content (62.8%), and has weak splice site scores (-1.08 and 9.46). This gene is associated with actin cytoskeleton organization and is located in Group A.
-
-Negative Control:
-
-Tpm1: Assigned to Group C.
 
 ### Introns
 
 ```{r densities_per_event introns, out.width="100%", warning=FALSE, message=FALSE}
-event_names <- c("MmuINT0172005", "MmuINT0168360")
+event_names <- c("MmuINT0168360", "MmuINT0018915","MmuINT1004569")
 
 # Generate individual plots and store them in a list
 plots <- lapply(event_names, function(eventID) {
@@ -3577,10 +3966,6 @@ final_plot_introns
 
 ```
 
-#### Explanation
-
-**Usp5 (MmuINT0172005):**
-The intron of Usp5 (ubiquitin-specific peptidase 5) shows significant splicing activity during myogenesis, with a splicing increase of over 50%. It has a weak 3' splice site score (4.56) and a GC content above 50%. Gene Ontology (GO) annotations link Usp5 to membraneless organelles. Previous studies, including the Science paper and findings on its human ortholog (USP42), highlight its relevance to nuclear speckle-associated splicing. Knockdown (KD) of USP42 was shown to reduce SC35 nuclear speckle markers (see PMC8329168). Inclusion of this intron disrupts the open reading frame (ORF), suggesting a functional impact. This intron represents a promising candidate for further investigation.
 
 ### ANOVA Exons
 
