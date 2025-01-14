@@ -10,10 +10,10 @@
 #SBATCH --error=/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/logs/%x.%A_%a.err
 
 # time limit in minutes
-#SBATCH --time=180
+#SBATCH --time=240
 
 # queue
-#SBATCH --qos=shorter
+#SBATCH --qos=short
 #SBATCH --requeue
 
 # memory (MB)
@@ -23,7 +23,7 @@
 # job name
 #SBATCH --job-name vast-align
 # job array directive
-#SBATCH --array=0-5
+#SBATCH --array=4
 
 #################
 # start message #
