@@ -43,11 +43,11 @@ set -o pipefail
 ###############
 
 #Define file list and select the file for the current array job
-files=($PWD/data/raw/trapnell2010/*_1.fastq.gz)
+files=($PWD/data/processed/trapnell2010/*_1_val_1.fq.gz)
 file1=${files[$SLURM_ARRAY_TASK_ID]}
-file2=${file1/_1.fastq.gz/_2.fastq.gz}
+file2=${file1/_1_val_1.fq.gz/_2_val_2.fq.gz}
 
-basename=$(basename "$file1" _1.fastq.gz)
+basename=$(basename "$file1" _1_val_1.fq.gz)
 mkdir -p $PWD/data/processed/trapnell2010/vast_out
 
 singularity_image="docker://andresgordoortiz/vast-tools:latest"
