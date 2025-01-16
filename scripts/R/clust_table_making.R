@@ -1,9 +1,11 @@
 # Create clust tables gene expression
 
-splicing_factor_genes<-txi$counts[rownames(txi$counts) %in% mouse_sf_filtered,]
-colnames(splicing_factor_genes)<-metadata$run_accession
-clust_events_tao<-na.omit(data.frame(ID=rownames(splicing_factor_genes), t0=rowMeans(splicing_factor_genes[,1:3]), t2=rowMeans(splicing_factor_genes[,4:6]),t4=rowMeans(splicing_factor_genes[,7:9]),t7=rowMeans(splicing_factor_genes[,10:12])))
-write_tsv(clust_events_tao, "clust_events_tao_gene_expression.txt")
+splicing_factor_genes<-tao_events$PSI[,c(2,7:18)]
+splicing_factor_genes$ID<-splicing_factor_genes$EVENT
+splicing_factor_genes <- splicing_factor_genes[, c("ID",metadata_tao$run_accession)]
+
+#clust_events_tao<-na.omit(data.frame(ID=rownames(splicing_factor_genes), t0=rowMeans(splicing_factor_genes[,1:3]), t2=rowMeans(splicing_factor_genes[,4:6]),t4=rowMeans(splicing_factor_genes[,7:9]),t7=rowMeans(splicing_factor_genes[,10:12])))
+write_tsv(splicing_factor_genes, "clust_events_tao_splicing.txt")
 
 clust_events_trapnell<-na.omit(data.frame(ID=trapnell_events$PSI$EVENT, t0=rowMeans(trapnell_events$PSI[,7:9]), t2=rowMeans(trapnell_events$PSI[,10:11]),t4=rowMeans(trapnell_events$PSI[,12:13]),t7=rowMeans(trapnell_events$PSI[,14:16])))
 write_tsv(clust_events_trapnell, "clust_events_trapnell.txt")

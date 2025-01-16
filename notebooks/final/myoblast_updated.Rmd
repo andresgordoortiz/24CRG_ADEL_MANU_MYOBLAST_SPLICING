@@ -4505,7 +4505,7 @@ set.seed(45)
 tao_all <- filterEvents(
   tao_events,
   types = c("C1", "C2", "C3", "S", "MIC", "IR"),
-  N = 3
+  N = 2
 )
 
 # Convert PSI values to a matrix and set row names
@@ -4802,8 +4802,8 @@ colsGroupB_trapnell <- convertCols(trapnell_exons$PSI, samplesB_trapnell)
 # Exons
 
 tao_pdiff_4vs7 <- prepareTableVolcano(
-  psitable = tao_events$PSI,
-  qualtable = tao_events$Qual,
+  psitable = tao_all$PSI,
+  qualtable = tao_all$Qual,
   npoints = 500,
   colsA = colsGroupA_tao,
   colsB = colsGroupB_tao,
@@ -4818,8 +4818,8 @@ tao_pdiff_4vs7 <- prepareTableVolcano(
 
 
 tao_fdr_4vs7  <- prepareTableVolcanoFDR(
-  psitable = tao_events$PSI,
-  qualtable = tao_events$Qual,
+  psitable = tao_all$PSI,
+  qualtable = tao_all$Qual,
   npoints = 500,
   colsA = colsGroupA_tao,
   colsB = colsGroupB_tao,
@@ -4834,12 +4834,12 @@ tao_fdr_4vs7  <- prepareTableVolcanoFDR(
 )
 
 tao_pdiff_4vs7_tab <- tao_pdiff_4vs7[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
+  dplyr::filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
   arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
 rownames(tao_pdiff_4vs7_tab) <- 1:nrow(tao_pdiff_4vs7_tab)
 
 tao_fdr_4vs7_tab <- tao_fdr_4vs7[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
-  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
+  dplyr::filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
   arrange((FDR), desc(abs(deltapsi)))
 rownames(tao_fdr_4vs7_tab) <- 1:nrow(tao_fdr_4vs7_tab)
 
@@ -4847,13 +4847,13 @@ rownames(tao_fdr_4vs7_tab) <- 1:nrow(tao_fdr_4vs7_tab)
 common_events <- Reduce(intersect, list(tao_pdiff_4vs7_tab$EVENT, tao_fdr_4vs7_tab$EVENT))
 
 # Filter each table to include only rows with common EVENTs
-filtered_4vs7_diff_tab <- tao_pdiff_4vs7_tab %>% filter(EVENT %in% common_events)
-filtered_4vs7_fdr_tab <- tao_fdr_4vs7_tab %>% filter(EVENT %in% common_events)
+filtered_4vs7_diff_tab <- tao_pdiff_4vs7_tab %>% dplyr::filter(EVENT %in% common_events)
+filtered_4vs7_fdr_tab <- tao_fdr_4vs7_tab %>% dplyr::filter(EVENT %in% common_events)
 
 
 # Select only unique columns from each table
-filtered_4vs7_diff_tab <- filtered_4vs7_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
-filtered_4vs7_fdr_tab <- filtered_4vs7_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
+filtered_4vs7_diff_tab <- filtered_4vs7_diff_tab %>% dplyr::select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
+filtered_4vs7_fdr_tab <- filtered_4vs7_fdr_tab %>% dplyr::select(EVENT, FDR) # Extra column is FDR
 
 # Merge the data frames by EVENT
 tao_4vs7_tab <- filtered_4vs7_diff_tab %>%
@@ -4884,7 +4884,7 @@ datatable(
 
 ```
 
-## Tao 7 vs 4 Gene Expression Analysis
+## Tao 7 vs 2 Gene Expression Analysis
 
 ```{r tao gene expression}
 library(DESeq2)
@@ -4896,7 +4896,7 @@ library(EnsDb.Mmusculus.v79)
 library(enrichR)
 library(edgeR)
 # Load metadata
-metadata <- arrange(read.csv("metadata/tao_metadata.csv", sep = ","), experiment_title)[7:12,]
+metadata <- arrange(read.csv("metadata/tao_metadata.csv", sep = ","), experiment_title)[c(7:12),]
 
 # Subset count files and ensure proper formatting
 count_files <- file.path(paste0("Kallisto/", metadata$run_accession, "/abundance.h5"))
@@ -4965,7 +4965,7 @@ annotated_res <- merge(as.data.frame(res), Tx, by.x = "gene", by.y = "gene_name"
 
 # Filter significantly differentially expressed genes
 expression_genes_tao_4vs7 <- annotated_res %>% 
-  dplyr::filter(padj <= 0.05 & abs(log2FoldChange) >= 1.5) %>% 
+  dplyr::filter(padj <= 0.05 & abs(log2FoldChange) >= 1) %>% 
   na.omit() %>% 
   arrange(-abs(log2FoldChange))
 
@@ -4980,6 +4980,32 @@ volcano_plot <- ggplot(annotated_res, aes(x = log2FoldChange, y = -log10(padj)))
   theme_minimal()
 
 
+human_sf <- read_excel("SFs_list_ensembl_ID.xlsx")
+
+# Connect to Ensembl databases using the US East mirror
+human_mart <- useMart("ensembl", dataset = "hsapiens_gene_ensembl", host = "https://sep2019.archive.ensembl.org")
+mouse_mart <- useMart("ensembl", dataset = "mmusculus_gene_ensembl", host = "https://sep2019.archive.ensembl.org")
+
+# Convert Human Ensembl IDs to Mouse Ensembl IDs
+human_to_mouse <- getLDS(
+    attributes = c("ensembl_gene_id"),    # Human Ensembl IDs
+    filters = "ensembl_gene_id",          # Filter by Human Ensembl IDs
+    values = human_sf$ensembl_ID,  # Example Human IDs
+    mart = human_mart,                    # Human BioMart
+    attributesL = c("ensembl_gene_id"),   # Mouse Ensembl IDs
+    martL = mouse_mart,
+)
+
+# Step 2: Convert human gene symbols to mouse gene symbols
+mouse_sf <- bitr(
+  human_to_mouse$Gene.stable.ID.1,
+  fromType = "ENSEMBL",
+  toType = "SYMBOL",
+  OrgDb = org.Mm.eg.db
+)
+
+
+mouse_sf_filtered<-mouse_sf$SYMBOL[mouse_sf$SYMBOL %in% expression_genes_tao_4vs7$gene]
 
 # Load metadata
 metadata <- arrange(read.csv("metadata/tao_metadata.csv", sep = ","), experiment_title)
@@ -4999,15 +5025,7 @@ txi <- tximport(
   ignoreTxVersion = TRUE
 )
 
-
-annotated_res <- merge(as.data.frame(res), Tx, by.x = "gene", by.y = "gene_name", all.x = TRUE)
-expression_genes_tao_4vs7<-annotated_res[annotated_res$padj<=0.05 & abs(annotated_res$log2FoldChange)>=1.5,] %>% na.omit() %>% arrange(-abs(log2FoldChange))
-
-mouse_sf_RBPbase <- read_excel("RBPbase_Mm_DescriptiveID.xlsx")
-mouse_sf_nucleicacids<- read.table("splicing_factorstxt.txt", sep = "\t", header = TRUE)
-
-mouse_sf_filtered<-mouse_sf_nucleicacids$Gene[mouse_sf_nucleicacids$Gene %in% expression_genes_tao_4vs7$gene]
-de_tf_tao_4vs7<-txi$counts[rownames(txi$counts) %in% mouse_sf_filtered,]
+de_tf_tao_4vs7<-txi$counts[tolower(rownames(txi$counts)) %in% tolower(mouse_sf_filtered),]
 colnames(de_tf_tao_4vs7)<-metadata$run_accession
 de_tf_tao_4vs7<-as.data.frame(t(de_tf_tao_4vs7))
 
@@ -5037,7 +5055,7 @@ print(volcano_plot)
 
 ### Correlated Events
 
-```{r correlation matrix, results='hide'}
+```{r correlation matrix, results='hide', warning=FALSE}
 # Filter PSI matrix with events found
 
 events_4vs7_tao<-tao_events$PSI[,c(2,7:18)]
@@ -5064,7 +5082,7 @@ for (factor in colnames(dplyr::select(de_tf_tao_4vs7, -sample_id))) {
 
     # Perform correlation test
     cor_test <- tryCatch({
-      cor.test(merged_data[[factor]], merged_data[[event]], method = "spearman")
+      cor.test(merged_data[[factor]], merged_data[[event]], method = "pearson")
     }, error = function(e) NULL)
 
     # Check if test succeeded and meets conditions
@@ -5088,7 +5106,9 @@ cor_events_df<-tao_4vs7_tab[tao_4vs7_tab$EVENT %in% cor_results$SplicingEvent,]
 cor_events_go <- bitr(cor_events_df$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
 names(cor_events_go)<-c("GENE","ENTREZID")
 cor_events_df <- cor_events_df %>%
+  
   left_join(as.data.frame(cor_events_go), by = "GENE")
+
 
 cor_events_df$GroupA <- ifelse(cor_events_df$ENTREZID %in% groupA_genelist_mouse$ENTREZID, "TRUE", "FALSE")
 
@@ -5099,7 +5119,7 @@ cor_events_df$GroupC <- ifelse(cor_events_df$ENTREZID %in% groupC_genelist_mouse
 # Render DataTable with enhancements
 datatable(
   dplyr::select(cor_events_df, -Pdiff, -FDR, -COORD, -ENTREZID) %>%
-    dplyr::arrange(desc(abs(deltapsi)), GroupA, GroupB),
+    dplyr::arrange(desc(GroupA), desc(GroupB),desc(abs(deltapsi))),
   options = list(
     pageLength = 10,                      # Rows per page
     autoWidth = TRUE,                     # Adjust column widths automatically
@@ -5124,8 +5144,6 @@ datatable(
 
 enrichdata<-enrichr(unique(tao_4vs7_tab$GENE[tao_4vs7_tab$EVENT %in% cor_results$SplicingEvent]), databases = c("GO_Biological_Process_2023","GO_Cellular_Component_2023","GO_Molecular_Function_2023"))
 
-cor_results_genes<-cor_results
-cor_results_genes$SplicingEvent<-tao_4vs7_tab$GENE[match(cor_results_genes$SplicingEvent, tao_4vs7_tab$EVENT)]
 
 
 # Create a unique list of splicing factors and events
@@ -5177,7 +5195,8 @@ rownames(events_4vs7_tao_cor) <- events_4vs7_tao_cor$EVENT
 events_4vs7_tao_cor<-events_4vs7_tao_cor[,-1]
 
 # Arrange columns based on metadata
-events_4vs7_tao_cor <- events_4vs7_tao_cor[, metadata_tao$run_accession]
+events_4vs7_tao_cor <- events_4vs7_tao_cor[, metadata_tao$run_accession] %>%
+  as.matrix()
 
 # Create a dendrogram for the columns
 col_dend <- hclust(dist(t(events_4vs7_tao_cor))) %>%
@@ -5241,8 +5260,9 @@ protein_impact <- read.table("PROT_IMPACT-mm10-v2.3.tab", sep = "\t",
 
 events_for_impact<-rownames(events_4vs7_tao_cor)
 
-final_impact <- protein_impact %>%
-  dplyr::filter(EventID %in% events_for_impact) %>%
+# Ensure all events from `events_for_impact` are included in `final_impact`
+final_impact <- tibble(EventID = events_for_impact) %>%
+  left_join(protein_impact, by = "EventID") %>%
   arrange(match(EventID, events_for_impact)) %>%
   mutate(ONTO = ifelse(grepl("isoform", ONTO, ignore.case = TRUE), "-1", ONTO)) %>%
   mutate(ONTO = ifelse(grepl("UTR", ONTO, ignore.case = TRUE), "-2", ONTO)) %>%
@@ -5303,8 +5323,9 @@ ht <- Heatmap(
   row_title = "Splicing Events",
   row_title_gp = gpar(fontsize = 16, fontface = "italic"),
   column_names_rot = 45,
+  rect_gp = gpar(col = "white", lwd = 0.3),
   column_dend_reorder = c(1:12),
-  #column_labels = metadata_tao$experiment_title,
+  column_labels = metadata_tao$experiment_title,
   row_km = number_splices,
   left_annotation = left_annotation,   # Add the points on the left
   right_annotation = right_annotation, # Add foo on the right

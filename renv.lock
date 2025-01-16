@@ -120,7 +120,7 @@
     "BiocFileCache": {
       "Package": "BiocFileCache",
       "Version": "2.10.2",
-      "Source": "Repository",
+      "Source": "Bioconductor",
       "Repository": "Bioconductor 3.18",
       "Requirements": [
         "DBI",
@@ -229,7 +229,6 @@
       "RemoteHost": "api.github.com",
       "RemoteRepo": "ComplexHeatmap",
       "RemoteUsername": "jokergoo",
-      "RemoteRef": "HEAD",
       "RemoteSha": "0d273cdf57ebdf6eb54193563760ba6b678bf1ef",
       "Requirements": [
         "GetoptLong",
@@ -1693,7 +1692,7 @@
       "Package": "enrichR",
       "Version": "3.2",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "https://packagemanager.posit.co/cran/2024-09-30",
       "Requirements": [
         "R",
         "WriteXLS",
