@@ -158,6 +158,7 @@ library("ComplexHeatmap")
 library("enrichR")
 library("colorRamp2")
 library("dendextend")
+
 # Register Google fonts
 showtext_auto()
 font_add_google("Roboto", "roboto")
@@ -4772,7 +4773,9 @@ ht <- draw(ht)
 
 ```
 
-# Finding Splicing Events in later stages of Myogenesis
+# Gene Co-regulatory network of Tao 4-day vs 7-day splicing
+
+This protocol is adapted from [*Identification of alternative splicing regulatory patterns and characteristic splicing factors in heart failure using RNA-seq data and machine learning*](https://www.cell.com/heliyon/fulltext/S2405-8440(24)11439-9?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS2405844024114399%3Fshowall%3Dtrue).
 
 ```{r new variables 4 or 5 vs 7}
 groupA_tao<-"4_days"
@@ -4794,182 +4797,8 @@ colsGroupA_trapnell <- convertCols(trapnell_exons$PSI, samplesA_trapnell)
 colsGroupB_trapnell <- convertCols(trapnell_exons$PSI, samplesB_trapnell)
 ```
 
-```{r calculations trapnell 5 vs 7 days}
-# Exons
 
-trapnell_pdiff_exons <- prepareTableVolcano(
-  psitable = trapnell_exons$PSI,
-  qualtable = trapnell_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_trapnell,
-  colsB = colsGroupB_trapnell,
-  labA = groupA_trapnell,
-  labB = groupB_trapnell,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
-
-# Prepare table for Trapnell
-trapnell_fstat_exons <- prepareTableVolcanoFstat(
-  psitable = trapnell_exons$PSI,
-  qualtable = trapnell_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_trapnell,
-  colsB = colsGroupB_trapnell,
-  labA = groupA_trapnell,
-  labB = groupB_trapnell,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
-
-trapnell_fdr_exons <- prepareTableVolcanoFDR(
-  psitable = trapnell_exons$PSI,
-  qualtable = trapnell_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_trapnell,
-  colsB = colsGroupB_trapnell,
-  labA = groupA_trapnell,
-  labB = groupB_trapnell,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  nsim = 100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
-
-trapnell_pdiff_exons_tab <- trapnell_pdiff_exons[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.90) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
-  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(trapnell_pdiff_exons_tab) <- 1:nrow(trapnell_pdiff_exons_tab)
-
-trapnell_fstat_exons_tab <- trapnell_fstat_exons[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
-  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
-  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(trapnell_fstat_exons_tab) <- 1:nrow(trapnell_fstat_exons_tab)
-
-trapnell_fdr_exons_tab <- trapnell_fdr_exons[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
-  filter(!is.na(EVENT), FDR<=0.1) %>%  # Remove rows where EVENT is NA
-  arrange((FDR), desc(abs(deltapsi)))
-rownames(trapnell_fdr_exons_tab) <- 1:nrow(trapnell_fdr_exons_tab)
-
-# Find common EVENTs across all tables
-common_events <- Reduce(intersect, list(trapnell_pdiff_exons_tab$EVENT, trapnell_fstat_exons_tab$EVENT, trapnell_fdr_exons_tab$EVENT))
-
-# Filter each table to include only rows with common EVENTs
-filtered_exon_diff_tab <- trapnell_pdiff_exons_tab %>% filter(EVENT %in% common_events)
-filtered_exon_fstat_tab <- trapnell_fstat_exons_tab %>% filter(EVENT %in% common_events)
-filtered_exon_fdr_tab <- trapnell_fdr_exons_tab %>% filter(EVENT %in% common_events)
-
-
-# Select only unique columns from each table
-filtered_exon_diff_tab <- filtered_exon_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
-filtered_exon_fstat_tab <- filtered_exon_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
-filtered_exon_fdr_tab <- filtered_exon_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
-
-# Merge the data frames by EVENT
-trapnell_exon_5vs7_tab <- filtered_exon_diff_tab %>%
-  inner_join(filtered_exon_fstat_tab, by = "EVENT") %>%
-  inner_join(filtered_exon_fdr_tab, by = "EVENT") %>%
-  distinct() %>%
-  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
-
-
-# Introns
-
-trapnell_pdiff_introns <- prepareTableVolcano(
-  psitable = trapnell_introns$PSI,
-  qualtable = trapnell_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_trapnell,
-  colsB = colsGroupB_trapnell,
-  labA = groupA_trapnell,
-  labB = groupB_trapnell,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
-
-# Prepare table for Trapnell
-trapnell_fstat_introns <- prepareTableVolcanoFstat(
-  psitable = trapnell_introns$PSI,
-  qualtable = trapnell_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_trapnell,
-  colsB = colsGroupB_trapnell,
-  labA = groupA_trapnell,
-  labB = groupB_trapnell,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
-
-trapnell_fdr_introns <- prepareTableVolcanoFDR(
-  psitable = trapnell_introns$PSI,
-  qualtable = trapnell_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_trapnell,
-  colsB = colsGroupB_trapnell,
-  labA = groupA_trapnell,
-  labB = groupB_trapnell,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  nsim = 100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
-
-trapnell_pdiff_introns_tab <- trapnell_pdiff_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
-  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(trapnell_pdiff_introns_tab) <- 1:nrow(trapnell_pdiff_introns_tab)
-
-trapnell_fstat_introns_tab <- trapnell_fstat_introns[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
-  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
-  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(trapnell_fstat_introns_tab) <- 1:nrow(trapnell_fstat_introns_tab)
-
-trapnell_fdr_introns_tab <- trapnell_fdr_introns[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
-  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
-  arrange((FDR), desc(abs(deltapsi)))
-rownames(trapnell_fdr_introns_tab) <- 1:nrow(trapnell_fdr_introns_tab)
-
-# Find common EVENTs across all tables
-common_events <- Reduce(intersect, list(trapnell_pdiff_introns_tab$EVENT, trapnell_fstat_introns_tab$EVENT, trapnell_fdr_introns_tab$EVENT))
-
-# Filter each table to include only rows with common EVENTs
-filtered_intron_diff_tab <- trapnell_pdiff_introns_tab %>% filter(EVENT %in% common_events)
-filtered_intron_fstat_tab <- trapnell_fstat_introns_tab %>% filter(EVENT %in% common_events)
-filtered_intron_fdr_tab <- trapnell_fdr_introns_tab %>% filter(EVENT %in% common_events)
-
-
-# Select only unique columns from each table
-filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
-filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
-filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
-
-# Merge the data frames by EVENT
-trapnell_intron_5vs7_tab <- filtered_intron_diff_tab %>%
-  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
-  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
-  distinct() %>%
-  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
-
-
-```
-
-```{r calculations tao 5 vs 7 days, results='hide'}
+```{r calculations tao 4 vs 7 days, results='hide'}
 # Exons
 
 tao_pdiff_4vs7 <- prepareTableVolcano(
@@ -5031,15 +4860,194 @@ tao_4vs7_tab <- filtered_4vs7_diff_tab %>%
   inner_join(filtered_4vs7_fdr_tab, by = "EVENT") %>%
   distinct() %>%
   arrange(desc(abs(deltapsi)),desc(FDR), desc(Pdiff))
+```
 
+
+```{r tao 7 vs 4 table}
+# Render DataTable with enhancements
+datatable(
+  dplyr::select(tao_4vs7_tab,, -Pdiff, -FDR, -COORD),
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center")
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+)
+
+
+
+```
+
+## Tao 7 vs 4 Gene Expression Analysis
+
+```{r tao gene expression}
+library(DESeq2)
+library(tximport)
+library(ggplot2)
+library(viridis)
+library(rhdf5)
+library(EnsDb.Mmusculus.v79)
+library(enrichR)
+library(edgeR)
+# Load metadata
+metadata <- arrange(read.csv("metadata/tao_metadata.csv", sep = ","), experiment_title)[7:12,]
+
+# Subset count files and ensure proper formatting
+count_files <- file.path(paste0("Kallisto/", metadata$run_accession, "/abundance.h5"))
+metadata$experiment_title <- as.factor(metadata$experiment_title)
+
+# Load transcript-to-gene mapping
+Tx <- transcripts(EnsDb.Mmusculus.v79, columns = c("tx_id", "gene_name"))
+Tx <- as_tibble(Tx)[, c("tx_id", "gene_name")]
+
+# Import data using tximport
+txi <- tximport(
+  count_files, 
+  type = "kallisto", 
+  tx2gene = Tx, 
+  txOut = FALSE, 
+  countsFromAbundance = "lengthScaledTPM",
+  ignoreTxVersion = TRUE
+)
+
+
+# Ensure row order consistency
+rownames(metadata) <- metadata$run_accession
+
+# Create DESeq2 dataset
+dds <- DESeqDataSetFromTximport(txi, colData = metadata, design = ~experiment_title)
+
+# Filter out lowly expressed genes using CPM threshold
+cpm <- cpm(counts(dds))
+keep <- rowSums(cpm >= 1) >= 2  # At least 1 CPM in 2 or more samples
+dds <- dds[keep, ]
+
+# Perform variance stabilizing transformation (VST)
+vsd <- vst(dds, blind = FALSE)
+
+# PCA Plot for EDA
+pca_plot <- plotPCA(vsd, intgroup = "experiment_title") + 
+  ggtitle("PCA of Transformed Counts") + 
+  theme_minimal()
+
+# Run DESeq2 analysis
+dds <- DESeq(dds)
+
+# Results for the comparison "7_days" vs "4_days"
+res <- results(dds, contrast = c("experiment_title", "7_days", "4_days"), alpha = 0.05)
+
+# MA Plot
+# Convert results to a data frame
+res_df <- as.data.frame(res)
+
+# Create MA plot using ggplot2
+ma_plot <- ggplot(res_df, aes(x = baseMean, y = log2FoldChange)) +
+  geom_point(aes(color = padj < 0.05), alpha = 0.6) +
+  scale_x_log10() +
+  scale_color_manual(values = c("gray", "red")) +
+  labs(
+    title = "MA Plot: 7_days vs 4_days",
+    x = "Mean of Normalized Counts",
+    y = "Log2 Fold Change"
+  ) +
+  theme_minimal()
+
+
+# Annotate results with gene names
+res$gene <- rownames(res)
+annotated_res <- merge(as.data.frame(res), Tx, by.x = "gene", by.y = "gene_name", all.x = TRUE)
+
+# Filter significantly differentially expressed genes
+expression_genes_tao_4vs7 <- annotated_res %>% 
+  dplyr::filter(padj <= 0.05 & abs(log2FoldChange) >= 1.5) %>% 
+  na.omit() %>% 
+  arrange(-abs(log2FoldChange))
+
+# Export results
+write.csv(expression_genes_tao_4vs7, "deseq2_results_7vs4.csv", row.names = FALSE)
+
+# Volcano Plot
+volcano_plot <- ggplot(annotated_res, aes(x = log2FoldChange, y = -log10(padj))) +
+  geom_point(aes(color = padj <= 0.05 & abs(log2FoldChange) >= 1.5), alpha = 0.6) +
+  scale_color_manual(values = c("gray", "red")) +
+  labs(title = "Volcano Plot: 7_days vs 4_days", x = "Log2 Fold Change", y = "-Log10 Adjusted P-value") +
+  theme_minimal()
+
+
+
+# Load metadata
+metadata <- arrange(read.csv("metadata/tao_metadata.csv", sep = ","), experiment_title)
+
+# Subset count files and ensure proper formatting
+count_files <- file.path(paste0("Kallisto/", metadata$run_accession, "/abundance.h5"))
+metadata$experiment_title <- as.factor(metadata$experiment_title)
+
+
+# Import data using tximport
+txi <- tximport(
+  count_files, 
+  type = "kallisto", 
+  tx2gene = Tx, 
+  txOut = FALSE, 
+  countsFromAbundance = "lengthScaledTPM",
+  ignoreTxVersion = TRUE
+)
+
+
+annotated_res <- merge(as.data.frame(res), Tx, by.x = "gene", by.y = "gene_name", all.x = TRUE)
+expression_genes_tao_4vs7<-annotated_res[annotated_res$padj<=0.05 & abs(annotated_res$log2FoldChange)>=1.5,] %>% na.omit() %>% arrange(-abs(log2FoldChange))
+
+mouse_sf_RBPbase <- read_excel("RBPbase_Mm_DescriptiveID.xlsx")
+mouse_sf_nucleicacids<- read.table("splicing_factorstxt.txt", sep = "\t", header = TRUE)
+
+mouse_sf_filtered<-mouse_sf_nucleicacids$Gene[mouse_sf_nucleicacids$Gene %in% expression_genes_tao_4vs7$gene]
+de_tf_tao_4vs7<-txi$counts[rownames(txi$counts) %in% mouse_sf_filtered,]
+colnames(de_tf_tao_4vs7)<-metadata$run_accession
+de_tf_tao_4vs7<-as.data.frame(t(de_tf_tao_4vs7))
+
+de_tf_tao_4vs7$sample_id<-rownames(de_tf_tao_4vs7)
+
+```
+
+### Expression Plots { .tabset}
+
+#### PCA Plot
+
+```{r pca plto de}
+print(pca_plot)
+```
+
+#### MA Plot
+
+```{r ma plto de}
+print(ma_plot)
+```
+
+#### Volcano Plot
+
+```{r volcano plto de}
+print(volcano_plot)
+```
+
+### Correlated Events
+
+```{r correlation matrix, results='hide'}
 # Filter PSI matrix with events found
 
-events_4vs7_tao<-tao_events$PSI[,c("EVENT",metadata_tao$run_accession[metadata_tao$experiment_title %in% c("4_days","7_days")])]
+events_4vs7_tao<-tao_events$PSI[,c(2,7:18)]
 
-events_4vs7_tao<-events_4vs7_tao[events_4vs7_tao$EVENT %in% tao_4vs7_tab$EVENT[abs(tao_4vs7_tab$deltapsi)>=0.1],]
+events_4vs7_tao<-events_4vs7_tao[events_4vs7_tao$EVENT %in% tao_4vs7_tab$EVENT[abs(tao_4vs7_tab$deltapsi)>=0.2],]
+
 
 rownames(events_4vs7_tao)<-events_4vs7_tao$EVENT
 events_4vs7_tao<-as.data.frame(t(events_4vs7_tao[,-1]))
+events_4vs7_tao<-events_4vs7_tao[match(metadata_tao$run_accession,rownames(events_4vs7_tao)),]
 events_4vs7_tao$sample_id<-rownames(events_4vs7_tao)
 
 
@@ -5051,16 +5059,16 @@ cor_results <- data.frame(SplicingFactor = character(),
                           stringsAsFactors = FALSE)
 
 # Loop through all pairs of splicing factors and splicing events
-for (factor in colnames(select(de_tf_tao_4vs7, -sample_id))) {
-  for (event in colnames(select(events_4vs7_tao, -sample_id))) {
+for (factor in colnames(dplyr::select(de_tf_tao_4vs7, -sample_id))) {
+  for (event in colnames(dplyr::select(events_4vs7_tao, -sample_id))) {
 
     # Perform correlation test
     cor_test <- tryCatch({
-      cor.test(merged_data[[factor]], merged_data[[event]], method = "pearson")
+      cor.test(merged_data[[factor]], merged_data[[event]], method = "spearman")
     }, error = function(e) NULL)
 
     # Check if test succeeded and meets conditions
-    if (!is.null(cor_test) && abs(cor_test$estimate) > 0.8 & cor_test$p.value < 0.01) {
+    if (!is.null(cor_test) && abs(cor_test$estimate) > 0.7 & cor_test$p.value < 0.01) {
       cor_results <- rbind(cor_results, data.frame(SplicingFactor = factor,
                                                    SplicingEvent = event,
                                                    CorrelationCoefficient = cor_test$estimate,
@@ -5069,7 +5077,50 @@ for (factor in colnames(select(de_tf_tao_4vs7, -sample_id))) {
   }
 }
 
-network <- igraph::graph_from_data_frame(cor_results, directed = FALSE)
+```
+
+
+```{r tao 7 vs 4 table correlated events}
+
+cor_events_df<-tao_4vs7_tab[tao_4vs7_tab$EVENT %in% cor_results$SplicingEvent,]
+
+
+cor_events_go <- bitr(cor_events_df$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+names(cor_events_go)<-c("GENE","ENTREZID")
+cor_events_df <- cor_events_df %>%
+  left_join(as.data.frame(cor_events_go), by = "GENE")
+
+cor_events_df$GroupA <- ifelse(cor_events_df$ENTREZID %in% groupA_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+
+cor_events_df$GroupB <- ifelse(cor_events_df$ENTREZID %in% groupB_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+
+cor_events_df$GroupC <- ifelse(cor_events_df$ENTREZID %in% groupC_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+
+# Render DataTable with enhancements
+datatable(
+  dplyr::select(cor_events_df, -Pdiff, -FDR, -COORD, -ENTREZID) %>%
+    dplyr::arrange(desc(abs(deltapsi)), GroupA, GroupB),
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+    columnDefs = list(
+      list(targets = "_all", className = "dt-center")
+    )
+  ),
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+)
+
+
+
+```
+
+
+### Gene Ontology of Correlated Events
+
+```{r gene ontology splicng eents correlated}
 
 enrichdata<-enrichr(unique(tao_4vs7_tab$GENE[tao_4vs7_tab$EVENT %in% cor_results$SplicingEvent]), databases = c("GO_Biological_Process_2023","GO_Cellular_Component_2023","GO_Molecular_Function_2023"))
 
@@ -5095,41 +5146,231 @@ write.csv(edges, "edges.csv", row.names = FALSE)
 
 ```
 
-```{r combined tao and trapnell}
-metadata_combined<-rbind(metadata_tao, metadata_trapnell)
-# Combine the tables
-tao_trapnell_events<-list()
-tao_trapnell_events$PSI<-tao_events$PSI
+#### GO Biological Process
 
-# Merge the data frames by EVENT
-tao_trapnell_events$PSI <- tao_trapnell_events$PSI %>%
-  inner_join(trapnell_events$PSI[,c(2,7:16)], by = "EVENT") 
+```{r pladb bioprocess, fig.width=10, fig.height=8}
+plotEnrich(enrichdata[[1]])
+```
 
-tao_trapnell_events$Qual<-tao_events$Qual
-# bind two datasets by the column EVENT
-tao_trapnell_events$Qual <- tao_trapnell_events$Qual %>%
-  inner_join(trapnell_events$Qual[,c(2,7:16)], by = "EVENT")
+#### GO Cellular Component
+
+```{r pladb cellcomponent, fig.width=10, fig.height=8}
+plotEnrich(enrichdata[[2]])
+```
+
+#### GO Molecular Function
+
+```{r pladb molfunction, fig.width=10, fig.height=8}
+plotEnrich(enrichdata[[3]])
+```
+
+### Heatmap showcasing Correlated Events
+
+```{r heatmap prep cor, results='hide', fig.show='hide'}
+set.seed(45)
 
 
-groups_combined <- unique(metadata_combined[, groupingVariable])
-samples_combined <- metadata_combined$run_accession
+events_4vs7_tao<-tao_events$PSI[,c(2,7:18)]
+
+events_4vs7_tao_cor<-events_4vs7_tao[events_4vs7_tao$EVENT %in% unique(cor_results$SplicingEvent),]
+rownames(events_4vs7_tao_cor) <- events_4vs7_tao_cor$EVENT
+events_4vs7_tao_cor<-events_4vs7_tao_cor[,-1]
+
+# Arrange columns based on metadata
+events_4vs7_tao_cor <- events_4vs7_tao_cor[, metadata_tao$run_accession]
+
+# Create a dendrogram for the columns
+col_dend <- hclust(dist(t(events_4vs7_tao_cor))) %>%
+  as.dendrogram() %>%
+  color_branches(k = 2) # Color branches with 4 clusters
+
+# Check if row names contain "EX"
+contains_EX <- grepl("EX", rownames(events_4vs7_tao_cor))
+
+# Define an improved color gradient for the heatmap
+col_fun <- colorRamp2(
+  c(0, 50, 100),
+  c("purple", "white", "orange")
+)
+
+number_splices<-5
+
+reference_table<-data.frame(EVENT=c(tao_4vs7_tab$EVENT),GENE=c(tao_4vs7_tab$GENE))
 
 
-random_colors=c("#D8D97AFF", "#95C36EFF", "#74C8C3FF", "#5A97C1FF", "#295384FF", "#0A2E57FF")
+ht<-Heatmap(
+  events_4vs7_tao_cor, name = "PSI",
+  clustering_distance_rows = "pearson",
+  col = col_fun,
+  cluster_columns  = col_dend,
+  column_title = "Myoblast Samples at Different stages f development",
+  row_title = "Splicing Events",
+  column_names_rot = 45,
+  #column_labels = metadata_tao$experiment_title,
+  column_dend_reorder = 1:12,
+  row_km = number_splices,
+  row_dend_reorder = F,
+  rect_gp = gpar(col = "white", lwd = 0.3),
+  column_names_gp = gpar(fontsize = 16),
+  show_row_names = FALSE,
 
-# Create group list with metadata
-groupList_combined <- lapply(1:length(groups_combined), function(i) {
-  list(
-    name = groups_combined[i],
-    samples = samples_combined[metadata_combined[, groupingVariable] == groups_combined[i]],
-    color = random_colors[i]
+)
+ht = draw(ht); clustered_events<-row_order(ht)
+text_list<-list()
+# Loop through clustered events and assign dynamic names
+for (i in 1:length(clustered_events)) {
+  enrich_events <- enrichr(
+    reference_table$GENE[reference_table$EVENT %in% rownames(events_4vs7_tao_cor)[clustered_events[[i]]]],
+    databases = c("GO_Biological_Process_2023", "GO_Cellular_Component_2023", "GO_Molecular_Function_2023")
   )
-})
-names(groupList_combined) <- groups_combined
 
+  # Assign the dynamic name and value
+  text_list[[paste0("text", i)]] <- paste(
+    enrich_events$GO_Cellular_Component_2023$Term[1],
+    enrich_events$GO_Cellular_Component_2023$Term[2],
+    enrich_events$GO_Cellular_Component_2023$Term[3],
+    enrich_events$GO_Molecular_Function_2023$Term[1],
+    enrich_events$GO_Molecular_Function_2023$Term[2],
+    enrich_events$GO_Molecular_Function_2023$Term[3],
+    sep = "; \n"
+  )
+}
+
+protein_impact <- read.table("PROT_IMPACT-mm10-v2.3.tab", sep = "\t", 
+                             header = TRUE, stringsAsFactors = FALSE, fill = TRUE, quote = "")
+
+events_for_impact<-rownames(events_4vs7_tao_cor)
+
+final_impact <- protein_impact %>%
+  dplyr::filter(EventID %in% events_for_impact) %>%
+  arrange(match(EventID, events_for_impact)) %>%
+  mutate(ONTO = ifelse(grepl("isoform", ONTO, ignore.case = TRUE), "-1", ONTO)) %>%
+  mutate(ONTO = ifelse(grepl("UTR", ONTO, ignore.case = TRUE), "-2", ONTO)) %>%
+  mutate(ONTO = case_when(
+    grepl("ORF", ONTO, ignore.case = TRUE) & grepl("inclusion", ONTO, ignore.case = TRUE) ~ "2",
+    grepl("ORF", ONTO, ignore.case = TRUE) & grepl("exclusion", ONTO, ignore.case = TRUE) ~ "1",
+    TRUE ~ ONTO
+  )) %>%
+  mutate(ONTO = as.numeric(ONTO)) %>%
+  replace_na(list(ONTO = 0))
+
+
+# Define the left annotation (points) with axis labels
+left_annotation <- rowAnnotation(
+  Impact = anno_points(
+    final_impact$ONTO,
+    width = unit(4, "cm"),  # Adjusted width
+    size = unit(4, "mm"),   # Adjusted size of points
+    axis_param = list(
+      side = "top",
+      at = -2:2, # Numeric values to label
+      labels = c(
+        "Regulatory (5´UTR)",
+        "Alternative Isoform",
+        "Unknown/NonCoding",
+        "ORF disruption upon exclusion",
+        "ORF disruption upon inclusion"
+      ),
+      labels_rot = 45, # Rotation of labels
+      gp = gpar(fontsize = 15) # Text style
+    )
+  )
+)
+
+# Define the right annotation (foo)
+right_annotation <- rowAnnotation(
+  foo = anno_empty(
+    border = FALSE,
+    width = max_text_width(unlist(text_list)) + unit(4, "mm")
+  )
+) 
 ```
 
 
+**Note**: Gene ontology of *Cellular Component* and *Molecular Function* for each of the clustered blocks (splicing events that the *pearson* algorithm has found they behave similarly) appears on the right. The impact of that Event at protein level is shown on the left.
+
+```{r heatmap_plot cor, fig.width=30, fig.height=25, echo=TRUE, out.width="100%"}
+set.seed(45)
+
+ht <- Heatmap(
+  events_4vs7_tao_cor, 
+  name = "PSI",
+  clustering_distance_rows = "pearson",
+  col = col_fun,
+  cluster_columns = col_dend,
+  column_title = "C2C12 Samples at Different Stages of Development",
+  column_title_gp = gpar(fontsize = 25, fontface = "bold"),
+  row_title = "Splicing Events",
+  row_title_gp = gpar(fontsize = 16, fontface = "italic"),
+  column_names_rot = 45,
+  column_dend_reorder = c(1:12),
+  #column_labels = metadata_tao$experiment_title,
+  row_km = number_splices,
+  left_annotation = left_annotation,   # Add the points on the left
+  right_annotation = right_annotation, # Add foo on the right
+  row_dend_reorder = F,
+  column_names_gp = gpar(fontsize = 18, fontface = "bold", col = "darkblue"),
+  show_row_names = FALSE,
+  row_gap = unit(6, "mm"), # Adjust the gap size between rows
+  column_gap = unit(4, "mm"), # Adjust the gap size between columns
+  heatmap_legend_param = list(
+    title = "PSI Value",
+    title_gp = gpar(fontsize = 40),
+    labels_gp = gpar(fontsize = 10),
+    legend_position = c(-20, 0),  # Move the legend closer to the center (x, y coordinates)
+    legend_direction = "vertical" # Align the legend horizontally
+  )
+)
+
+# Draw the heatmap
+ht <- draw(ht)
+
+# Decorate the "foo" annotation slices (on the right)
+for (i in seq_along(clustered_events)) {
+  decorate_annotation("foo", slice = i, {
+    grid.rect(x = 0, width = unit(2, "mm"), gp = gpar(fill = i, col = NA), just = "left")
+    grid.text(paste(text_list[[i]], collapse = "\n"), x = unit(4, "mm"), just = "left", gp = gpar(fontsize = 15))
+  })
+}
+```
+
+### Table of Events from Heatmap
+
+```{r, table heatmap cor}
+row_order <- unlist(row_order(ht), use.names = F)
+col_order <- unlist(column_order(ht), use.names = F)
+
+cluster_index <- unlist(lapply(seq_along(row_order(ht)), function(i) rep(i, length(row_order(ht)[[i]]))))
+
+# Reorder the original matrix based on clustering
+clustered_matrix <- events_4vs7_tao_cor[row_order, col_order]
+final_impact_string<-protein_impact %>%
+  dplyr::filter(EventID %in% events_for_impact) %>%
+  arrange(match(EventID, events_for_impact))
+final_impact_string<- final_impact_string[match(rownames(clustered_matrix),final_impact_string$EventID),]
+
+
+heatmap_dataframe<-tibble(EVENT=rownames(clustered_matrix), heatmap_cluster=cluster_index, protein_impact=final_impact_string$ONTO)
+heatmap_dataframe$GENE<-reference_table$GENE[match(heatmap_dataframe$EVENT, reference_table$EVENT)]
+heatmap_dataframe<-dplyr::select(heatmap_dataframe, GENE, EVENT, protein_impact, heatmap_cluster)
+
+# Render DataTable with enhancements
+datatable(
+  heatmap_dataframe,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+))
+
+
+write.csv(heatmap_dataframe,
+          file = file.path(output_dir, paste0("heatmap_cluster_events_", format(Sys.Date(), "%Y%m%d"), ".csv")),
+          row.names = FALSE)
+```
 
 # System Settings
 
