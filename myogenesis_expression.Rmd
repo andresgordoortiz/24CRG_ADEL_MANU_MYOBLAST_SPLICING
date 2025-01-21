@@ -6,6 +6,8 @@ output: html_document
 ---
 ```{r}
 knitr::opts_chunk$set(echo = TRUE)
+
+# Load required libraries
 library(DESeq2)
 library(tximport)
 library(dplyr)
@@ -14,18 +16,18 @@ library(viridis)
 library(rhdf5)
 library(EnsDb.Mmusculus.v79)
 library(enrichR)
-# Load metadata of tao, samples of 4 days and 7 days only
+library(edgeR)
+
+# Load metadata
 metadata <- arrange(read.csv("metadata/tao_metadata.csv", sep = ","), experiment_title)[7:12,]
 
-# Subset count files and metadata
-count_files <- file.path(paste0("notebooks/final/Kallisto/", metadata$run_accession,"/abundance.h5"))
-
-# Ensure proper formatting
+# Subset count files and ensure proper formatting
+count_files <- file.path(paste0("notebooks/final/Kallisto/", metadata$run_accession, "/abundance.h5"))
 metadata$experiment_title <- as.factor(metadata$experiment_title)
 
 # Load transcript-to-gene mapping
 Tx <- transcripts(EnsDb.Mmusculus.v79, columns = c("tx_id", "gene_name"))
-Tx <- as_tibble(Tx)[,6:7]
+Tx <- as_tibble(Tx)[, c("tx_id", "gene_name")]
 
 # Import data using tximport
 txi <- tximport(
@@ -38,50 +40,104 @@ txi <- tximport(
 )
 
 
+# Ensure row order consistency
+rownames(metadata) <- metadata$run_accession
+
 # Create DESeq2 dataset
 dds <- DESeqDataSetFromTximport(txi, colData = metadata, design = ~experiment_title)
 
-# Filter lowly expressed genes
-keep <- rowSums(counts(dds) >= 5) >= 1
+# Filter out lowly expressed genes using CPM threshold
+cpm <- cpm(counts(dds))
+keep <- rowSums(cpm >= 1) >= 2  # At least 1 CPM in 2 or more samples
 dds <- dds[keep, ]
 
-# Variance stabilizing transformation for PCA
+# Perform variance stabilizing transformation (VST)
 vsd <- vst(dds, blind = FALSE)
 
-# PCA Plot
+# PCA Plot for EDA
 pca_plot <- plotPCA(vsd, intgroup = "experiment_title") + 
-  ggtitle("PCA of Transformed Counts")
+  ggtitle("PCA of Transformed Counts") + 
+  theme_minimal()
 print(pca_plot)
 
-```
-
-```{r}
 # Run DESeq2 analysis
 dds <- DESeq(dds)
 
-# Results with FDR threshold
-res <- results(dds, alpha = 0.05)
+# Results for the comparison "7_days" vs "4_days"
+res <- results(dds, contrast = c("experiment_title", "7_days", "4_days"), alpha = 0.05)
 
 # MA Plot
-ma_plot <- plotMA(res, ylim = c(-5, 5))
+# Convert results to a data frame
+res_df <- as.data.frame(res)
+
+# Create MA plot using ggplot2
+ma_plot <- ggplot(res_df, aes(x = baseMean, y = log2FoldChange)) +
+  geom_point(aes(color = padj < 0.05), alpha = 0.6) +
+  scale_x_log10() +
+  scale_color_manual(values = c("gray", "red")) +
+  labs(
+    title = "MA Plot: 7_days vs 4_days",
+    x = "Mean of Normalized Counts",
+    y = "Log2 Fold Change"
+  ) +
+  theme_minimal()
 print(ma_plot)
+
 
 # Annotate results with gene names
 res$gene <- rownames(res)
 annotated_res <- merge(as.data.frame(res), Tx, by.x = "gene", by.y = "gene_name", all.x = TRUE)
-expression_genes_tao_4vs7<-annotated_res[annotated_res$padj<=0.05 & abs(annotated_res$log2FoldChange)>=1,] %>% na.omit() %>% arrange(-abs(log2FoldChange))
+
+# Filter significantly differentially expressed genes
+expression_genes_tao_4vs7 <- annotated_res %>% 
+  filter(padj <= 0.05 & abs(log2FoldChange) >= 1.5) %>% 
+  na.omit() %>% 
+  arrange(-abs(log2FoldChange))
+
+# Export results
+write.csv(expression_genes_tao_4vs7, "deseq2_results_7vs4.csv", row.names = FALSE)
+
+# Volcano Plot
+volcano_plot <- ggplot(annotated_res, aes(x = log2FoldChange, y = -log10(padj))) +
+  geom_point(aes(color = padj <= 0.05 & abs(log2FoldChange) >= 1.5), alpha = 0.6) +
+  scale_color_manual(values = c("gray", "red")) +
+  labs(title = "Volcano Plot: 7_days vs 4_days", x = "Log2 Fold Change", y = "-Log10 Adjusted P-value") +
+  theme_minimal()
+print(volcano_plot)
 
 
-mouse_sf <- read_csv("notebooks/final/RBPDB_v1.3.1_proteins_mouse_2012-11-21.csv", 
-    col_names = FALSE)[,5:6]
-colnames(mouse_sf)<-c("gene","description")
+# Load metadata
+metadata <- arrange(read.csv("metadata/tao_metadata.csv", sep = ","), experiment_title)
 
-mouse_sf_filtered<-mouse_sf[mouse_sf$gene %in% expression_genes_tao_4vs7$gene,]
-de_tf_tao_4vs7<-txi$counts[rownames(txi$counts) %in% mouse_sf_filtered$gene,]
+# Subset count files and ensure proper formatting
+count_files <- file.path(paste0("notebooks/final/Kallisto/", metadata$run_accession, "/abundance.h5"))
+metadata$experiment_title <- as.factor(metadata$experiment_title)
+
+
+# Import data using tximport
+txi <- tximport(
+  count_files, 
+  type = "kallisto", 
+  tx2gene = Tx, 
+  txOut = FALSE, 
+  countsFromAbundance = "lengthScaledTPM",
+  ignoreTxVersion = TRUE
+)
+
+
+annotated_res <- merge(as.data.frame(res), Tx, by.x = "gene", by.y = "gene_name", all.x = TRUE)
+expression_genes_tao_4vs7<-annotated_res[annotated_res$padj<=0.05 & abs(annotated_res$log2FoldChange)>=1.5,] %>% na.omit() %>% arrange(-abs(log2FoldChange))
+
+mouse_sf_RBPbase <- read_excel("notebooks/final/RBPbase_Mm_DescriptiveID.xlsx")
+mouse_sf_nucleicacids<- read.table("notebooks/final/Table_MM_RBP.txt", sep = "\t", header = TRUE)
+
+mouse_sf_filtered<-mouse_sf$UNIQUE[mouse_sf$UNIQUE %in% expression_genes_tao_4vs7$gene]
+de_tf_tao_4vs7<-txi$counts[rownames(txi$counts) %in% mouse_sf_filtered,]
 colnames(de_tf_tao_4vs7)<-metadata$run_accession
 de_tf_tao_4vs7<-as.data.frame(t(de_tf_tao_4vs7))
 
 de_tf_tao_4vs7$sample_id<-rownames(de_tf_tao_4vs7)
+
 
 gsea_genes<-annotated_res[annotated_res$padj<=0.05 & abs(annotated_res$log2FoldChange)>=1,] %>% na.omit() %>% arrange(-log2FoldChange)
 
@@ -103,7 +159,8 @@ gsea_results <- GSEA(geneList = geneList,
 
 ```{r trapnell 4 vs 7}
 # Load metadata of tao, samples of 4 days and 7 days only
-metadata <- arrange(read.csv("metadata/trapnell2010_metadata.csv", sep = ","), experiment_title)[1:5,]
+metadata <- arrange(read.csv("metadata/trapnell2010_metadata.csv", sep = ","), experiment_title)[c(3:5,8:10),]
+metadata$experiment_title<-rep(c("168_h","60_h"), each=3)
 
 # Subset count files and metadata
 count_files <- file.path(paste0("notebooks/final/Kallisto/", metadata$run_accession,"/abundance.h5"))
@@ -127,7 +184,8 @@ txi <- tximport(
 dds <- DESeqDataSetFromTximport(txi, colData = metadata, design = ~experiment_title)
 
 # Filter lowly expressed genes
-keep <- rowSums(counts(dds) >= 5) >= 1
+cpm <- cpm(counts(dds))
+keep <- rowSums(cpm >= 1) >= 2  # At least 1 CPM in 2 or more samples
 dds <- dds[keep, ]
 
 # Variance stabilizing transformation for PCA
@@ -145,7 +203,7 @@ print(pca_plot)
 dds <- DESeq(dds)
 
 # Results with FDR threshold
-res <- results(dds, alpha = 0.05)
+res <- results(dds, contrast = c("experiment_title", "168_h", "60_h"), alpha = 0.05)
 
 # MA Plot
 ma_plot <- plotMA(res, ylim = c(-5, 5))
@@ -153,8 +211,13 @@ print(ma_plot)
 
 # Annotate results with gene names
 res$gene <- rownames(res)
-annotated_res <- merge(as.data.frame(res), Tx, by.x = "gene", by.y = "gene_name", all.x = TRUE)
-expression_genes_trapnell_5vs7<-annotated_res[annotated_res$padj<=0.1,] %>% na.omit() %>% arrange(-abs(log2FoldChange))
+annotated_res_trapnell <- merge(as.data.frame(res), Tx, by.x = "gene", by.y = "gene_name", all.x = TRUE)
+
+
+expression_genes_trapnell_5vs7 <- annotated_res_trapnell %>% 
+  dplyr::filter(padj <= 0.05 & abs(log2FoldChange) >= 1) %>% 
+  na.omit() %>% 
+  arrange(-abs(log2FoldChange))
 
 ```
 
