@@ -914,7 +914,6 @@ tao_pdiff_exons <- prepareTableVolcano(
   CoverageWeight = FALSE
 )
 
-
 groupA_tao<-"0_days"
 groupB_tao<-"2_days"
 samplesA_tao <- groupList_tao[[groupA_tao]]$samples
@@ -998,7 +997,7 @@ Volcano Plots of the FDR corrected exons for each study. In pink are the exons w
 
 #### Tao
 
-```{r tao fdr volcano}
+```{r tao fdr volcano 4 days}
 
 # INtersecting dhared exons between 10mm vs control and 1mm vs control
 differential_exons_2d<-na.omit(tao_pdiff_exons_2d[tao_pdiff_exons_2d$Pdiff >= 0.90 & abs(tao_pdiff_exons_2d$deltapsi) >= 0.1,])
@@ -1008,25 +1007,25 @@ differential_exons_4dvs2d<-na.omit(tao_pdiff_exons_4dvs2d[tao_pdiff_exons_4dvs2d
 shared_exons<-differential_exons_4d$EVENT[differential_exons_4d$EVENT %in% differential_exons_2d$EVENT]
 # Volcano plot
 library(ggrepel)
-differential_exons_4d<-na.omit(differential_exons_4d)
+tao_pdiff_exons_4d<-na.omit(tao_pdiff_exons_4d)
 # Add a Shared column based on the shared_exons
-differential_exons_4d$Shared <- ifelse(differential_exons_4d$EVENT %in% shared_exons, "Shared", "Not Shared")
+tao_pdiff_exons_4d$Shared <- ifelse(tao_pdiff_exons_4d$EVENT %in% shared_exons, "Shared", "Not Shared")
 
 # Classify significance
-differential_exons_4d$Significant <- ifelse(
-  differential_exons_4d$Pdiff >= 0.90 & differential_exons_4d$deltapsi >= 0.1, "Overrepresented",
+tao_pdiff_exons_4d$Significant <- ifelse(
+  tao_pdiff_exons_4d$Pdiff >= 0.90 & tao_pdiff_exons_4d$deltapsi >= 0.1, "Overrepresented",
   ifelse(
-    differential_exons_4d$Pdiff >= 0.90 & differential_exons_4d$deltapsi <= -0.1, "Underrepresented",
+    tao_pdiff_exons_4d$Pdiff >= 0.90 & tao_pdiff_exons_4d$deltapsi <= -0.1, "Underrepresented",
     "Not Significant"
   )
 )
 
 # Convert FDR to -log10 scale for y-axis
-differential_exons_4d$negLogpvalue <- -log10(1 - differential_exons_4d$Pdiff)
+tao_pdiff_exons_4d$negLogpvalue <- -log10(1 - tao_pdiff_exons_4d$Pdiff)
 
 
 # Updated volcano plot with improved fonts and axis styling
-volcano_plot <- ggplot(differential_exons_4d, aes(x = deltapsi, y = negLogpvalue)) +
+volcano_plot <- ggplot(tao_pdiff_exons_4d, aes(x = deltapsi, y = negLogpvalue)) +
   geom_point(aes(
     color = ifelse(Shared == "Shared", "Shared", Significant),
     alpha = ifelse(Shared == "Shared", "Shared", Significant),
@@ -1077,7 +1076,149 @@ volcano_plot <- ggplot(differential_exons_4d, aes(x = deltapsi, y = negLogpvalue
 # Display the plot
 volcano_plot
 ```
+```{r tao fdr volcano 2 days}
 
+tao_pdiff_exons_2d<-na.omit(tao_pdiff_exons_2d)
+# Add a Shared column based on the shared_exons
+tao_pdiff_exons_2d$Shared <- ifelse(tao_pdiff_exons_2d$EVENT %in% shared_exons, "Shared", "Not Shared")
+
+# Classify significance
+tao_pdiff_exons_2d$Significant <- ifelse(
+  tao_pdiff_exons_2d$Pdiff >= 0.90 & tao_pdiff_exons_2d$deltapsi >= 0.1, "Overrepresented",
+  ifelse(
+    tao_pdiff_exons_2d$Pdiff >= 0.90 & tao_pdiff_exons_2d$deltapsi <= -0.1, "Underrepresented",
+    "Not Significant"
+  )
+)
+
+# Convert FDR to -log10 scale for y-axis
+tao_pdiff_exons_2d$negLogpvalue <- -log10(1 - tao_pdiff_exons_2d$Pdiff)
+
+
+# Updated volcano plot with improved fonts and axis styling
+volcano_plot <- ggplot(tao_pdiff_exons_2d, aes(x = deltapsi, y = negLogpvalue)) +
+  geom_point(aes(
+    color = ifelse(Shared == "Shared", "Shared", Significant),
+    alpha = ifelse(Shared == "Shared", "Shared", Significant),
+    size = ifelse(Shared == "Shared", "Shared", Significant)
+  )) +
+  scale_color_manual(values = c(
+    "Shared" = "yellow",
+    "Overrepresented" = "#E00E73",
+    "Underrepresented" = "#3E2672",
+    "Not Significant" = "gray"
+  )) +
+  scale_alpha_manual(values = c(
+    "Shared" = 1.0,  # Fully opaque for shared exons
+    "Overrepresented" = 0.6,
+    "Underrepresented" = 0.6,
+    "Not Significant" = 0.3
+  )) +
+  scale_size_manual(values = c(
+    "Shared" = 3,  # Larger size for shared exons
+    "Overrepresented" = 2,
+    "Underrepresented" = 2,
+    "Not Significant" = 1
+  )) +
+  labs(
+    x = "Delta PSI",
+    y = expression(-log[10](1 - Pdiff)),
+    title = "(2 Days - 0 Days) Exons",
+    subtitle = "Shared events are highlighted in golden"
+  ) +
+  theme_minimal(base_size = 14, base_family = "sans") +  # Set base font
+  theme(
+    plot.title = element_text(
+      hjust = 0.5, size = 18, face = "bold", color = "black"
+    ),  # Centered and bold title
+    plot.subtitle = element_text(
+      hjust = 0.5, size = 14, face = "italic", color = "gray30"
+    ),  # Italicized subtitle
+    axis.text = element_text(size = 12, color = "black"),  # Axis text styling
+    axis.title = element_text(size = 14, face = "bold", color = "black"),  # Axis title styling
+    legend.text = element_text(size = 12),  # Larger legend text
+    legend.title = element_blank(),  # Remove legend title
+    panel.grid.major = element_line(color = "gray90"),  # Subtle grid lines
+    panel.grid.minor = element_blank(),  # Remove minor grid lines
+    panel.border = element_rect(color = "black", fill = NA, size = 1)  # Add border to plot area
+  ) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, NA))  # Extend y-axis dynamically
+
+# Display the plot
+volcano_plot
+```
+
+```{r tao fdr volcano 4 to 2 days}
+
+tao_pdiff_exons_4dvs2d<-na.omit(tao_pdiff_exons_4dvs2d)
+# Add a Shared column based on the shared_exons
+tao_pdiff_exons_4dvs2d$Shared <- ifelse(tao_pdiff_exons_4dvs2d$EVENT %in% shared_exons, "Shared", "Not Shared")
+
+# Classify significance
+tao_pdiff_exons_4dvs2d$Significant <- ifelse(
+  tao_pdiff_exons_4dvs2d$Pdiff >= 0.90 & tao_pdiff_exons_4dvs2d$deltapsi >= 0.1, "Overrepresented",
+  ifelse(
+    tao_pdiff_exons_4dvs2d$Pdiff >= 0.90 & tao_pdiff_exons_4dvs2d$deltapsi <= -0.1, "Underrepresented",
+    "Not Significant"
+  )
+)
+
+# Convert FDR to -log10 scale for y-axis
+tao_pdiff_exons_4dvs2d$negLogpvalue <- -log10(1 - tao_pdiff_exons_4dvs2d$Pdiff)
+
+
+# Updated volcano plot with improved fonts and axis styling
+volcano_plot <- ggplot(tao_pdiff_exons_4dvs2d, aes(x = deltapsi, y = negLogpvalue)) +
+  geom_point(aes(
+    color = ifelse(Shared == "Shared", "Shared", Significant),
+    alpha = ifelse(Shared == "Shared", "Shared", Significant),
+    size = ifelse(Shared == "Shared", "Shared", Significant)
+  )) +
+  scale_color_manual(values = c(
+    "Shared" = "yellow",
+    "Overrepresented" = "#E00E73",
+    "Underrepresented" = "#3E2672",
+    "Not Significant" = "gray"
+  )) +
+  scale_alpha_manual(values = c(
+    "Shared" = 1.0,  # Fully opaque for shared exons
+    "Overrepresented" = 0.6,
+    "Underrepresented" = 0.6,
+    "Not Significant" = 0.3
+  )) +
+  scale_size_manual(values = c(
+    "Shared" = 3,  # Larger size for shared exons
+    "Overrepresented" = 2,
+    "Underrepresented" = 2,
+    "Not Significant" = 1
+  )) +
+  labs(
+    x = "Delta PSI",
+    y = expression(-log[10](1 - Pdiff)),
+    title = "(4 Days - 2 Days) Exons",
+    subtitle = "Shared events are highlighted in golden"
+  ) +
+  theme_minimal(base_size = 14, base_family = "sans") +  # Set base font
+  theme(
+    plot.title = element_text(
+      hjust = 0.5, size = 18, face = "bold", color = "black"
+    ),  # Centered and bold title
+    plot.subtitle = element_text(
+      hjust = 0.5, size = 14, face = "italic", color = "gray30"
+    ),  # Italicized subtitle
+    axis.text = element_text(size = 12, color = "black"),  # Axis text styling
+    axis.title = element_text(size = 14, face = "bold", color = "black"),  # Axis title styling
+    legend.text = element_text(size = 12),  # Larger legend text
+    legend.title = element_blank(),  # Remove legend title
+    panel.grid.major = element_line(color = "gray90"),  # Subtle grid lines
+    panel.grid.minor = element_blank(),  # Remove minor grid lines
+    panel.border = element_rect(color = "black", fill = NA, size = 1)  # Add border to plot area
+  ) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, NA))  # Extend y-axis dynamically
+
+# Display the plot
+volcano_plot
+```
 
 ### Individual Combination Tables { .tabset}
 
@@ -1135,9 +1276,7 @@ datatable(
   fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
 )
 
-write.csv(tao_exon_combination_tab,
-          file = file.path(output_dir, paste0("tao_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
+
 ```
 
 
@@ -1235,6 +1374,8 @@ write.csv(tao_pdiff_introns_2d,"tao_pdiff_introns_2d.csv")
 write.csv(tao_pdiff_introns_4d,"tao_pdiff_introns_4d.csv")
 write.csv(tao_pdiff_introns_4dvs2d,"tao_pdiff_introns_4dvs2d.csv")
 
+
+
 ```
 
 
@@ -1263,56 +1404,6 @@ theme(
 )
 ```
 
-#### Christopher
-
-```{r christopher fdr intron volcano}
-plotVolcanoFDR(betasTable =filter(christopher_fdr_introns,!is.na(EVENT)),
-                            labA = groupA,
-                            labB = groupB,
-                            basalColor = "#89C0AE",
-                            interestColor = "#E69A9C") +
-theme(
-  plot.title = element_text(size = 10),  # Title font size
-  axis.title = element_text(size = 10),  # Axis title font size
-  axis.text = element_text(size = 10),   # Axis text font size
-  legend.text = element_text(size = 10), # Legend text font size
-  legend.title = element_text(size = 10) # Legend title font size
-)
-```
-
-#### Dominic
-
-```{r dominic fdr intron volcano}
-plotVolcanoFDR(betasTable =filter(dominic_fdr_introns,!is.na(EVENT)),
-                            labA = groupA,
-                            labB = groupB,
-                            basalColor = "#89C0AE",
-                            interestColor = "#E69A9C") +
-theme(
-  plot.title = element_text(size = 10),  # Title font size
-  axis.title = element_text(size = 10),  # Axis title font size
-  axis.text = element_text(size = 10),   # Axis text font size
-  legend.text = element_text(size = 10), # Legend text font size
-  legend.title = element_text(size = 10) # Legend title font size
-)
-```
-
-#### Kan
-
-```{r kan fdr intron volcano}
-plotVolcanoFDR(betasTable =filter(kan_fdr_introns,!is.na(EVENT)),
-                            labA = groupA,
-                            labB = groupB,
-                            basalColor = "#89C0AE",
-                            interestColor = "#E69A9C") +
-theme(
-  plot.title = element_text(size = 10),  # Title font size
-  axis.title = element_text(size = 10),  # Axis title font size
-  axis.text = element_text(size = 10),   # Axis text font size
-  legend.text = element_text(size = 10), # Legend text font size
-  legend.title = element_text(size = 10) # Legend title font size
-)
-```
 
 ### Individual Combination Tables { .tabset}
 
@@ -1321,43 +1412,6 @@ These tables show the Introns that show a FDR<=0.05 and PDiff (1-pvalue)>=0.95 i
 
 #### Tao
 
-```{r tao table intron making}
-tao_pdiff_introns_tab <- tao_pdiff_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
-  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(tao_pdiff_introns_tab) <- 1:nrow(tao_pdiff_introns_tab)
-
-tao_fstat_introns_tab <- tao_fstat_introns[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
-  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
-  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(tao_fstat_introns_tab) <- 1:nrow(tao_fstat_introns_tab)
-
-tao_fdr_introns_tab <- tao_fdr_introns[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
-  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
-  arrange((FDR), desc(abs(deltapsi)))
-rownames(tao_fdr_introns_tab) <- 1:nrow(tao_fdr_introns_tab)
-
-# Find common EVENTs across all tables
-common_events <- Reduce(intersect, list(tao_pdiff_introns_tab$EVENT, tao_fstat_introns_tab$EVENT, tao_fdr_introns_tab$EVENT))
-
-# Filter each table to include only rows with common EVENTs
-filtered_intron_diff_tab <- tao_pdiff_introns_tab %>% filter(EVENT %in% common_events)
-filtered_intron_fstat_tab <- tao_fstat_introns_tab %>% filter(EVENT %in% common_events)
-filtered_intron_fdr_tab <- tao_fdr_introns_tab %>% filter(EVENT %in% common_events)
-
-
-# Select only unique columns from each table
-filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
-filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
-filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
-
-# Merge the data frames by EVENT
-tao_intron_combination_tab <- filtered_intron_diff_tab %>%
-  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
-  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
-  distinct() %>%
-  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
-```
 
 ```{r tao combination intron table}
 # Render DataTable with enhancements
@@ -1410,290 +1464,6 @@ datatable(
 
 write.csv(tao_intron_combination_tab,
           file = file.path(output_dir, paste0("tao_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
-
-#### Dominic
-
-```{r dominic table intron making}
-dominic_pdiff_introns_tab <- dominic_pdiff_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
-  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(dominic_pdiff_introns_tab) <- 1:nrow(dominic_pdiff_introns_tab)
-
-dominic_fstat_introns_tab <- dominic_fstat_introns[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
-  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
-  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(dominic_fstat_introns_tab) <- 1:nrow(dominic_fstat_introns_tab)
-
-dominic_fdr_introns_tab <- dominic_fdr_introns[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
-  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
-  arrange((FDR), desc(abs(deltapsi)))
-rownames(dominic_fdr_introns_tab) <- 1:nrow(dominic_fdr_introns_tab)
-
-# Find common EVENTs across all tables
-common_events <- Reduce(intersect, list(dominic_pdiff_introns_tab$EVENT, dominic_fstat_introns_tab$EVENT, dominic_fdr_introns_tab$EVENT))
-
-# Filter each table to include only rows with common EVENTs
-filtered_intron_diff_tab <- dominic_pdiff_introns_tab %>% filter(EVENT %in% common_events)
-filtered_intron_fstat_tab <- dominic_fstat_introns_tab %>% filter(EVENT %in% common_events)
-filtered_intron_fdr_tab <- dominic_fdr_introns_tab %>% filter(EVENT %in% common_events)
-
-
-# Select only unique columns from each table
-filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
-filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
-filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
-
-# Merge the data frames by EVENT
-dominic_intron_combination_tab <- filtered_intron_diff_tab %>%
-  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
-  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
-  distinct() %>%
-  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
-```
-
-```{r dominic combination intron table}
-# Render DataTable with enhancements
-datatable(
-  dominic_intron_combination_tab,
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-) %>%
-  formatStyle(
-    columns = "Pdiff",
-    color = styleInterval(0.99, c("black", "green")),
-    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
-  ) %>%
-  formatStyle(
-  columns = "deltapsi",
-  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
-  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
-)
-
-
-write.csv(dominic_intron_combination_tab,
-          file = file.path(output_dir, paste0("dominic_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
-
-#### Kan
-
-```{r kan table intron making}
-kan_pdiff_introns_tab <- kan_pdiff_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
-  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(kan_pdiff_introns_tab) <- 1:nrow(kan_pdiff_introns_tab)
-
-kan_fstat_introns_tab <- kan_fstat_introns[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
-  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
-  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(kan_fstat_introns_tab) <- 1:nrow(kan_fstat_introns_tab)
-
-kan_fdr_introns_tab <- kan_fdr_introns[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
-  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
-  arrange((FDR), desc(abs(deltapsi)))
-rownames(kan_fdr_introns_tab) <- 1:nrow(kan_fdr_introns_tab)
-
-# Find common EVENTs across all tables
-common_events <- Reduce(intersect, list(kan_pdiff_introns_tab$EVENT, kan_fstat_introns_tab$EVENT, kan_fdr_introns_tab$EVENT))
-
-# Filter each table to include only rows with common EVENTs
-filtered_intron_diff_tab <- kan_pdiff_introns_tab %>% filter(EVENT %in% common_events)
-filtered_intron_fstat_tab <- kan_fstat_introns_tab %>% filter(EVENT %in% common_events)
-filtered_intron_fdr_tab <- kan_fdr_introns_tab %>% filter(EVENT %in% common_events)
-
-
-# Select only unique columns from each table
-filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
-filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
-filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
-
-# Merge the data frames by EVENT
-kan_intron_combination_tab <- filtered_intron_diff_tab %>%
-  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
-  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
-  distinct() %>%
-  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
-```
-
-```{r kan combination intron table}
-# Render DataTable with enhancements
-datatable(
-  kan_intron_combination_tab,
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-) %>%
-  formatStyle(
-    columns = "Pdiff",
-    color = styleInterval(0.99, c("black", "green")),
-    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
-  ) %>%
-  formatStyle(
-  columns = "deltapsi",
-  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
-  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
-)
-
-
-write.csv(kan_intron_combination_tab,
-          file = file.path(output_dir, paste0("kan_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
-
-#### Christopher
-
-```{r christopher table intron making}
-christopher_pdiff_introns_tab <- christopher_pdiff_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
-  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(christopher_pdiff_introns_tab) <- 1:nrow(christopher_pdiff_introns_tab)
-
-christopher_fstat_introns_tab <- christopher_fstat_introns[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
-  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
-  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(christopher_fstat_introns_tab) <- 1:nrow(christopher_fstat_introns_tab)
-
-christopher_fdr_introns_tab <- christopher_fdr_introns[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
-  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
-  arrange((FDR), desc(abs(deltapsi)))
-rownames(christopher_fdr_introns_tab) <- 1:nrow(christopher_fdr_introns_tab)
-
-# Find common EVENTs across all tables
-common_events <- Reduce(intersect, list(christopher_pdiff_introns_tab$EVENT, christopher_fstat_introns_tab$EVENT, christopher_fdr_introns_tab$EVENT))
-
-# Filter each table to include only rows with common EVENTs
-filtered_intron_diff_tab <- christopher_pdiff_introns_tab %>% filter(EVENT %in% common_events)
-filtered_intron_fstat_tab <- christopher_fstat_introns_tab %>% filter(EVENT %in% common_events)
-filtered_intron_fdr_tab <- christopher_fdr_introns_tab %>% filter(EVENT %in% common_events)
-
-
-# Select only unique columns from each table
-filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
-filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
-filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
-
-# Merge the data frames by EVENT
-christopher_intron_combination_tab <- filtered_intron_diff_tab %>%
-  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
-  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
-  distinct() %>%
-  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
-```
-
-```{r christopher combination intron table}
-# Render DataTable with enhancements
-datatable(
-  christopher_intron_combination_tab,
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-) %>%
-  formatStyle(
-    columns = "Pdiff",
-    color = styleInterval(0.99, c("black", "green")),
-    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
-  ) %>%
-  formatStyle(
-  columns = "deltapsi",
-  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
-  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
-)
-
-write.csv(christopher_intron_combination_tab,
-          file = file.path(output_dir, paste0("christopher_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
 
@@ -1969,167 +1739,11 @@ write.csv(final_intron_list,
 ```
 
 
-
-
-# Unsorted Exon Candidates List
-
-These *UpSet* plots showcase the number of common exons found in the different studies. 
-
-```{r merging final lists, warning=FALSE}
-# List of data frames to compare
-dataframes <- list(
-  christopher = christopher_exon_combination_tab,
-  tao = tao_exon_combination_tab,
-  dominic=dominic_exon_combination_tab,
-  kan=kan_exon_combination_tab
-)
-
-# Extract unique EVENTS for each data frame
-events_list <- lapply(dataframes, function(df) unique(df$EVENT))
-
-# Function to calculate unique and shared counts for a given combination of data frames
-compute_shared_and_unique <- function(indices) {
-  combo_names <- names(events_list)[indices]
-  combined_events <- events_list[indices]
-
-  # Compute shared and unique values
-  shared <- Reduce(intersect, combined_events)
-  unique_events <- lapply(combined_events, function(events) {
-    setdiff(events, unlist(combined_events[-which(combined_events == events)]))
-  })
-
-  # Return result even if one combination is empty
-  list(
-    combination = combo_names, # Store as list of dataset names
-    shared_count = length(shared),
-    unique_counts = sapply(unique_events, length)
-  )
-}
-
-# Iterate through all subsets of data frames
-all_combinations <- lapply(1:length(events_list), function(k) {
-  combn(seq_along(events_list), k, compute_shared_and_unique, simplify = FALSE)
-})
-
-# Flatten the list of results
-all_combinations <- unlist(all_combinations, recursive = FALSE)
-
-# Ensure all results have consistent structure
-exons_candidates <- do.call(rbind, lapply(all_combinations, function(res) {
-  # Handle cases with no unique values gracefully
-  data.frame(
-    Combination = I(list(res$combination)), # Store combination as list object
-    Shared = res$shared_count,
-    Unique = I(list(res$unique_counts)),   # Store unique counts as list object
-    row.names = NULL
-  )
-}))
-exons_candidates<-as.tibble(exons_candidates)
-
-# Check if lengths match
-if (length(exons_candidates$Combination) != length(exons_candidates$Shared)) {
-  stop("Lengths of Combination and Shared are not the same.")
-}
-
-# Apply mutate safely
-exons_candidates <- exons_candidates %>%
-  mutate(Combination = map2(Combination, Shared, ~rep(list(.x), .y))) %>%
-  unnest(Combination)
-
-
-```
-
-
-```{r plot venn diagram}
-counts <- exons_candidates %>%
-  count(Combination)
-
-upset_exon_plot<-exons_candidates %>%
-  ggplot(aes(x = Combination)) +
-  geom_bar(fill = "#D8D97AFF", color = "black") +  # Polished bar colors
-  geom_text(data = counts, aes(x = Combination, y = n, label = n),
-            vjust = -0.5, size = 4) +  # Add count labels
-  scale_x_upset(n_intersections = 31) +
-  labs(
-    title = paste("UpSet Plot of Exon Candidates (", Sys.Date(), ")", sep = ""),
-    x = "Exon Combinations",
-    y = "Count"
-  ) +
-  theme_minimal() +  # Professional font
-  theme(
-    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
-    axis.title = element_text(size = 12),
-    axis.text = element_text(size = 10),
-    panel.grid.major = element_line(color = "white", size = 0.7),
-    panel.grid.minor = element_blank(),
-    panel.background = element_rect(fill = "lightblue"),  # Set background color
-    plot.background = element_rect(fill = "white"),
-    strip.text = element_text(size = 12, face = "bold")
-  )
-
-upset_exon_plot
-```
-
 ```{r loading data from vastdb}
 events_info<-read.table("EVENT_INFO-mm10.tab", header = TRUE, sep = "\t")
 splice_scores<-read.table("SPLICE_SITE_SCORES-mm10.tab", header = FALSE, sep = "\t")
 ```
 
-```{r shared events final list}
-# Step 1: Combine all events into a single vector with their sources
-all_events <- unlist(lapply(list(tao_exon_combination_tab, 
-                                christopher_exon_combination_tab, 
-                                 dominic_exon_combination_tab,kan_exon_combination_tab), function(df) df$EVENT))
-
-# Step 2: Count occurrences of each event
-event_counts <- table(all_events)
-
-# Step 3: Identify events that appear in at least 4 dataframes
-events_at_least_4 <- names(event_counts[event_counts >= 2])
-
-# Step 4: Filter each dataframe to keep only these events
-tao_shared <- tao_exon_combination_tab[tao_exon_combination_tab$EVENT %in% events_at_least_4, ]
-christopher_shared <- christopher_exon_combination_tab[christopher_exon_combination_tab$EVENT %in% events_at_least_4, ]
-dominic_shared <- dominic_exon_combination_tab[dominic_exon_combination_tab$EVENT %in% events_at_least_4, ]
-kan_shared <- kan_exon_combination_tab[kan_exon_combination_tab$EVENT %in% events_at_least_4, ]
-
-# Step 5: Combine the filtered dataframes with a source identifier
-combined_data <- bind_rows(
-  tao_shared %>% mutate(Source = "tao_shared"),
-  christopher_shared %>% mutate(Source = "christopher_shared"),
-  dominic_shared %>% mutate(Source = "dominic_shared"),
-  kan_shared %>% mutate(Source = "kan_shared")
-)
-
-# Step 6: Calculate average per EVENT
-averaged_data <- combined_data %>%
-  group_by(EVENT) %>%
-  summarise(
-    avg_deltapsi = mean(deltapsi, na.rm = TRUE),
-    avg_Fstat = mean(Fstat, na.rm = TRUE),
-    avg_Pdiff = mean(Pdiff, na.rm = TRUE),
-    avg_FDR = mean(FDR, na.rm = TRUE)
-  )
-
-# Step 7: Add GENE and COORD information from tao_shared
-final_exon_list <- averaged_data
-final_exon_list$GENE <- tao_shared$GENE[match(final_exon_list$EVENT, tao_shared$EVENT)]
-final_exon_list$COORD <- tao_shared$COORD[match(final_exon_list$EVENT, tao_shared$EVENT)]
-
-# Step 8: Reorder columns and finalize
-final_exon_list <- final_exon_list %>%
-  select(GENE, EVENT, COORD, everything()) %>%
-  arrange(desc(abs(avg_deltapsi))) %>%
-  mutate(
-    avg_deltapsi = round(avg_deltapsi, 3),
-    avg_Fstat = round(avg_Fstat, 3),
-    avg_Pdiff = round(avg_Pdiff, 3),
-    avg_FDR = round(avg_FDR, 3)
-  )
-
-final_exon_list$GENE<-events_info$GENE[match(final_exon_list$EVENT,events_info$EVENT)]
-
-```
 
 
 # Sorting Out according to features
@@ -2173,10 +1787,10 @@ extract_V3_for_event <- function(event_value, splice_scores) {
 
 ```{r final list features extraction}
 # Exon List features
-final_exon_list$length<-events_info$LE_n[match(final_exon_list$EVENT, events_info$EVENT)]
-final_exon_list$sequence<-events_info$Seq_A[match(final_exon_list$EVENT, events_info$EVENT)]
+differential_exons_2d$length<-events_info$LE_n[match(differential_exons_2d$EVENT, events_info$EVENT)]
+differential_exons_2d$sequence<-events_info$Seq_A[match(differential_exons_2d$EVENT, events_info$EVENT)]
 
-final_exon_list$splice_scores <- apply(final_exon_list, 1, function(row) {
+differential_exons_2d$splice_scores <- apply(differential_exons_2d, 1, function(row) {
   # Get the event value from the current row
   event_value <- row["EVENT"]
 
@@ -2185,17 +1799,17 @@ final_exon_list$splice_scores <- apply(final_exon_list, 1, function(row) {
 })
 
 # Unnest the list in V3_values into two separate columns
-final_exon_list <- final_exon_list %>%
+differential_exons_2d <- differential_exons_2d %>%
   unnest(cols = splice_scores) %>%
   separate(splice_scores, into = c("splice_score_3", "splice_score_5"), sep = ",")
 
 # If necessary, clean up the new columns
-final_exon_list$splice_score_3 <- gsub("[c()]", "", final_exon_list$splice_score_3)
-final_exon_list$splice_score_5 <- gsub("[c()]", "", final_exon_list$splice_score_5)
-final_exon_list$splice_score_3 <- as.numeric(final_exon_list$splice_score_3)
-final_exon_list$splice_score_5 <- as.numeric(final_exon_list$splice_score_5)
+differential_exons_2d$splice_score_3 <- gsub("[c()]", "", differential_exons_2d$splice_score_3)
+differential_exons_2d$splice_score_5 <- gsub("[c()]", "", differential_exons_2d$splice_score_5)
+differential_exons_2d$splice_score_3 <- as.numeric(differential_exons_2d$splice_score_3)
+differential_exons_2d$splice_score_5 <- as.numeric(differential_exons_2d$splice_score_5)
 
-final_exon_list<-calculate_GC_percent(final_exon_list,"sequence")
+differential_exons_2d<-calculate_GC_percent(differential_exons_2d,"sequence")
 
 # Intron List features
 final_intron_list$length<-events_info$LE_n[match(final_intron_list$EVENT, events_info$EVENT)]
@@ -2230,98 +1844,9 @@ final_intron_list<-calculate_GC_percent(final_intron_list,"sequence")
 ## Enrichment Analysis with EnrichR of Candidate Genes { .tabset}
 
 
-### Network
-
 ```{r pladb enrichr}
-enrichdata<-enrichr(unique(c(final_exon_list$GENE, final_intron_list$GENE)), databases = c("GO_Biological_Process_2023","GO_Cellular_Component_2023","GO_Molecular_Function_2023"))
+enrichdata<-enrichr(unique(c(differential_exons_2d$GENE)), databases = c("GO_Biological_Process_2023","GO_Cellular_Component_2023","GO_Molecular_Function_2023"))
 
-cel_comp_df<-enrichdata[[2]]
-
-library(tidygraph)
-library(ggraph)
-
-## Prepare the edges
-edges <- cel_comp_df %>%
-  mutate(
-    genes = str_split(Genes, ";"),
-    Term = str_remove(Term, "\\(GO:\\s*\\d+\\)") # Remove "(GO: XXXX)" from GO terms
-  ) %>%
-  unnest(genes) %>%
-  dplyr::select(Term, genes)
-
-# Calculate the number of genes and filter significant terms
-nodes <- tibble(
-  name = unique(c(edges$Term, edges$genes))
-) %>%
-  left_join(
-    cel_comp_df %>%
-      mutate(
-        num_genes = str_count(Genes, ";") + 1,
-        Term = str_remove(Term, "\\(GO:\\s*\\d+\\)") # Remove "(GO: XXXX)" from GO terms
-      ) %>%
-      dplyr::select(Term, Adjusted.P.value, num_genes),
-    by = c("name" = "Term")
-  )
-
-# Filter significant GO terms with at least 6 genes
-significant_terms <- nodes %>%
-  filter(!is.na(Adjusted.P.value) & Adjusted.P.value < 0.05 & num_genes >= 6) %>%
-  arrange(desc(num_genes), Adjusted.P.value) %>%
-  slice(1:7)
-
-# Filter edges to include only selected significant terms
-edges <- edges %>%
-  filter(Term %in% significant_terms$name)
-
-# Update nodes to include only selected terms and their genes
-nodes <- nodes %>%
-  filter(name %in% c(significant_terms$name, edges$genes)) %>%
-  mutate(
-    type = if_else(name %in% significant_terms$name, "GO Term", "Gene")
-  )
-
-# Create a graph object
-graph <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE)
-
-# Plot the network graph with adjustments for num_genes and color
-ccgo<-ggraph(graph, layout = "stress") + 
-  # Use stress layout for better spacing
-  geom_edge_link(color = "gray80", alpha = 1) + 
-  # Use num_genes for node size and Adjusted.P.value for color
-  geom_node_point(aes(color =Adjusted.P.value, size = c(na.omit(num_genes), rep(1,length(graph)-7))), na.rm = TRUE) + 
-  geom_node_text(
-    aes(
-      label = name, 
-      fontface = "bold"  # Genes are not bold, GO terms are bold
-    ),
-    size = c(rep(5, 7), rep(3,length(graph)-7)),  # Different size for genes and GO terms
-    repel = TRUE,
-    vjust = 0.5
-  ) + 
-  # Adjust color scale using viridis with a more fitting color palette for publication
-  scale_color_viridis_c(
-    option = "cividis", 
-    na.value = "black", 
-    guide = guide_colorbar(title = "Adjusted P-value")
-  ) + 
-  # Adjust size scale and add legend for num_genes
-  scale_size_continuous(
-    range = c(2, 10), 
-    guide = guide_legend(title = "Number of Genes", title.position = "top", order = 1)
-  ) + 
-  # Optionally, you can adjust the shape scale if you need specific point types
-  scale_shape_manual(values = c("GO Term" = 21, "Gene" = 16)) + 
-  theme_void(base_size = 14) + 
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    legend.position = "right",
-    legend.title = element_text(face = "bold"),
-    legend.text = element_text(size = 12)
-  ) + 
-  ggtitle("Top 7 Significant CC GO Terms Network Graph")
-
-
-ccgo
 ```
 
 ### GO Biological Process
@@ -2345,9 +1870,9 @@ plotEnrich(enrichdata[[3]])
 
 
 ```{r ENTREZ}
-exon_go <- bitr(final_exon_list$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+exon_go <- bitr(differential_exons_2d$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
 names(exon_go)<-c("GENE","ENTREZID")
-final_exon_list <- final_exon_list %>%
+differential_exons_2d <- differential_exons_2d %>%
   left_join(as.data.frame(exon_go), by = "GENE")
 
 intron_go <- bitr(final_intron_list$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
@@ -2397,11 +1922,11 @@ groupB_genelist_mouse <- bitr(groupB_genelist_mouse, fromType = "ENSEMBL", toTyp
 groupC_genelist_mouse <- bitr(groupC_genelist_mouse, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
 
 # Exon list analysis
-final_exon_list$GroupA <- ifelse(final_exon_list$ENTREZID %in% groupA_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+differential_exons_2d$GroupA <- ifelse(differential_exons_2d$ENTREZID %in% groupA_genelist_mouse$ENTREZID, "TRUE", "FALSE")
 
-final_exon_list$GroupB <- ifelse(final_exon_list$ENTREZID %in% groupB_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+differential_exons_2d$GroupB <- ifelse(differential_exons_2d$ENTREZID %in% groupB_genelist_mouse$ENTREZID, "TRUE", "FALSE")
 
-final_exon_list$GroupC <- ifelse(final_exon_list$ENTREZID %in% groupC_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+differential_exons_2d$GroupC <- ifelse(differential_exons_2d$ENTREZID %in% groupC_genelist_mouse$ENTREZID, "TRUE", "FALSE")
 
 # Intron list analysis
 final_intron_list$GroupA <- ifelse(final_intron_list$ENTREZID %in% groupA_genelist_mouse$ENTREZID, "TRUE", "FALSE")
@@ -2418,26 +1943,21 @@ final_exon_list$GO_speckle<-tolower(final_exon_list$GENE) %in% tolower(go_speckl
 final_intron_list$GO_speckle<-tolower(final_intron_list$GENE) %in% tolower(go_speckle_genes)
 
 
-clustered_exons<-read_tsv("results/clust_results_tao_exons/Clusters_Objects.tsv")[-1,]
-
-final_exon_list$zigzag_clust2<-final_exon_list$EVENT %in% clustered_exons$`C2 (250 genes)`
-final_exon_list$zigzag_clust1<-final_exon_list$EVENT %in% clustered_exons$`C1 (215 genes)`
-
 
 splice_factors<-read_xlsx("SFs_list_ensembl_ID.xlsx")
 
-final_exon_list$splicing_factor<-tolower(final_exon_list$GENE) %in% tolower(splice_factors$symbol)
+differential_exons_2d$splicing_factor<-tolower(differential_exons_2d$GENE) %in% tolower(splice_factors$symbol)
 final_intron_list$splicing_factor<-tolower(final_intron_list$GENE) %in% tolower(splice_factors$symbol)
 
 speckle_protein<-read_tsv("nuclear_speckles_protein_human_atlas.tsv")
 
-final_exon_list$HPA_speckle_protein<-tolower(final_exon_list$GENE) %in% tolower(speckle_protein$Gene)
+differential_exons_2d$HPA_speckle_protein<-tolower(differential_exons_2d$GENE) %in% tolower(speckle_protein$Gene)
 final_intron_list$HPA_speckle_protein<-tolower(final_intron_list$GENE) %in% tolower(speckle_protein$Gene)
 
 mouse_tf <- read_excel("mouse_tf.xlsx", 
     sheet = "TFs_Mouse")
 
-final_exon_list$transcription_factor<-tolower(final_exon_list$GENE) %in% tolower(mouse_tf$`Gene Symbol`)
+differential_exons_2d$transcription_factor<-tolower(differential_exons_2d$GENE) %in% tolower(mouse_tf$`Gene Symbol`)
 final_intron_list$transcription_factor<-tolower(final_intron_list$GENE) %in% tolower(mouse_tf$`Gene Symbol`)
 
 
@@ -2447,7 +1967,7 @@ speckle_introns_go <- enrichdata$GO_Biological_Process_2023[
 
 # Extract and split the genes into a single vector
 speckle_introns_go_genes <- unique(unlist(strsplit(speckle_introns_go$Genes, ";")))
-final_exon_list$intron_speckle_go<-tolower(final_exon_list$GENE) %in% tolower(speckle_introns_go_genes)
+differential_exons_2d$intron_speckle_go<-tolower(differential_exons_2d$GENE) %in% tolower(speckle_introns_go_genes)
 final_intron_list$intron_speckle_go<-tolower(final_intron_list$GENE) %in% tolower(speckle_introns_go_genes)
 
 
