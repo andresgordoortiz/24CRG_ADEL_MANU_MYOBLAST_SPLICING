@@ -256,24 +256,18 @@ The final plots showcase potentially promising events found in myoblast differen
 ## Importing Inclusion Data
 
 ```{r inclusion tables}
-# Zhang et al. 2018 data
-zhang_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Zhang_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
-zhang_events <- getEvents(zhang_data, tool = "vast-tools") # Extract alternative splicing events
-zhang_events <- alternativeEvents(zhang_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
-zhang_exons <- filterEvents(zhang_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 2)
-zhang_introns <- filterEvents(zhang_events, types = c("IR"), N = 2)
 
 # Tao et al. 2024 data
 tao_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Tao_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
 tao_events <- getEvents(tao_data, tool = "vast-tools") # Extract alternative splicing events
-tao_events <- alternativeEvents(tao_events, minPsi = 0.1, maxPsi = 99.9) # Filter events based on PSI thresholds
+#tao_events <- alternativeEvents(tao_events, minPsi = 0, maxPsi = 100) # Filter events based on PSI thresholds
 tao_exons <- filterEvents(tao_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 2)
 tao_introns <- filterEvents(tao_events, types = c("IR"), N = 2)
 
 # Christopher Azar 2021 data
 christopher_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Christopher_Physioreports_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
 christopher_events <- getEvents(christopher_data, tool = "vast-tools") # Extract alternative splicing events
-christopher_events <- alternativeEvents(christopher_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
+#christopher_events <- alternativeEvents(christopher_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
 christopher_exons <- filterEvents(christopher_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 2)
 christopher_introns <- filterEvents(christopher_events, types = c("IR"), N = 2)
 
@@ -281,37 +275,24 @@ christopher_introns <- filterEvents(christopher_events, types = c("IR"), N = 2)
 # Dominic Data
 dominic_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Dominic_Frontiers_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
 dominic_events <- getEvents(dominic_data, tool = "vast-tools") # Extract alternative splicing events
-dominic_events <- alternativeEvents(dominic_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
+#dominic_events <- alternativeEvents(dominic_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
 dominic_exons <- filterEvents(dominic_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 2)
 dominic_introns <- filterEvents(dominic_events, types = c("IR"), N = 2)
 
 # Kan Data
 kan_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/kan_scientific_reports_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
 kan_events <- getEvents(kan_data, tool = "vast-tools") # Extract alternative splicing events
-kan_events <- alternativeEvents(kan_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
+#kan_events <- alternativeEvents(kan_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
 kan_exons <- filterEvents(kan_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 2)
 kan_introns <- filterEvents(kan_events, types = c("IR"), N = 2)
 
-# Trapnell Data
-trapnell_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Trapnell_trim_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
-trapnell_events <- getEvents(trapnell_data, tool = "vast-tools") # Extract alternative splicing events
-trapnell_events <- alternativeEvents(trapnell_events, minPsi = 0.1, maxPsi = 99.9) # Filter events based on PSI thresholds
-trapnell_exons <- filterEvents(trapnell_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 1)
-trapnell_introns <- filterEvents(trapnell_events, types = c("IR"), N = 1)
+
+
 ```
 
 
 ## Metadata { .tabset}
 
-### Zhang
-
-```{r metadata zhang}
-# Load metadata file containing sample information
-metadata_zhang <- read.csv(paste0(getwd(),"/metadata/zhangnature_metadata.csv"), sep = ",")
-metadata_zhang$experiment_title <- gsub("Myoblasts", "0_days", metadata_zhang$experiment_title)
-metadata_zhang$experiment_title <- gsub("Myotubes", "3_days", metadata_zhang$experiment_title)
-DT::datatable(metadata_zhang, options = list(pageLength = nrow(metadata_zhang), scrollX = TRUE))
-```
 
 ### Tao
 
@@ -351,17 +332,6 @@ metadata_kan$experiment_title <- gsub("Myotubes", "5_days", metadata_kan$experim
 DT::datatable(metadata_kan, options = list(pageLength = nrow(metadata_kan), scrollX = TRUE))
 ```
 
-### Trapnell
-
-```{r metadata trapnell}
-# Load metadata file containing sample information
-metadata_trapnell <- arrange(read.csv(paste0(getwd(),"/metadata/trapnell2010_metadata.csv"), sep = ","), run_accession)
-metadata_trapnell$experiment_title <- gsub("24 hours", "0_days", metadata_trapnell$experiment_title)
-metadata_trapnell$experiment_title <- gsub("60 hours", "3_days", metadata_trapnell$experiment_title)
-metadata_trapnell$experiment_title <- gsub("120 hours", "5_days", metadata_trapnell$experiment_title)
-metadata_trapnell$experiment_title <- gsub("168 hours", "7_days", metadata_trapnell$experiment_title)
-DT::datatable(metadata_trapnell, options = list(pageLength = nrow(metadata_trapnell), scrollX = TRUE))
-```
 
 ---
 
@@ -369,296 +339,29 @@ DT::datatable(metadata_trapnell, options = list(pageLength = nrow(metadata_trapn
 
 Splicing inclusion plots look like a ***U*** when looking at the *exons*, as normally most of them are spliced out completely (dPSI=0) or constitutively spliced in (dPSI=100), but some of them are in between and those are the most interesting for the analysis. On the other hand, *introns* are ussually not included (that is their definiiton), but in a few cases they are included. Thus, the intron plot looks like the exponential distribution.
 
-## PSI Distribution Plots { .tabset}
-
-### Zhang
-
-```{r psi distribution zhang}
-# Create the first plot for exon inclusion levels
-bigPicturePlotExons <- bigPicturePlot(table = zhang_exons$PSI)
-
-# Customize the first plot for professional reporting
-plot1 <- bigPicturePlotExons +
-  ggtitle("Exon Inclusion Levels") +
-  xlab("Samples") +
-  ylab("PSI Values") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    axis.text = element_text(size = 10),
-    axis.title = element_text(size = 12),
-    panel.background = element_rect(fill = "lightblue"),  # Set background color
-    panel.grid.major = element_line(color = "gray90", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.25)
-  )
-
-# Create a second plot for a hypothetical dataframe
-# Replace 'hypothetical_data$PSI' with your actual dataframe and column
-bigPictureIntrons <- bigPicturePlot(table = zhang_introns$PSI)
-
-# Customize the second plot
-plot2 <- bigPictureIntrons +
-  ggtitle("Introns Inclusion Levels") +
-  xlab("Samples") +
-  ylab("PSI Values") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    axis.text = element_text(size = 10),
-    axis.title = element_text(size = 12),
-    panel.background = element_rect(fill = "lightblue"),  # Set background color
-    panel.grid.major = element_line(color = "gray90", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.25)
-  )
-
-# Combine both plots into one figure using patchwork
-plot1 / plot2
-```
 
 
-### Tao
-
-```{r tao distri plots}
-# Create the first plot for exon inclusion levels
-bigPicturePlotExons <- bigPicturePlot(table = tao_exons$PSI)
-
-# Customize the first plot for professional reporting
-plot1 <- bigPicturePlotExons +
-  ggtitle("Exon Inclusion Levels") +
-  xlab("Samples") +
-  ylab("PSI Values") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    axis.text = element_text(size = 10),
-    axis.title = element_text(size = 12),
-    panel.background = element_rect(fill = "lightblue"),  # Set background color
-    panel.grid.major = element_line(color = "gray90", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.25)
-  )
-
-# Create a second plot for a hypothetical dataframe
-# Replace 'hypothetical_data$PSI' with your actual dataframe and column
-bigPictureIntrons <- bigPicturePlot(table = tao_introns$PSI)
-
-# Customize the second plot
-plot2 <- bigPictureIntrons +
-  ggtitle("Introns Inclusion Levels") +
-  xlab("Samples") +
-  ylab("PSI Values") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    axis.text = element_text(size = 10),
-    axis.title = element_text(size = 12),
-    panel.background = element_rect(fill = "lightblue"),  # Set background color
-    panel.grid.major = element_line(color = "gray90", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.25)
-  )
-
-# Combine both plots into one figure using patchwork
-plot1 / plot2
-```
-
-### Christopher
-
-```{r christopher distro plots}
-# Create the first plot for exon inclusion levels
-bigPicturePlotExons <- bigPicturePlot(table = christopher_exons$PSI)
-
-# Customize the first plot for professional reporting
-plot1 <- bigPicturePlotExons +
-  ggtitle("Exon Inclusion Levels") +
-  xlab("Samples") +
-  ylab("PSI Values") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    axis.text = element_text(size = 10),
-    axis.title = element_text(size = 12),
-    panel.grid.major = element_line(color = "gray90", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.25)
-  )
-
-# Create a second plot for a hypothetical dataframe
-# Replace 'hypothetical_data$PSI' with your actual dataframe and column
-bigPictureIntrons <- bigPicturePlot(table = christopher_introns$PSI)
-
-# Customize the second plot
-plot2 <- bigPictureIntrons +
-  ggtitle("Introns Inclusion Levels") +
-  xlab("Samples") +
-  ylab("PSI Values") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    axis.text = element_text(size = 10),
-    axis.title = element_text(size = 12),
-    panel.background = element_rect(fill = "lightblue"),  # Set background color
-    panel.grid.major = element_line(color = "gray90", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.25)
-  )
-
-# Combine both plots into one figure using patchwork
-plot1 / plot2
-```
-
-### Dominic
-
-
-```{r dominic distro plots}
-# Create the first plot for exon inclusion levels
-bigPicturePlotExons <- bigPicturePlot(table = dominic_exons$PSI)
-
-# Customize the first plot for professional reporting
-plot1 <- bigPicturePlotExons +
-  ggtitle("Exon Inclusion Levels") +
-  xlab("Samples") +
-  ylab("PSI Values") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    axis.text = element_text(size = 10),
-    axis.title = element_text(size = 12),
-    panel.grid.major = element_line(color = "gray90", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.25)
-  )
-
-# Create a second plot for a hypothetical dataframe
-# Replace 'hypothetical_data$PSI' with your actual dataframe and column
-bigPictureIntrons <- bigPicturePlot(table = dominic_introns$PSI)
-
-# Customize the second plot
-plot2 <- bigPictureIntrons +
-  ggtitle("Introns Inclusion Levels") +
-  xlab("Samples") +
-  ylab("PSI Values") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    axis.text = element_text(size = 10),
-    axis.title = element_text(size = 12),
-    panel.background = element_rect(fill = "lightblue"),  # Set background color
-    panel.grid.major = element_line(color = "gray90", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.25)
-  )
-
-# Combine both plots into one figure using patchwork
-plot1 / plot2
-```
-
-
-### Kan
-
-```{r kan distro plots}
-# Create the first plot for exon inclusion levels
-bigPicturePlotExons <- bigPicturePlot(table = kan_exons$PSI)
-
-# Customize the first plot for professional reporting
-plot1 <- bigPicturePlotExons +
-  ggtitle("Exon Inclusion Levels") +
-  xlab("Samples") +
-  ylab("PSI Values") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    axis.text = element_text(size = 10),
-    axis.title = element_text(size = 12),
-    panel.grid.major = element_line(color = "gray90", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.25)
-  )
-
-# Create a second plot for a hypothetical dataframe
-# Replace 'hypothetical_data$PSI' with your actual dataframe and column
-bigPictureIntrons <- bigPicturePlot(table = kan_introns$PSI)
-
-# Customize the second plot
-plot2 <- bigPictureIntrons +
-  ggtitle("Introns Inclusion Levels") +
-  xlab("Samples") +
-  ylab("PSI Values") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    axis.text = element_text(size = 10),
-    axis.title = element_text(size = 12),
-    panel.background = element_rect(fill = "lightblue"),  # Set background color
-    panel.grid.major = element_line(color = "gray90", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.25)
-  )
-
-# Combine both plots into one figure using patchwork
-plot1 / plot2
-```
-
-### Trapnell
-
-```{r trapnell distro plots}
-# Create the first plot for exon inclusion levels
-bigPicturePlotExons <- bigPicturePlot(table = trapnell_exons$PSI)
-
-# Customize the first plot for professional reporting
-plot1 <- bigPicturePlotExons +
-  ggtitle("Exon Inclusion Levels") +
-  xlab("Samples") +
-  ylab("PSI Values") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    axis.text = element_text(size = 10),
-    axis.title = element_text(size = 12),
-    panel.grid.major = element_line(color = "gray90", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.25)
-  )
-
-# Create a second plot for a hypothetical dataframe
-# Replace 'hypothetical_data$PSI' with your actual dataframe and column
-bigPictureIntrons <- bigPicturePlot(table = trapnell_introns$PSI)
-
-# Customize the second plot
-plot2 <- bigPictureIntrons +
-  ggtitle("Introns Inclusion Levels") +
-  xlab("Samples") +
-  ylab("PSI Values") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    axis.text = element_text(size = 10),
-    axis.title = element_text(size = 12),
-    panel.background = element_rect(fill = "lightblue"),  # Set background color
-    panel.grid.major = element_line(color = "gray90", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.25)
-  )
-
-# Combine both plots into one figure using patchwork
-plot1 / plot2
-```
-
-## PCA Plot
+## PCA Plot All Studies
 
 As it can be seen, most dataframe sinclude only two conditions; *Myoblasts* or *Myotubes*, where Tao has different time points. However, all of them are clustered properly in the PCA plot. PCA was done on the PSI matrix of each study as they come out from *Vast Combine*.
 
 
 ```{r pca calculation, results='hide'}
 # Subset and scale data
-pca_zhang <- zhang_data[, c("EVENT",zhang_events$Samples)]
 pca_tao <- tao_data[,  c("EVENT",tao_events$Samples)]
 pca_christopher <- christopher_data[,  c("EVENT",christopher_events$Samples)]
 pca_dominic <- dominic_data[,  c("EVENT",dominic_events$Samples)]
 pca_kan <- kan_data[,  c("EVENT",kan_events$Samples)]
-pca_trapnell<- trapnell_data[,  c("EVENT",trapnell_events$Samples)]
 # merge pca data columns by row names
-merged_pca <- pca_zhang %>%
-  left_join(pca_tao, by = "EVENT") %>%
+merged_pca <- pca_tao %>%
   left_join(pca_christopher, by="EVENT") %>%
   left_join(pca_dominic, by="EVENT") %>%
   left_join(pca_kan, by="EVENT") %>%
-  left_join(pca_trapnell, by="EVENT") %>%
   na.omit()
 rownames(merged_pca)<- merged_pca$EVENT
 merged_pca<-t(merged_pca[,-1])
 
-metadata_merged<-tibble(sample=c(metadata_zhang$run_accession,metadata_tao$run_accession,metadata_christopher$run_accession,metadata_dominic$run_accession,metadata_kan$run_accession, metadata_trapnell$run_accession),experiment_title=c(metadata_zhang$experiment_title,metadata_tao$experiment_title,metadata_christopher$experiment_title,metadata_dominic$experiment_title,metadata_kan$experiment_title,metadata_trapnell$experiment_title))
+metadata_merged<-tibble(sample=c(metadata_tao$run_accession,metadata_christopher$run_accession,metadata_dominic$run_accession,metadata_kan$run_accession),experiment_title=c(metadata_tao$experiment_title,metadata_christopher$experiment_title,metadata_dominic$experiment_title,metadata_kan$experiment_title))
 
 # Reorder metadata_merged$experiment_title based on the row names of merged_pca
 condition_pca <- metadata_merged$experiment_title[match(rownames(merged_pca), metadata_merged$sample)]
@@ -670,7 +373,7 @@ pca_result <- prcomp(merged_pca)  # Perform PCA
 pca_data <- as.data.frame(pca_result$x)
 pca_data$Sample <- rownames(pca_data)
 pca_data$condition<-condition_pca
-pca_data$data_origin<-c(rep("Zhang",ncol(pca_zhang)-1),rep("Tao",ncol(pca_tao)-1),rep("Christopher",ncol(pca_christopher)-1),rep("Dominic",ncol(pca_dominic)-1),rep("Kan",ncol(pca_kan)-1),rep("Trapnell",ncol(pca_trapnell)-1))
+pca_data$data_origin<-c(rep("Tao",ncol(pca_tao)-1),rep("Christopher",ncol(pca_christopher)-1),rep("Dominic",ncol(pca_dominic)-1),rep("Kan",ncol(pca_kan)-1))
 ```
 
 ```{r pca plotting}
@@ -703,6 +406,63 @@ pca_plot
 
 ```
 
+## PCA Plot Only Tao
+
+As it can be seen, most dataframe sinclude only two conditions; *Myoblasts* or *Myotubes*, where Tao has different time points. However, all of them are clustered properly in the PCA plot. PCA was done on the PSI matrix of each study as they come out from *Vast Combine*.
+
+
+```{r pca calculation tao, results='hide'}
+# Subset and scale data
+pca_tao <- na.omit(tao_data[,  c("EVENT",tao_events$Samples)])
+
+
+rownames(pca_tao)<- pca_tao$EVENT
+pca_tao<-t(pca_tao[,-1])
+
+metadata_merged<-tibble(sample=c(metadata_tao$run_accession),experiment_title=c(metadata_tao$experiment_title))
+
+# Reorder metadata_merged$experiment_title based on the row names of merged_pca
+condition_pca <- metadata_merged$experiment_title[match(rownames(pca_tao), metadata_merged$sample)]
+
+
+pca_result <- prcomp(pca_tao)  # Perform PCA
+
+# Prepare PCA results for plotting
+pca_data <- as.data.frame(pca_result$x)
+pca_data$Sample <- rownames(pca_data)
+pca_data$condition<-condition_pca
+```
+
+```{r pca plotting tao}
+# Create PCA plot
+pca_plot <- ggplot(pca_data, aes(x = PC1, y = PC2, color = as.factor(condition))) +
+  geom_point(size = 6) +
+  labs(
+    title = "<b style='font-size:18px;'>PCA of Tao Samples (PSI Data)</b>",
+    x = paste("PC1 (", round(100 * summary(pca_result)$importance[2, 1], 1), "%)", sep = ""),
+    y = paste("PC2 (", round(100 * summary(pca_result)$importance[2, 2], 1), "%)", sep = ""),
+    caption = paste0("Created by AG on ", Sys.Date()), size=3
+  ) +
+  theme_minimal(base_family = "roboto") +
+  theme(
+    plot.title = element_markdown(),
+    plot.title.position = "plot",
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.position = "right",
+    legend.title = element_blank(),
+    panel.background = element_rect(fill = "gray98"),
+    panel.grid = element_line(color = "gray90", size = 0.5),
+    panel.grid.major = element_line(color = "gray90", size = 0.5),
+    panel.grid.minor = element_blank()
+  ) +
+  scale_colour_paletteer_d("lisa::OskarSchlemmer") +
+  coord_fixed()
+
+pca_plot
+
+```
+
 ## Total Splicing Events
 
 As it can be observed below, the dominic dataset has the highest number of splicing events, what can be explained by the higher number of reads (90M in myotubes and 140M in myoblasts).
@@ -712,17 +472,15 @@ As it can be observed below, the dominic dataset has the highest number of splic
 
 # Adjusted version of the script
 splicing_events <- tibble(
-  event_type = names(zhang_events$EventsPerType),
-  zhang = zhang_events$EventsPerType,
+  event_type = names(tao_events$EventsPerType),
   tao = tao_events$EventsPerType,
   christopher = christopher_events$EventsPerType,
   dominic = dominic_events$EventsPerType,
-  kan = kan_events$EventsPerType,
-  trapnell=trapnell_events$EventsPerType
+  kan = kan_events$EventsPerType
 )
 
 splicing_events_long <- splicing_events %>%
-  pivot_longer(cols = c(zhang, tao, christopher, dominic, kan, trapnell),
+  pivot_longer(cols = c( tao, christopher, dominic, kan),
                names_to = "study", values_to = "count") %>%
   mutate(event_type = ifelse(event_type %in% c("C1", "C2", "C3", "ANN", "S", "MIC"), "EX", event_type)) %>%
   group_by(study, event_type) %>%
@@ -782,21 +540,263 @@ combined_plot <- plot_proportion / plot_absolute +
 combined_plot
 ```
 
+```{r general stats}
+vastdb_events<-read.table("EVENT_INFO-mm10.tab", header = TRUE, sep = "\t")
+bin_exons <- function(n) {
+  if (is.na(n)) return(NA) # Handle missing values
+  else if (n < 6) return("1-5")
+  else if (n < 11) return("6-10")
+  else if (n < 21) return("11-20")
+  else return("21+")
+}
+
+#subset vastdb events if they contin the word "EX" in the column EVENT
+vastdb_exons<-vastdb_events[grep("EX", vastdb_events$EVENT),]
+# Add exon group information
+apply_bin_exons <- function(item) {
+  gene_counts <- table(item$GENE) # Count exons per gene
+  item$exon_group <- sapply(item$GENE, function(gene) bin_exons(gene_counts[gene]))
+  item
+}
+
+vastdb_exons<-apply_bin_exons(vastdb_exons)
+
+#subset vastdb events if they contin the word "EX" in the column EVENT
+vastdb_introns<-vastdb_events[grep("IN", vastdb_events$EVENT),]
+# Add exon group information
+apply_bin_exons <- function(item) {
+  gene_counts <- table(item$GENE) # Count exons per gene
+  item$intron_group <- sapply(item$GENE, function(gene) bin_exons(gene_counts[gene]))
+  item
+}
+
+vastdb_introns<-apply_bin_exons(vastdb_introns)
+
+```
+
+
+# Does the number of exons of a gene affect Inclusion? { .tabset}
+
+First I classified the genes according to the number of exons they contain from VASTDB. Then I plotted the dPSI of all exons grouped by that classification.
+
+## Exons { .tabset}
+
+```{r inclusionumber of exons tao}
+tao_exons_df<-na.omit(tao_exons$PSI)
+tao_exons_df<-tao_exons_df[,c(colnames(tao_exons_df)[1:6],metadata_tao$run_accession)]
+tao_exons_df$exon_group<-vastdb_exons$exon_group[match(tao_exons_df$EVENT,vastdb_exons$EVENT)]
+
+```
+
+### 7days vs 0 days
+
+```{r 7 vs 0 exons}
+# Function to compute the difference for a single dataframe
+compute_difference <- function(df) {
+  avg_7d <- rowMeans(df[, 16:18])
+  avg_0d <- rowMeans(df[, 7:9])
+  avg_7d - avg_0d
+}
+
+# Compute the difference and group by exon groups
+tao_exons_df$difference <- compute_difference(tao_exons_df)
+
+tao_exons_df$exon_group<-factor(tao_exons_df$exon_group, levels = c("1-5","6-10","11-20","21+"))
+# Plot distribution of PSI difference for each exon group with fixed axis
+plot_psi_distribution <- ggplot(
+  na.omit(tao_exons_df[abs(tao_exons_df$difference) >= 10,]), 
+  aes(y=..density..,x = difference, fill = ifelse(difference < 0, "Skipped", "Included"))
+) +
+  geom_histogram(bins = 50, position = "identity") +
+  facet_wrap(~exon_group, scales = "fixed") +  # Change scales to "fixed"
+  labs(
+    title = "PSI Difference Distribution Grouped by Number of Exons present in a Gene",
+    subtitle = "dPSI = avg_7d - avg_0d",
+    x = "ΔPSI (DKO - WT)",
+    y = "Density",
+    fill = "|ΔPSI| >= 0.1",
+    caption = paste0("Created by AG on ", Sys.Date())
+  ) +
+  theme_minimal(base_family = font) +
+  theme(
+    legend.position = "right",
+    axis.title.x = element_text(margin = margin(t = 10)),
+    axis.text.x = element_text(size = 15),
+    panel.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(color = "gray80", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.3),
+    strip.text = element_text(size = 14, face = "bold"),
+    panel.spacing = unit(1.5, "lines")  # Increase the distance between facets
+  ) +
+  scale_fill_brewer(palette = "Set1")
+
+
+print(plot_psi_distribution)
+
+
+```
+
+### 4days vs 0 days
+
+```{r 4 vs 0 exons}
+# Function to compute the difference for a single dataframe
+compute_difference <- function(df) {
+  avg_4d <- rowMeans(df[, 13:15])
+  avg_0d <- rowMeans(df[, 7:9])
+  avg_4d - avg_0d
+}
+
+# Compute the difference and group by exon groups
+tao_exons_df$difference <- compute_difference(tao_exons_df)
+
+tao_exons_df$exon_group<-factor(tao_exons_df$exon_group, levels = c("1-5","6-10","11-20","21+"))
+# Plot distribution of PSI difference for each exon group with fixed axis
+plot_psi_distribution <- ggplot(
+  na.omit(tao_exons_df[abs(tao_exons_df$difference) >= 10,]), 
+  aes(y=..density..,x = difference, fill = ifelse(difference < 0, "Skipped", "Included"))
+) +
+  geom_histogram(bins = 50, position = "identity") +
+  facet_wrap(~exon_group, scales = "fixed") +  # Change scales to "fixed"
+  labs(
+    title = "PSI Difference Distribution Grouped by Number of Exons present in a Gene",
+    subtitle = "dPSI = avg_4d - avg_0d",
+    x = "ΔPSI (DKO - WT)",
+    y = "Density",
+    fill = "|ΔPSI| >= 0.1",
+    caption = paste0("Created by AG on ", Sys.Date())
+  ) +
+  theme_minimal(base_family = font) +
+  theme(
+    legend.position = "right",
+    axis.title.x = element_text(margin = margin(t = 10)),
+    axis.text.x = element_text(size = 15),
+    panel.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(color = "gray80", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.3),
+    strip.text = element_text(size = 14, face = "bold"),
+    panel.spacing = unit(1.5, "lines")  # Increase the distance between facets
+  ) +
+  scale_fill_brewer(palette = "Set1")
+
+
+print(plot_psi_distribution)
+
+
+```
+
+### 7days vs 4 days
+
+```{r 7 vs 4 exons}
+# Function to compute the difference for a single dataframe
+compute_difference <- function(df) {
+  avg_4d <- rowMeans(df[, 13:15])
+  avg_7d <- rowMeans(df[, 16:18])
+  avg_7d - avg_4d
+}
+
+# Compute the difference and group by exon groups
+tao_exons_df$difference <- compute_difference(tao_exons_df)
+
+tao_exons_df$exon_group<-factor(tao_exons_df$exon_group, levels = c("1-5","6-10","11-20","21+"))
+# Plot distribution of PSI difference for each exon group with fixed axis
+plot_psi_distribution <- ggplot(
+  na.omit(tao_exons_df[abs(tao_exons_df$difference) >= 10,]), 
+  aes(y=..density..,x = difference, fill = ifelse(difference < 0, "Skipped", "Included"))
+) +
+  geom_histogram(bins = 50, position = "identity") +
+  facet_wrap(~exon_group, scales = "fixed") +  # Change scales to "fixed"
+  labs(
+    title = "PSI Difference Distribution Grouped by Number of Exons present in a Gene",
+    subtitle = "dPSI = avg_7d - avg_4d",
+    x = "ΔPSI (DKO - WT)",
+    y = "Density",
+    fill = "|ΔPSI| >= 0.1",
+    caption = paste0("Created by AG on ", Sys.Date())
+  ) +
+  theme_minimal(base_family = font) +
+  theme(
+    legend.position = "right",
+    axis.title.x = element_text(margin = margin(t = 10)),
+    axis.text.x = element_text(size = 15),
+    panel.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(color = "gray80", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.3),
+    strip.text = element_text(size = 14, face = "bold"),
+    panel.spacing = unit(1.5, "lines")  # Increase the distance between facets
+  ) +
+  scale_fill_brewer(palette = "Set1")
+
+
+print(plot_psi_distribution)
+
+
+```
+
+### 4days vs 2 days
+
+```{r 4 vs 2 exons}
+# Function to compute the difference for a single dataframe
+compute_difference <- function(df) {
+  avg_4d <- rowMeans(df[, 13:15])
+  avg_2d <- rowMeans(df[, 10:12])
+  avg_4d - avg_2d
+}
+
+# Compute the difference and group by exon groups
+tao_exons_df$difference <- compute_difference(tao_exons_df)
+
+tao_exons_df$exon_group<-factor(tao_exons_df$exon_group, levels = c("1-5","6-10","11-20","21+"))
+# Plot distribution of PSI difference for each exon group with fixed axis
+plot_psi_distribution <- ggplot(
+  na.omit(tao_exons_df[abs(tao_exons_df$difference) >= 10,]), 
+  aes(y=..density..,x = difference, fill = ifelse(difference < 0, "Skipped", "Included"))
+) +
+  geom_histogram(bins = 50, position = "identity") +
+  facet_wrap(~exon_group, scales = "fixed") +  # Change scales to "fixed"
+  labs(
+    title = "PSI Difference Distribution Grouped by Number of Exons present in a Gene",
+    subtitle = "dPSI = avg_4d - avg_2d",
+    x = "ΔPSI (DKO - WT)",
+    y = "Density",
+    fill = "|ΔPSI| >= 0.1",
+    caption = paste0("Created by AG on ", Sys.Date())
+  ) +
+  theme_minimal(base_family = font) +
+  theme(
+    legend.position = "right",
+    axis.title.x = element_text(margin = margin(t = 10)),
+    axis.text.x = element_text(size = 15),
+    panel.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(color = "gray80", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.3),
+    strip.text = element_text(size = 14, face = "bold"),
+    panel.spacing = unit(1.5, "lines")  # Increase the distance between facets
+  ) +
+  scale_fill_brewer(palette = "Set1")
+
+
+print(plot_psi_distribution)
+
+
+```
+
+
+
+
+
+
+
 
 # Differential Splicing Calculation
 
 ```{r aux_featuregroup}
 # Extract unique groups and sample IDs
 groupingVariable <- "experiment_title"
-# Zhang
-groups_zhang <- unique(metadata_zhang[, groupingVariable])
-samples_zhang <- metadata_zhang$run_accession
+
 # Tao
 groups_tao <- unique(metadata_tao[, groupingVariable])
 samples_tao <- metadata_tao$run_accession
-# Trapnell
-groups_trapnell <- unique(metadata_trapnell[, groupingVariable])
-samples_trapnell <- metadata_trapnell$run_accession
+
 # Christopher
 groups_christopher <- unique(metadata_christopher[, groupingVariable])
 samples_christopher <- metadata_christopher$run_accession
@@ -810,15 +810,6 @@ samples_kan <- metadata_kan$run_accession
 
 random_colors=c("#D8D97AFF", "#95C36EFF", "#74C8C3FF", "#5A97C1FF", "#295384FF", "#0A2E57FF")
 
-# Create group list with metadata
-groupList_zhang <- lapply(1:length(groups_zhang), function(i) {
-  list(
-    name = groups_zhang[i],
-    samples = samples_zhang[metadata_zhang[, groupingVariable] == groups_zhang[i]],
-    color = random_colors[i]
-  )
-})
-names(groupList_zhang) <- groups_zhang
 
 # Create group list with metadata for Tao, Christopher, and Lyu
 groupList_tao <- lapply(1:length(groups_tao), function(i) {
@@ -839,14 +830,6 @@ groupList_christopher <- lapply(1:length(groups_christopher), function(i) {
 })
 names(groupList_christopher) <- groups_christopher
 
-groupList_trapnell <- lapply(1:length(groups_trapnell), function(i) {
-  list(
-    name = groups_trapnell[i],
-    samples = samples_trapnell[metadata_trapnell[, groupingVariable] == groups_trapnell[i]],
-    color = random_colors[i]
-  )
-})
-names(groupList_trapnell) <- groups_trapnell
 
 # Create group list with metadata
 groupList_dominic <- lapply(1:length(groups_dominic), function(i) {
@@ -877,15 +860,8 @@ groupA_tao<-"0_days"
 groupB_tao<-"7_days"
 
 groupB_christopher<-"6_days"
-groupB_zhang<-"3_days"
 
 
-# Define samples inside each group
-# Zhang
-samplesA_zhang    <- groupList_zhang[[groupA]]$samples
-samplesB_zhang    <- groupList_zhang[[groupB_zhang]]$samples
-colsGroupA_zhang    <- convertCols(zhang_exons$PSI, samplesA_zhang)
-colsGroupB_zhang    <- convertCols(zhang_exons$PSI, samplesB_zhang)
 
 # For Tao
 samplesA_tao <- groupList_tao[[groupA_tao]]$samples
@@ -899,11 +875,7 @@ samplesB_christopher <- groupList_christopher[[groupB_christopher]]$samples
 colsGroupA_christopher <- convertCols(christopher_exons$PSI, samplesA_christopher)
 colsGroupB_christopher <- convertCols(christopher_exons$PSI, samplesB_christopher)
 
-# For Trapnell
-samplesA_trapnell <- groupList_trapnell[[groupA_tao]]$samples
-samplesB_trapnell <- groupList_trapnell[[groupB_tao]]$samples
-colsGroupA_trapnell <- convertCols(trapnell_exons$PSI, samplesA_trapnell)
-colsGroupB_trapnell <- convertCols(trapnell_exons$PSI, samplesB_trapnell)
+
 
 # Dominic
 samplesA_dominic    <- groupList_dominic[[groupA]]$samples
@@ -925,20 +897,6 @@ set.seed(42) #Setting seed for downstream simulations of the beta distribution
 ### Calculations
 
 ```{r pdiff calculation}
-# Preprae table for zhang
-zhang_pdiff_exons <- prepareTableVolcano(
-  psitable = zhang_exons$PSI,
-  qualtable = zhang_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_zhang,
-  colsB = colsGroupB_zhang,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
 
 # Prepare table for Tao
 tao_pdiff_exons <- prepareTableVolcano(
@@ -956,87 +914,15 @@ tao_pdiff_exons <- prepareTableVolcano(
   CoverageWeight = FALSE
 )
 
-# Prepare table for Christopher
-christopher_pdiff_exons <- prepareTableVolcano(
-  psitable = christopher_exons$PSI,
-  qualtable = christopher_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_christopher,
-  colsB = colsGroupB_christopher,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
 
-# Prepare table for Trapnell
-trapnell_pdiff_exons <- prepareTableVolcano(
-  psitable = trapnell_exons$PSI,
-  qualtable = trapnell_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_trapnell,
-  colsB = colsGroupB_trapnell,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
+groupA_tao<-"0_days"
+groupB_tao<-"2_days"
+samplesA_tao <- groupList_tao[[groupA_tao]]$samples
+samplesB_tao <- groupList_tao[[groupB_tao]]$samples
+colsGroupA_tao <- convertCols(tao_exons$PSI, samplesA_tao)
+colsGroupB_tao <- convertCols(tao_exons$PSI, samplesB_tao)
 
-# Preprae table for dominic
-dominic_pdiff_exons <- prepareTableVolcano(
-  psitable = dominic_exons$PSI,
-  qualtable = dominic_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_dominic,
-  colsB = colsGroupB_dominic,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
-
-# Preprae table for kan
-kan_pdiff_exons <- prepareTableVolcano(
-  psitable = kan_exons$PSI,
-  qualtable = kan_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_kan,
-  colsB = colsGroupB_kan,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
-```
-
-```{r f-stat}
-# Preprae table for zhang
-zhang_fstat_exons <- prepareTableVolcanoFstat(
-  psitable = zhang_exons$PSI,
-  qualtable = zhang_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_zhang,
-  colsB = colsGroupB_zhang,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
-
-# Prepare table for Tao
-tao_fstat_exons <- prepareTableVolcanoFstat(
+tao_pdiff_exons_2d <- prepareTableVolcano(
   psitable = tao_exons$PSI,
   qualtable = tao_exons$Qual,
   npoints = 500,
@@ -1051,88 +937,14 @@ tao_fstat_exons <- prepareTableVolcanoFstat(
   CoverageWeight = FALSE
 )
 
-# Prepare table for Christopher
-christopher_fstat_exons <- prepareTableVolcanoFstat(
-  psitable = christopher_exons$PSI,
-  qualtable = christopher_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_christopher,
-  colsB = colsGroupB_christopher,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
+groupA_tao<-"0_days"
+groupB_tao<-"4_days"
+samplesA_tao <- groupList_tao[[groupA_tao]]$samples
+samplesB_tao <- groupList_tao[[groupB_tao]]$samples
+colsGroupA_tao <- convertCols(tao_exons$PSI, samplesA_tao)
+colsGroupB_tao <- convertCols(tao_exons$PSI, samplesB_tao)
 
-# Prepare table for Trapnell
-trapnell_fstat_exons <- prepareTableVolcanoFstat(
-  psitable = trapnell_exons$PSI,
-  qualtable = trapnell_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_trapnell,
-  colsB = colsGroupB_trapnell,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
-
-# Preprae table for dominic
-dominic_fstat_exons <- prepareTableVolcanoFstat(
-  psitable = dominic_exons$PSI,
-  qualtable = dominic_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_dominic,
-  colsB = colsGroupB_dominic,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
-
-# Preprae table for kan
-kan_fstat_exons <- prepareTableVolcanoFstat(
-  psitable = kan_exons$PSI,
-  qualtable = kan_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_kan,
-  colsB = colsGroupB_kan,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
-```
-
-```{r FDR calculations}
-# Preprae table for zhang
-zhang_fdr_exons <- prepareTableVolcanoFDR(
-  psitable = zhang_exons$PSI,
-  qualtable = zhang_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_zhang,
-  colsB = colsGroupB_zhang,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  nsim = 100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
-
-# Prepare table for Tao
-tao_fdr_exons <- prepareTableVolcanoFDR(
+tao_pdiff_exons_4d <- prepareTableVolcano(
   psitable = tao_exons$PSI,
   qualtable = tao_exons$Qual,
   npoints = 500,
@@ -1143,149 +955,127 @@ tao_fdr_exons <- prepareTableVolcanoFDR(
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
   maxDevTable = maxDevSimulationN100,
-  nsim = 100,
   seed = TRUE,
   CoverageWeight = FALSE
 )
 
-# Prepare table for Christopher
-christopher_fdr_exons <- prepareTableVolcanoFDR(
-  psitable = christopher_exons$PSI,
-  qualtable = christopher_exons$Qual,
+groupA_tao<-"2_days"
+groupB_tao<-"4_days"
+samplesA_tao <- groupList_tao[[groupA_tao]]$samples
+samplesB_tao <- groupList_tao[[groupB_tao]]$samples
+colsGroupA_tao <- convertCols(tao_exons$PSI, samplesA_tao)
+colsGroupB_tao <- convertCols(tao_exons$PSI, samplesB_tao)
+
+tao_pdiff_exons_4dvs2d <- prepareTableVolcano(
+  psitable = tao_exons$PSI,
+  qualtable = tao_exons$Qual,
   npoints = 500,
-  colsA = colsGroupA_christopher,
-  colsB = colsGroupB_christopher,
-  labA = groupA,
-  labB = groupB,
+  colsA = colsGroupA_tao,
+  colsB = colsGroupB_tao,
+  labA = groupA_tao,
+  labB = groupB_tao,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
   maxDevTable = maxDevSimulationN100,
-  nsim = 100,
   seed = TRUE,
   CoverageWeight = FALSE
 )
 
-# Prepare table for Trapnell
-trapnell_fdr_exons <- prepareTableVolcanoFDR(
-  psitable = trapnell_exons$PSI,
-  qualtable = trapnell_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_trapnell,
-  colsB = colsGroupB_trapnell,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  nsim = 100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
-
-# Preprae table for dominic
-dominic_fdr_exons <- prepareTableVolcanoFDR(
-  psitable = dominic_exons$PSI,
-  qualtable = dominic_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_dominic,
-  colsB = colsGroupB_dominic,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  nsim = 100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
-
-# Preprae table for kan
-kan_fdr_exons <- prepareTableVolcanoFDR(
-  psitable = kan_exons$PSI,
-  qualtable = kan_exons$Qual,
-  npoints = 500,
-  colsA = colsGroupA_kan,
-  colsB = colsGroupB_kan,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  nsim = 100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
-
+write.csv(tao_pdiff_exons, "tao_pdiff_exons.csv")
+write.csv(tao_pdiff_exons_2d,"tao_pdiff_exons_2d.csv")
+write.csv(tao_pdiff_exons_4d,"tao_pdiff_exons_4d.csv")
+write.csv(tao_pdiff_exons_4dvs2d,"tao_pdiff_exons_4dvs2d.csv")
 ```
 
-```{r table_multgroups exons}
-tao_anova_multgroups_exons <- prepareTableVolcanoMultipleGroups(psitable = tao_exons$PSI,
-                                                 qualtable = tao_exons$Qual,
-                                                 groupList = groupList_tao,
-                                                 npoints = 500,
-                                                 maxDevTable = maxDevSimulationN100, seed=TRUE, CoverageWeight = F)
 
-trapnell_anova_multgroups_exons <- prepareTableVolcanoMultipleGroups(psitable = trapnell_exons$PSI,
-                                                 qualtable = trapnell_exons$Qual,
-                                                 groupList = groupList_trapnell[-3], # 5_day only has 1 sample
-                                                 npoints = 500,
-                                                 maxDevTable = maxDevSimulationN100, seed=TRUE, CoverageWeight = F)
-
-```
 
 
 ### FDR Volcano Plots { .tabset}
 
 Volcano Plots of the FDR corrected exons for each study. In pink are the exons with a deltaPSI>=0.1.
 
-#### Zhang
 
-```{r zhang fdr volcano}
-plotVolcanoFDR(betasTable =filter(zhang_fdr_exons,!is.na(EVENT)),
-                            labA = groupA,
-                            labB = groupB,
-                            basalColor = "#89C0AE",
-                            interestColor = "#E69A9C") +
-
-theme(
-  plot.title = element_text(size = 10),  # Title font size
-  axis.title = element_text(size = 10),  # Axis title font size
-  axis.text = element_text(size = 10),   # Axis text font size
-  legend.text = element_text(size = 10), # Legend text font size
-  legend.title = element_text(size = 10) # Legend title font size
-)
-```
-
-#### Trapnell
-
-```{r trapnell fdr volcano}
-plotVolcanoFDR(betasTable =filter(trapnell_fdr_exons,!is.na(EVENT)),
-                            labA = groupA_tao,
-                            labB = groupB_tao,
-                            basalColor = "#89C0AE",
-                            interestColor = "#E69A9C") +
-theme(
-  plot.title = element_text(size = 10),  # Title font size
-  axis.title = element_text(size = 10),  # Axis title font size
-  axis.text = element_text(size = 10),   # Axis text font size
-  legend.text = element_text(size = 10), # Legend text font size
-  legend.title = element_text(size = 10) # Legend title font size
-)
-```
 
 #### Tao
 
 ```{r tao fdr volcano}
-plotVolcanoFDR(betasTable =filter(tao_fdr_exons,!is.na(EVENT)),
-                            labA = groupA_tao,
-                            labB = groupB_tao,
-                            basalColor = "#89C0AE",
-                            interestColor = "#E69A9C") +
-theme(
-  plot.title = element_text(size = 10),  # Title font size
-  axis.title = element_text(size = 10),  # Axis title font size
-  axis.text = element_text(size = 10),   # Axis text font size
-  legend.text = element_text(size = 10), # Legend text font size
-  legend.title = element_text(size = 10) # Legend title font size
+
+# INtersecting dhared exons between 10mm vs control and 1mm vs control
+differential_exons_2d<-na.omit(tao_pdiff_exons_2d[tao_pdiff_exons_2d$Pdiff >= 0.90 & abs(tao_pdiff_exons_2d$deltapsi) >= 0.1,])
+differential_exons_4d<-na.omit(tao_pdiff_exons_4d[tao_pdiff_exons_4d$Pdiff >= 0.90 & abs(tao_pdiff_exons_4d$deltapsi) >= 0.1,])
+differential_exons_4dvs2d<-na.omit(tao_pdiff_exons_4dvs2d[tao_pdiff_exons_4dvs2d$Pdiff >= 0.90 & abs(tao_pdiff_exons_4dvs2d$deltapsi) >= 0.1,])
+
+shared_exons<-differential_exons_4d$EVENT[differential_exons_4d$EVENT %in% differential_exons_2d$EVENT]
+# Volcano plot
+library(ggrepel)
+differential_exons_4d<-na.omit(differential_exons_4d)
+# Add a Shared column based on the shared_exons
+differential_exons_4d$Shared <- ifelse(differential_exons_4d$EVENT %in% shared_exons, "Shared", "Not Shared")
+
+# Classify significance
+differential_exons_4d$Significant <- ifelse(
+  differential_exons_4d$Pdiff >= 0.90 & differential_exons_4d$deltapsi >= 0.1, "Overrepresented",
+  ifelse(
+    differential_exons_4d$Pdiff >= 0.90 & differential_exons_4d$deltapsi <= -0.1, "Underrepresented",
+    "Not Significant"
+  )
 )
+
+# Convert FDR to -log10 scale for y-axis
+differential_exons_4d$negLogpvalue <- -log10(1 - differential_exons_4d$Pdiff)
+
+
+# Updated volcano plot with improved fonts and axis styling
+volcano_plot <- ggplot(differential_exons_4d, aes(x = deltapsi, y = negLogpvalue)) +
+  geom_point(aes(
+    color = ifelse(Shared == "Shared", "Shared", Significant),
+    alpha = ifelse(Shared == "Shared", "Shared", Significant),
+    size = ifelse(Shared == "Shared", "Shared", Significant)
+  )) +
+  scale_color_manual(values = c(
+    "Shared" = "yellow",
+    "Overrepresented" = "#E00E73",
+    "Underrepresented" = "#3E2672",
+    "Not Significant" = "gray"
+  )) +
+  scale_alpha_manual(values = c(
+    "Shared" = 1.0,  # Fully opaque for shared exons
+    "Overrepresented" = 0.6,
+    "Underrepresented" = 0.6,
+    "Not Significant" = 0.3
+  )) +
+  scale_size_manual(values = c(
+    "Shared" = 3,  # Larger size for shared exons
+    "Overrepresented" = 2,
+    "Underrepresented" = 2,
+    "Not Significant" = 1
+  )) +
+  labs(
+    x = "Delta PSI",
+    y = expression(-log[10](1 - Pdiff)),
+    title = "(4 Days - 0 Days) Exons",
+    subtitle = "Shared events are highlighted in golden"
+  ) +
+  theme_minimal(base_size = 14, base_family = "sans") +  # Set base font
+  theme(
+    plot.title = element_text(
+      hjust = 0.5, size = 18, face = "bold", color = "black"
+    ),  # Centered and bold title
+    plot.subtitle = element_text(
+      hjust = 0.5, size = 14, face = "italic", color = "gray30"
+    ),  # Italicized subtitle
+    axis.text = element_text(size = 12, color = "black"),  # Axis text styling
+    axis.title = element_text(size = 14, face = "bold", color = "black"),  # Axis title styling
+    legend.text = element_text(size = 12),  # Larger legend text
+    legend.title = element_blank(),  # Remove legend title
+    panel.grid.major = element_line(color = "gray90"),  # Subtle grid lines
+    panel.grid.minor = element_blank(),  # Remove minor grid lines
+    panel.border = element_rect(color = "black", fill = NA, size = 1)  # Add border to plot area
+  ) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, NA))  # Extend y-axis dynamically
+
+# Display the plot
+volcano_plot
 ```
 
 #### Christopher
@@ -1342,196 +1132,6 @@ theme(
 ### Individual Combination Tables { .tabset}
 
 These tables show the Exons that show a FDR<=0.05 and PDiff (1-pvalue)>=0.95 in the pairwise comparison of Myotubes-Myoblasts, for each study.
-
-#### Zhang
-
-```{r zhang table making}
-zhang_pdiff_exons_tab <- zhang_pdiff_exons[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
-  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(zhang_pdiff_exons_tab) <- 1:nrow(zhang_pdiff_exons_tab)
-
-zhang_fstat_exons_tab <- zhang_fstat_exons[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
-  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
-  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(zhang_fstat_exons_tab) <- 1:nrow(zhang_fstat_exons_tab)
-
-zhang_fdr_exons_tab <- zhang_fdr_exons[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
-  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
-  arrange((FDR), desc(abs(deltapsi)))
-rownames(zhang_fdr_exons_tab) <- 1:nrow(zhang_fdr_exons_tab)
-
-# Find common EVENTs across all tables
-common_events <- Reduce(intersect, list(zhang_pdiff_exons_tab$EVENT, zhang_fstat_exons_tab$EVENT, zhang_fdr_exons_tab$EVENT))
-
-# Filter each table to include only rows with common EVENTs
-filtered_exon_diff_tab <- zhang_pdiff_exons_tab %>% filter(EVENT %in% common_events)
-filtered_exon_fstat_tab <- zhang_fstat_exons_tab %>% filter(EVENT %in% common_events)
-filtered_exon_fdr_tab <- zhang_fdr_exons_tab %>% filter(EVENT %in% common_events)
-
-
-# Select only unique columns from each table
-filtered_exon_diff_tab <- filtered_exon_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
-filtered_exon_fstat_tab <- filtered_exon_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
-filtered_exon_fdr_tab <- filtered_exon_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
-
-# Merge the data frames by EVENT
-zhang_exon_combination_tab <- filtered_exon_diff_tab %>%
-  inner_join(filtered_exon_fstat_tab, by = "EVENT") %>%
-  inner_join(filtered_exon_fdr_tab, by = "EVENT") %>%
-  distinct() %>%
-  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
-```
-
-```{r zhang combination table}
-# Render DataTable with enhancements
-datatable(
-  zhang_exon_combination_tab,
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-) %>%
-  formatStyle(
-    columns = "Pdiff",
-    color = styleInterval(0.99, c("black", "green")),
-    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
-  ) %>%
-  formatStyle(
-  columns = "deltapsi",
-  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
-  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
-)
-
-output_dir <- file.path(getwd(), "results", "tables")
-dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-write.csv(zhang_exon_combination_tab,
-          file = file.path(output_dir, paste0("zhang_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
-
-#### Trapnell
-
-```{r trapnell table making}
-trapnell_pdiff_exons_tab <- trapnell_pdiff_exons[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
-  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(trapnell_pdiff_exons_tab) <- 1:nrow(trapnell_pdiff_exons_tab)
-
-trapnell_fstat_exons_tab <- trapnell_fstat_exons[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
-  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
-  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(trapnell_fstat_exons_tab) <- 1:nrow(trapnell_fstat_exons_tab)
-
-trapnell_fdr_exons_tab <- trapnell_fdr_exons[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
-  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
-  arrange((FDR), desc(abs(deltapsi)))
-rownames(trapnell_fdr_exons_tab) <- 1:nrow(trapnell_fdr_exons_tab)
-
-# Find common EVENTs across all tables
-common_events <- Reduce(intersect, list(trapnell_pdiff_exons_tab$EVENT, trapnell_fstat_exons_tab$EVENT, trapnell_fdr_exons_tab$EVENT))
-
-# Filter each table to include only rows with common EVENTs
-filtered_exon_diff_tab <- trapnell_pdiff_exons_tab %>% filter(EVENT %in% common_events)
-filtered_exon_fstat_tab <- trapnell_fstat_exons_tab %>% filter(EVENT %in% common_events)
-filtered_exon_fdr_tab <- trapnell_fdr_exons_tab %>% filter(EVENT %in% common_events)
-
-
-# Select only unique columns from each table
-filtered_exon_diff_tab <- filtered_exon_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
-filtered_exon_fstat_tab <- filtered_exon_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
-filtered_exon_fdr_tab <- filtered_exon_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
-
-# Merge the data frames by EVENT
-trapnell_exon_combination_tab <- filtered_exon_diff_tab %>%
-  inner_join(filtered_exon_fstat_tab, by = "EVENT") %>%
-  inner_join(filtered_exon_fdr_tab, by = "EVENT") %>%
-  distinct() %>%
-  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
-```
-
-```{r trapnell combination table}
-# Render DataTable with enhancements
-datatable(
-  trapnell_exon_combination_tab,
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-) %>%
-  formatStyle(
-    columns = "Pdiff",
-    color = styleInterval(0.99, c("black", "green")),
-    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
-  ) %>%
-  formatStyle(
-  columns = "deltapsi",
-  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
-  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
-)
-
-write.csv(trapnell_exon_combination_tab,
-          file = file.path(output_dir, paste0("trapnell_exon_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
 
 #### Tao
 
@@ -1913,147 +1513,12 @@ write.csv(christopher_exon_combination_tab,
           row.names = FALSE)
 ```
 
-#### ANOVA Multigroup Tao
-
-```{r anova exons making}
-tao_anova_multgroups_exons_tab <- tao_anova_multgroups_exons[, c("GENE", "EVENT", "COORD", "Pdiff", "deltaAbsolute","Fstat","medianBetweens")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
-  arrange(desc(Pdiff), desc(abs(deltaAbsolute)))  # Sort by Pdiff and abs(deltapsi)
-rownames(tao_anova_multgroups_exons_tab) <- 1:nrow(tao_anova_multgroups_exons_tab)
-
-# Render DataTable with enhancements
-datatable(
-  tao_anova_multgroups_exons_tab,
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-) %>%
-  formatStyle(
-    columns = "Pdiff",
-    color = styleInterval(0.99, c("black", "green")),
-    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
-  ) %>%
-  formatStyle(
-  columns = "deltaAbsolute",
-  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
-  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
-)
-
-write.csv(tao_anova_multgroups_exons_tab,
-          file = file.path(output_dir, paste0("tao_anova_multgroups_exons_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
-
-#### ANOVA Multigroup Trapnell
-
-```{r anova exons making trapnell}
-trapnell_anova_multgroups_exons_tab <- trapnell_anova_multgroups_exons[, c("GENE", "EVENT", "COORD", "Pdiff", "deltaAbsolute","Fstat","medianBetweens")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
-  arrange(desc(Pdiff), desc(abs(deltaAbsolute)))  # Sort by Pdiff and abs(deltapsi)
-rownames(trapnell_anova_multgroups_exons_tab) <- 1:nrow(trapnell_anova_multgroups_exons_tab)
-
-# Render DataTable with enhancements
-datatable(
-  trapnell_anova_multgroups_exons_tab,
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-) %>%
-  formatStyle(
-    columns = "Pdiff",
-    color = styleInterval(0.99, c("black", "green")),
-    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
-  ) %>%
-  formatStyle(
-  columns = "deltaAbsolute",
-  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
-  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
-)
-
-write.csv(trapnell_anova_multgroups_exons_tab,
-          file = file.path(output_dir, paste0("trapnell_anova_multgroups_exons_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
 
 ## Intron Lists
 
 ### Calculations
 
 ```{r pdiff intron calculation}
-# Preprae table for zhang
-zhang_pdiff_introns <- prepareTableVolcano(
-  psitable = zhang_introns$PSI,
-  qualtable = zhang_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_zhang,
-  colsB = colsGroupB_zhang,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
 
 # Prepare table for Tao
 tao_pdiff_introns <- prepareTableVolcano(
@@ -2071,88 +1536,15 @@ tao_pdiff_introns <- prepareTableVolcano(
   CoverageWeight = FALSE
 )
 
-# Prepare table for Christopher
-christopher_pdiff_introns <- prepareTableVolcano(
-  psitable = christopher_introns$PSI,
-  qualtable = christopher_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_christopher,
-  colsB = colsGroupB_christopher,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
 
-# Prepare table for Trapnell
-trapnell_pdiff_introns <- prepareTableVolcano(
-  psitable = trapnell_introns$PSI,
-  qualtable = trapnell_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_trapnell,
-  colsB = colsGroupB_trapnell,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
+groupA_tao<-"0_days"
+groupB_tao<-"2_days"
+samplesA_tao <- groupList_tao[[groupA_tao]]$samples
+samplesB_tao <- groupList_tao[[groupB_tao]]$samples
+colsGroupA_tao <- convertCols(tao_introns$PSI, samplesA_tao)
+colsGroupB_tao <- convertCols(tao_introns$PSI, samplesB_tao)
 
-# Preprae table for dominic
-dominic_pdiff_introns <- prepareTableVolcano(
-  psitable = dominic_introns$PSI,
-  qualtable = dominic_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_dominic,
-  colsB = colsGroupB_dominic,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
-
-# Preprae table for kan
-kan_pdiff_introns <- prepareTableVolcano(
-  psitable = kan_introns$PSI,
-  qualtable = kan_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_kan,
-  colsB = colsGroupB_kan,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
-
-```
-
-```{r intron f-stat}
-# Preprae table for zhang
-zhang_fstat_introns <- prepareTableVolcanoFstat(
-  psitable = zhang_introns$PSI,
-  qualtable = zhang_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_zhang,
-  colsB = colsGroupB_zhang,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
-
-# Prepare table for Tao
-tao_fstat_introns <- prepareTableVolcanoFstat(
+tao_pdiff_introns_2d <- prepareTableVolcano(
   psitable = tao_introns$PSI,
   qualtable = tao_introns$Qual,
   npoints = 500,
@@ -2167,89 +1559,14 @@ tao_fstat_introns <- prepareTableVolcanoFstat(
   CoverageWeight = FALSE
 )
 
-# Prepare table for Christopher
-christopher_fstat_introns <- prepareTableVolcanoFstat(
-  psitable = christopher_introns$PSI,
-  qualtable = christopher_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_christopher,
-  colsB = colsGroupB_christopher,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
+groupA_tao<-"0_days"
+groupB_tao<-"4_days"
+samplesA_tao <- groupList_tao[[groupA_tao]]$samples
+samplesB_tao <- groupList_tao[[groupB_tao]]$samples
+colsGroupA_tao <- convertCols(tao_introns$PSI, samplesA_tao)
+colsGroupB_tao <- convertCols(tao_introns$PSI, samplesB_tao)
 
-# Prepare table for Trapnell
-trapnell_fstat_introns <- prepareTableVolcanoFstat(
-  psitable = trapnell_introns$PSI,
-  qualtable = trapnell_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_trapnell,
-  colsB = colsGroupB_trapnell,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
-
-# Preprae table for dominic
-dominic_fstat_introns <- prepareTableVolcanoFstat(
-  psitable = dominic_introns$PSI,
-  qualtable = dominic_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_dominic,
-  colsB = colsGroupB_dominic,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
-
-# Preprae table for kan
-kan_fstat_introns <- prepareTableVolcanoFstat(
-  psitable = kan_introns$PSI,
-  qualtable = kan_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_kan,
-  colsB = colsGroupB_kan,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
-
-```
-
-```{r FDR intron calculations}
-# Preprae table for zhang
-zhang_fdr_introns <- prepareTableVolcanoFDR(
-  psitable = zhang_introns$PSI,
-  qualtable = zhang_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_zhang,
-  colsB = colsGroupB_zhang,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  nsim = 100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
-
-# Prepare table for Tao
-tao_fdr_introns <- prepareTableVolcanoFDR(
+tao_pdiff_introns_4d <- prepareTableVolcano(
   psitable = tao_introns$PSI,
   qualtable = tao_introns$Qual,
   npoints = 500,
@@ -2260,132 +1577,47 @@ tao_fdr_introns <- prepareTableVolcanoFDR(
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
   maxDevTable = maxDevSimulationN100,
-  nsim = 100,
   seed = TRUE,
   CoverageWeight = FALSE
 )
 
-# Prepare table for Christopher
-christopher_fdr_introns <- prepareTableVolcanoFDR(
-  psitable = christopher_introns$PSI,
-  qualtable = christopher_introns$Qual,
+groupA_tao<-"2_days"
+groupB_tao<-"4_days"
+samplesA_tao <- groupList_tao[[groupA_tao]]$samples
+samplesB_tao <- groupList_tao[[groupB_tao]]$samples
+colsGroupA_tao <- convertCols(tao_introns$PSI, samplesA_tao)
+colsGroupB_tao <- convertCols(tao_introns$PSI, samplesB_tao)
+
+tao_pdiff_introns_4dvs2d <- prepareTableVolcano(
+  psitable = tao_introns$PSI,
+  qualtable = tao_introns$Qual,
   npoints = 500,
-  colsA = colsGroupA_christopher,
-  colsB = colsGroupB_christopher,
-  labA = groupA,
-  labB = groupB,
+  colsA = colsGroupA_tao,
+  colsB = colsGroupB_tao,
+  labA = groupA_tao,
+  labB = groupB_tao,
   basalColor = "#89C0AE",
   interestColor = "#E69A9C",
   maxDevTable = maxDevSimulationN100,
-  nsim = 100,
   seed = TRUE,
   CoverageWeight = FALSE
 )
 
-# Prepare table for Trapnell
-trapnell_fdr_introns <- prepareTableVolcanoFDR(
-  psitable = trapnell_introns$PSI,
-  qualtable = trapnell_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_trapnell,
-  colsB = colsGroupB_trapnell,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  nsim = 100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
+write.csv(tao_pdiff_introns, "tao_pdiff_introns.csv")
+write.csv(tao_pdiff_introns_2d,"tao_pdiff_introns_2d.csv")
+write.csv(tao_pdiff_introns_4d,"tao_pdiff_introns_4d.csv")
+write.csv(tao_pdiff_introns_4dvs2d,"tao_pdiff_introns_4dvs2d.csv")
 
-# Preprae table for dominic
-dominic_fdr_introns <- prepareTableVolcanoFDR(
-  psitable = dominic_introns$PSI,
-  qualtable = dominic_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_dominic,
-  colsB = colsGroupB_dominic,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  nsim = 100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
-
-# Preprae table for kan
-kan_fdr_introns <- prepareTableVolcanoFDR(
-  psitable = kan_introns$PSI,
-  qualtable = kan_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_kan,
-  colsB = colsGroupB_kan,
-  labA = groupA,
-  labB = groupB,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  nsim = 100,
-  seed=TRUE,
-  CoverageWeight = FALSE)
 ```
 
-```{r table_multgroups introns}
-tao_anova_multgroups_introns <- prepareTableVolcanoMultipleGroups(psitable = tao_introns$PSI,
-                                                 qualtable = tao_introns$Qual,
-                                                 groupList = groupList_tao,
-                                                 npoints = 500,
-                                                 maxDevTable = maxDevSimulationN100, seed=TRUE, CoverageWeight = F)
 
-
-trapnell_anova_multgroups_introns <- prepareTableVolcanoMultipleGroups(psitable = trapnell_introns$PSI,
-                                                 qualtable = trapnell_introns$Qual,
-                                                 groupList = groupList_trapnell[-3],
-                                                 npoints = 500,
-                                                 maxDevTable = maxDevSimulationN100, seed=TRUE, CoverageWeight = F)
-```
 
 
 ### FDR Volcano Plots { .tabset}
 
 Volcano Plots of the FDR corrected introns for each study. In pink are the exons with a deltaPSI>=0.1.
 
-#### Zhang
 
-```{r zhang intron fdr volcano}
-plotVolcanoFDR(betasTable =filter(zhang_fdr_introns,!is.na(EVENT)),
-                            labA = groupA,
-                            labB = groupB,
-                            basalColor = "#89C0AE",
-                            interestColor = "#E69A9C") +
-
-theme(
-  plot.title = element_text(size = 10),  # Title font size
-  axis.title = element_text(size = 10),  # Axis title font size
-  axis.text = element_text(size = 10),   # Axis text font size
-  legend.text = element_text(size = 10), # Legend text font size
-  legend.title = element_text(size = 10) # Legend title font size
-)
-```
-
-#### Trapnell
-
-```{r trapnell fdr intron volcano}
-plotVolcanoFDR(betasTable =filter(trapnell_fdr_introns,!is.na(EVENT)),
-                            labA = groupA,
-                            labB = groupB,
-                            basalColor = "#89C0AE",
-                            interestColor = "#E69A9C") +
-theme(
-  plot.title = element_text(size = 10),  # Title font size
-  axis.title = element_text(size = 10),  # Axis title font size
-  axis.text = element_text(size = 10),   # Axis text font size
-  legend.text = element_text(size = 10), # Legend text font size
-  legend.title = element_text(size = 10) # Legend title font size
-)
-```
 
 #### Tao
 
@@ -2459,195 +1691,6 @@ theme(
 
 These tables show the Introns that show a FDR<=0.05 and PDiff (1-pvalue)>=0.95 in the pairwise comparison of Myotubes-Myoblasts, for each study.
 
-#### Zhang
-
-```{r zhang table intron making}
-zhang_pdiff_introns_tab <- zhang_pdiff_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
-  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(zhang_pdiff_introns_tab) <- 1:nrow(zhang_pdiff_introns_tab)
-
-zhang_fstat_introns_tab <- zhang_fstat_introns[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
-  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
-  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(zhang_fstat_introns_tab) <- 1:nrow(zhang_fstat_introns_tab)
-
-zhang_fdr_introns_tab <- zhang_fdr_introns[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
-  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
-  arrange((FDR), desc(abs(deltapsi)))
-rownames(zhang_fdr_introns_tab) <- 1:nrow(zhang_fdr_introns_tab)
-
-# Find common EVENTs across all tables
-common_events <- Reduce(intersect, list(zhang_pdiff_introns_tab$EVENT, zhang_fstat_introns_tab$EVENT, zhang_fdr_introns_tab$EVENT))
-
-# Filter each table to include only rows with common EVENTs
-filtered_intron_diff_tab <- zhang_pdiff_introns_tab %>% filter(EVENT %in% common_events)
-filtered_intron_fstat_tab <- zhang_fstat_introns_tab %>% filter(EVENT %in% common_events)
-filtered_intron_fdr_tab <- zhang_fdr_introns_tab %>% filter(EVENT %in% common_events)
-
-
-# Select only unique columns from each table
-filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
-filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
-filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
-
-# Merge the data frames by EVENT
-zhang_intron_combination_tab <- filtered_intron_diff_tab %>%
-  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
-  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
-  distinct() %>%
-  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
-```
-
-```{r zhang combination intron table}
-# Render DataTable with enhancements
-datatable(
-  zhang_intron_combination_tab,
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-) %>%
-  formatStyle(
-    columns = "Pdiff",
-    color = styleInterval(0.99, c("black", "green")),
-    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
-  ) %>%
-  formatStyle(
-  columns = "deltapsi",
-  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
-  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
-)
-
-output_dir <- file.path(getwd(), "results", "tables")
-dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-write.csv(zhang_intron_combination_tab,
-          file = file.path(output_dir, paste0("zhang_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
-
-#### Trapnell
-
-```{r trapnell table intron making}
-trapnell_pdiff_introns_tab <- trapnell_pdiff_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
-  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(trapnell_pdiff_introns_tab) <- 1:nrow(trapnell_pdiff_introns_tab)
-
-trapnell_fstat_introns_tab <- trapnell_fstat_introns[, c("GENE","EVENT","COORD","Fstat","deltapsi")] %>%
-  filter(!is.na(EVENT)) %>%  # Remove rows where EVENT is NA
-  arrange(desc(Fstat), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(trapnell_fstat_introns_tab) <- 1:nrow(trapnell_fstat_introns_tab)
-
-trapnell_fdr_introns_tab <- trapnell_fdr_introns[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
-  filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
-  arrange((FDR), desc(abs(deltapsi)))
-rownames(trapnell_fdr_introns_tab) <- 1:nrow(trapnell_fdr_introns_tab)
-
-# Find common EVENTs across all tables
-common_events <- Reduce(intersect, list(trapnell_pdiff_introns_tab$EVENT, trapnell_fstat_introns_tab$EVENT, trapnell_fdr_introns_tab$EVENT))
-
-# Filter each table to include only rows with common EVENTs
-filtered_intron_diff_tab <- trapnell_pdiff_introns_tab %>% filter(EVENT %in% common_events)
-filtered_intron_fstat_tab <- trapnell_fstat_introns_tab %>% filter(EVENT %in% common_events)
-filtered_intron_fdr_tab <- trapnell_fdr_introns_tab %>% filter(EVENT %in% common_events)
-
-
-# Select only unique columns from each table
-filtered_intron_diff_tab <- filtered_intron_diff_tab %>% select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
-filtered_intron_fstat_tab <- filtered_intron_fstat_tab %>% select(EVENT, Fstat) # Extra column is Fstat
-filtered_intron_fdr_tab <- filtered_intron_fdr_tab %>% select(EVENT, FDR) # Extra column is FDR
-
-# Merge the data frames by EVENT
-trapnell_intron_combination_tab <- filtered_intron_diff_tab %>%
-  inner_join(filtered_intron_fstat_tab, by = "EVENT") %>%
-  inner_join(filtered_intron_fdr_tab, by = "EVENT") %>%
-  distinct() %>%
-  arrange(desc(abs(deltapsi)), desc(Fstat),desc(FDR), desc(Pdiff))
-```
-
-```{r trapnell combination intron table}
-# Render DataTable with enhancements
-datatable(
-  trapnell_intron_combination_tab,
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-) %>%
-  formatStyle(
-    columns = "Pdiff",
-    color = styleInterval(0.99, c("black", "green")),
-    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
-  ) %>%
-  formatStyle(
-  columns = "deltapsi",
-  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
-  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
-)
-
-write.csv(trapnell_intron_combination_tab,
-          file = file.path(output_dir, paste0("trapnell_intron_combination_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
 
 #### Tao
 
@@ -3027,127 +2070,6 @@ write.csv(christopher_intron_combination_tab,
           row.names = FALSE)
 ```
 
-#### ANOVA Multigroup Tao
-
-```{r anova introns making}
-tao_anova_multgroups_introns_tab <- tao_anova_multgroups_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltaAbsolute","Fstat","medianBetweens")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.90) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
-  arrange(desc(Pdiff), desc(abs(deltaAbsolute)))  # Sort by Pdiff and abs(deltapsi)
-rownames(tao_anova_multgroups_introns_tab) <- 1:nrow(tao_anova_multgroups_introns_tab)
-
-# Render DataTable with enhancements
-datatable(
-  tao_anova_multgroups_introns_tab,
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-) %>%
-  formatStyle(
-    columns = "Pdiff",
-    color = styleInterval(0.99, c("black", "green")),
-    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
-  ) %>%
-  formatStyle(
-  columns = "deltaAbsolute",
-  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
-  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
-)
-
-write.csv(tao_anova_multgroups_introns_tab,
-          file = file.path(output_dir, paste0("tao_anova_multgroups_introns_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
-
-#### ANOVA Multigroup Trapnell
-
-```{r anova introns making trapnell}
-trapnell_anova_multgroups_introns_tab <- trapnell_anova_multgroups_introns[, c("GENE", "EVENT", "COORD", "Pdiff", "deltaAbsolute","Fstat","medianBetweens")] %>%
-  filter(!is.na(EVENT), Pdiff >= 0.90) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
-  arrange(desc(Pdiff), desc(abs(deltaAbsolute)))  # Sort by Pdiff and abs(deltapsi)
-rownames(trapnell_anova_multgroups_introns_tab) <- 1:nrow(trapnell_anova_multgroups_introns_tab)
-
-# Render DataTable with enhancements
-datatable(
-  trapnell_anova_multgroups_introns_tab,
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-) %>%
-  formatStyle(
-    columns = "Pdiff",
-    color = styleInterval(0.99, c("black", "green")),
-    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
-  ) %>%
-  formatStyle(
-  columns = "deltaAbsolute",
-  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
-  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
-)
-
-write.csv(trapnell_anova_multgroups_introns_tab,
-          file = file.path(output_dir, paste0("trapnell_anova_multgroups_introns_table_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
 
 # PSI Distribution Plots { .tabset}
 
@@ -3163,12 +2085,8 @@ dfs <- list(
   list(df = kan_pdiff_introns, group = "Introns", study = "Kan"),
   list(df = christopher_pdiff_exons, group = "Exons", study = "Christopher"),
   list(df = christopher_pdiff_introns, group = "Introns", study = "Christopher"),
-  list(df = trapnell_pdiff_exons, group = "Exons", study = "Trapnell"),
-  list(df = trapnell_pdiff_introns, group = "Introns", study = "Trapnell"),
   list(df = tao_pdiff_exons, group = "Exons", study = "Tao"),
-  list(df = tao_pdiff_introns, group = "Introns", study = "Tao"),
-  list(df = zhang_pdiff_exons, group = "Exons", study = "Zhang"),
-  list(df = zhang_pdiff_introns, group = "Introns", study = "Zhang")
+  list(df = tao_pdiff_introns, group = "Introns", study = "Tao")
 )
 
 # Add metadata columns to each dataframe beforehand
@@ -3179,8 +2097,8 @@ dfs_with_metadata <- lapply(dfs, function(x) {
 
 # Combine all dataframes into one using bind_rows() for faster merging
 final_df <- bind_rows(dfs_with_metadata) %>%
-  select(EVENT, Group, Study, deltapsi) %>%
-  filter(abs(deltapsi)>=0.1) %>%
+  dplyr::select(EVENT, Group, Study, deltapsi) %>%
+  dplyr::filter(abs(deltapsi)>=0.1) %>%
   na.omit()# Adjust this line if other columns should be prioritized
 
 
@@ -3219,8 +2137,6 @@ This *UpSet* plots showcase the number of common introns found in the different 
 dataframes <- list(
   christopher = christopher_intron_combination_tab,
   tao = tao_intron_combination_tab,
-  trapnell = trapnell_intron_combination_tab,
-  zhang= zhang_intron_combination_tab,
   dominic=dominic_intron_combination_tab,
   kan=kan_intron_combination_tab
 )
@@ -3311,7 +2227,7 @@ upset_intron_plot<-introns_candidates %>%
 upset_intron_plot
 ```
 
-**Important**: Since merging all 5 dataframes result in only 5 candidates, I will merge to obtain those EVENTS appearing in at least 4 studies.
+**Important**: Since merging all 5 dataframes result in only 5 candidates, I will merge to obtain those EVENTS appearing in at least 2 studies.
 
 ```{r shared events final list intron}
 # Step 1: Combine all events into a single vector with their sources
@@ -3320,12 +2236,12 @@ all_events <- unlist(lapply(dataframes, function(df) df$EVENT))
 # Step 2: Count occurrences of each event
 event_counts <- table(all_events)
 
-# Step 3: Identify events that appear in at least 4 dataframes
-events_at_least_4 <- names(event_counts[event_counts >= 4])
+# Step 3: Identify events that appear in at least 2 dataframes
+events_at_least_4 <- names(event_counts[event_counts >= 2])
 
 # Step 4: Filter each dataframe to keep only these events
 tao_shared <- tao_intron_combination_tab[tao_intron_combination_tab$EVENT %in% events_at_least_4, ]
-trapnell_shared <- trapnell_intron_combination_tab[trapnell_intron_combination_tab$EVENT %in% events_at_least_4, ]
+
 christopher_shared <- christopher_intron_combination_tab[christopher_intron_combination_tab$EVENT %in% events_at_least_4, ]
 dominic_shared <- dominic_intron_combination_tab[dominic_intron_combination_tab$EVENT %in% events_at_least_4, ]
 kan_shared <- kan_intron_combination_tab[kan_intron_combination_tab$EVENT %in% events_at_least_4, ]
@@ -3333,7 +2249,6 @@ kan_shared <- kan_intron_combination_tab[kan_intron_combination_tab$EVENT %in% e
 # Step 5: Combine the filtered dataframes with a source identifier
 combined_data <- bind_rows(
   tao_shared %>% mutate(Source = "tao_shared"),
-  trapnell_shared %>% mutate(Source = "trapnell_shared"),
   christopher_shared %>% mutate(Source = "christopher_shared"),
   dominic_shared %>% mutate(Source = "dominic_shared"),
   kan_shared %>% mutate(Source = "kan_shared")
@@ -3438,8 +2353,6 @@ These *UpSet* plots showcase the number of common exons found in the different s
 dataframes <- list(
   christopher = christopher_exon_combination_tab,
   tao = tao_exon_combination_tab,
-  trapnell = trapnell_exon_combination_tab,
-  zhang= zhang_exon_combination_tab,
   dominic=dominic_exon_combination_tab,
   kan=kan_exon_combination_tab
 )
@@ -3530,22 +2443,25 @@ upset_exon_plot<-exons_candidates %>%
 upset_exon_plot
 ```
 
+```{r loading data from vastdb}
+events_info<-read.table("EVENT_INFO-mm10.tab", header = TRUE, sep = "\t")
+splice_scores<-read.table("SPLICE_SITE_SCORES-mm10.tab", header = FALSE, sep = "\t")
+```
+
 ```{r shared events final list}
 # Step 1: Combine all events into a single vector with their sources
-all_events <- unlist(lapply(list(tao_exon_combination_tab, trapnell_exon_combination_tab, 
-                                 zhang_exon_combination_tab, christopher_exon_combination_tab, 
+all_events <- unlist(lapply(list(tao_exon_combination_tab, 
+                                christopher_exon_combination_tab, 
                                  dominic_exon_combination_tab,kan_exon_combination_tab), function(df) df$EVENT))
 
 # Step 2: Count occurrences of each event
 event_counts <- table(all_events)
 
 # Step 3: Identify events that appear in at least 4 dataframes
-events_at_least_4 <- names(event_counts[event_counts >= 4])
+events_at_least_4 <- names(event_counts[event_counts >= 2])
 
 # Step 4: Filter each dataframe to keep only these events
 tao_shared <- tao_exon_combination_tab[tao_exon_combination_tab$EVENT %in% events_at_least_4, ]
-trapnell_shared <- trapnell_exon_combination_tab[trapnell_exon_combination_tab$EVENT %in% events_at_least_4, ]
-zhang_shared <- zhang_exon_combination_tab[zhang_exon_combination_tab$EVENT %in% events_at_least_4, ]
 christopher_shared <- christopher_exon_combination_tab[christopher_exon_combination_tab$EVENT %in% events_at_least_4, ]
 dominic_shared <- dominic_exon_combination_tab[dominic_exon_combination_tab$EVENT %in% events_at_least_4, ]
 kan_shared <- kan_exon_combination_tab[kan_exon_combination_tab$EVENT %in% events_at_least_4, ]
@@ -3553,8 +2469,6 @@ kan_shared <- kan_exon_combination_tab[kan_exon_combination_tab$EVENT %in% event
 # Step 5: Combine the filtered dataframes with a source identifier
 combined_data <- bind_rows(
   tao_shared %>% mutate(Source = "tao_shared"),
-  trapnell_shared %>% mutate(Source = "trapnell_shared"),
-  zhang_shared %>% mutate(Source = "zhang_shared"),
   christopher_shared %>% mutate(Source = "christopher_shared"),
   dominic_shared %>% mutate(Source = "dominic_shared"),
   kan_shared %>% mutate(Source = "kan_shared")
@@ -3586,73 +2500,12 @@ final_exon_list <- final_exon_list %>%
     avg_FDR = round(avg_FDR, 3)
   )
 
+final_exon_list$GENE<-events_info$GENE[match(final_exon_list$EVENT,events_info$EVENT)]
+
 ```
 
-This table is composed of the merged exon candidates list based on whether they appear to be differenially spliced in all the studies.
-
-```{r output final list}
-# Render DataTable with enhancements
-datatable(
-  final_exon_list,
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-) %>%
-  formatStyle(
-    columns = "avg_Pdiff",
-    color = styleInterval(0.99, c("black", "green")),
-    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
-  ) %>%
-  formatStyle(
-  columns = "avg_deltapsi",
-  color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
-  fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
-)
-
-
-
-
-write.csv(final_exon_list,
-          file = file.path(output_dir, paste0("final_exon_list_unsorted_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
 
 # Sorting Out according to features
-
-```{r loading data from vastdb}
-events_info<-read.table("EVENT_INFO-mm10.tab", header = TRUE, sep = "\t")
-splice_scores<-read.table("SPLICE_SITE_SCORES-mm10.tab", header = FALSE, sep = "\t")
-```
 
 ```{r gc content function}
 calculate_GC_percent <- function(df, sequence_column) {
@@ -3744,225 +2597,104 @@ final_intron_list<-calculate_GC_percent(final_intron_list,"sequence")
 
 ```
 
-```{r final ANOVA list features extraction}
-# ANOVA Exon List features
-tao_anova_multgroups_exons_tab$length<-events_info$LE_n[match(tao_anova_multgroups_exons_tab$EVENT, events_info$EVENT)]
-tao_anova_multgroups_exons_tab$sequence<-events_info$Seq_A[match(tao_anova_multgroups_exons_tab$EVENT, events_info$EVENT)]
-
-tao_anova_multgroups_exons_tab$splice_scores <- apply(tao_anova_multgroups_exons_tab, 1, function(row) {
-  # Get the event value from the current row
-  event_value <- row["EVENT"]
-
-  # Call the function to extract the V3 values
-  extract_V3_for_event(event_value, splice_scores)
-})
-
-# Unnest the list in V3_values into two separate columns
-tao_anova_multgroups_exons_tab <- tao_anova_multgroups_exons_tab %>%
-  unnest(cols = splice_scores) %>%
-  separate(splice_scores, into = c("splice_score_3", "splice_score_5"), sep = ",")
-
-# If necessary, clean up the new columns
-tao_anova_multgroups_exons_tab$splice_score_3 <- gsub("[c()]", "", tao_anova_multgroups_exons_tab$splice_score_3)
-tao_anova_multgroups_exons_tab$splice_score_5 <- gsub("[c()]", "", tao_anova_multgroups_exons_tab$splice_score_5)
-tao_anova_multgroups_exons_tab$splice_score_3 <- as.numeric(tao_anova_multgroups_exons_tab$splice_score_3)
-tao_anova_multgroups_exons_tab$splice_score_5 <- as.numeric(tao_anova_multgroups_exons_tab$splice_score_5)
-
-tao_anova_multgroups_exons_tab<-calculate_GC_percent(tao_anova_multgroups_exons_tab,"sequence")
-
-# Look for unique events not in the pair-wise list
-unique_tao_anova_multgroups_exons_tab<-tao_anova_multgroups_exons_tab[!tao_anova_multgroups_exons_tab$EVENT %in% final_exon_list$EVENT,]
-
-# ANOVA Intron List features
-tao_anova_multgroups_introns_tab$length<-events_info$LE_n[match(tao_anova_multgroups_introns_tab$EVENT, events_info$EVENT)]
-tao_anova_multgroups_introns_tab$sequence<-events_info$Seq_A[match(tao_anova_multgroups_introns_tab$EVENT, events_info$EVENT)]
-
-tao_anova_multgroups_introns_tab$splice_scores <- apply(tao_anova_multgroups_introns_tab, 1, function(row) {
-  # Get the event value from the current row
-  event_value <- row["EVENT"]
-
-  # Call the function to extract the V3 values
-  extract_V3_for_event(event_value, splice_scores)
-})
-
-# Unnest the list in V3_values into two separate columns
-tao_anova_multgroups_introns_tab <- tao_anova_multgroups_introns_tab %>%
-  unnest(cols = splice_scores) %>%
-  separate(splice_scores, into = c("splice_score_3", "splice_score_5"), sep = ",")
-
-# If necessary, clean up the new columns
-tao_anova_multgroups_introns_tab$splice_score_3 <- gsub("[c()]", "", tao_anova_multgroups_introns_tab$splice_score_3)
-tao_anova_multgroups_introns_tab$splice_score_5 <- gsub("[c()]", "", tao_anova_multgroups_introns_tab$splice_score_5)
-tao_anova_multgroups_introns_tab$splice_score_3 <- as.numeric(tao_anova_multgroups_introns_tab$splice_score_3)
-tao_anova_multgroups_introns_tab$splice_score_5 <- as.numeric(tao_anova_multgroups_introns_tab$splice_score_5)
-
-tao_anova_multgroups_introns_tab<-calculate_GC_percent(tao_anova_multgroups_introns_tab,"sequence")
-
-# Look for unique events not in the pair-wise list
-unique_tao_anova_multgroups_introns_tab<-tao_anova_multgroups_introns_tab[!tao_anova_multgroups_introns_tab$EVENT %in% final_intron_list$EVENT,]
-
-```
-
-```{r final ANOVA list features extraction trapnell}
-# ANOVA Exon List features
-trapnell_anova_multgroups_exons_tab$length<-events_info$LE_n[match(trapnell_anova_multgroups_exons_tab$EVENT, events_info$EVENT)]
-trapnell_anova_multgroups_exons_tab$sequence<-events_info$Seq_A[match(trapnell_anova_multgroups_exons_tab$EVENT, events_info$EVENT)]
-
-trapnell_anova_multgroups_exons_tab$splice_scores <- apply(trapnell_anova_multgroups_exons_tab, 1, function(row) {
-  # Get the event value from the current row
-  event_value <- row["EVENT"]
-
-  # Call the function to extract the V3 values
-  extract_V3_for_event(event_value, splice_scores)
-})
-
-# Unnest the list in V3_values into two separate columns
-trapnell_anova_multgroups_exons_tab <- trapnell_anova_multgroups_exons_tab %>%
-  unnest(cols = splice_scores) %>%
-  separate(splice_scores, into = c("splice_score_3", "splice_score_5"), sep = ",")
-
-# If necessary, clean up the new columns
-trapnell_anova_multgroups_exons_tab$splice_score_3 <- gsub("[c()]", "", trapnell_anova_multgroups_exons_tab$splice_score_3)
-trapnell_anova_multgroups_exons_tab$splice_score_5 <- gsub("[c()]", "", trapnell_anova_multgroups_exons_tab$splice_score_5)
-trapnell_anova_multgroups_exons_tab$splice_score_3 <- as.numeric(trapnell_anova_multgroups_exons_tab$splice_score_3)
-trapnell_anova_multgroups_exons_tab$splice_score_5 <- as.numeric(trapnell_anova_multgroups_exons_tab$splice_score_5)
-
-trapnell_anova_multgroups_exons_tab<-calculate_GC_percent(trapnell_anova_multgroups_exons_tab,"sequence")
-
-# Look for unique events not in the pair-wise list
-unique_trapnell_anova_multgroups_exons_tab<-trapnell_anova_multgroups_exons_tab[!trapnell_anova_multgroups_exons_tab$EVENT %in% final_exon_list$EVENT,]
-
-# ANOVA Intron List features
-trapnell_anova_multgroups_introns_tab$length<-events_info$LE_n[match(trapnell_anova_multgroups_introns_tab$EVENT, events_info$EVENT)]
-trapnell_anova_multgroups_introns_tab$sequence<-events_info$Seq_A[match(trapnell_anova_multgroups_introns_tab$EVENT, events_info$EVENT)]
-
-trapnell_anova_multgroups_introns_tab$splice_scores <- apply(trapnell_anova_multgroups_introns_tab, 1, function(row) {
-  # Get the event value from the current row
-  event_value <- row["EVENT"]
-
-  # Call the function to extract the V3 values
-  extract_V3_for_event(event_value, splice_scores)
-})
-
-# Unnest the list in V3_values into two separate columns
-trapnell_anova_multgroups_introns_tab <- trapnell_anova_multgroups_introns_tab %>%
-  unnest(cols = splice_scores) %>%
-  separate(splice_scores, into = c("splice_score_3", "splice_score_5"), sep = ",")
-
-# If necessary, clean up the new columns
-trapnell_anova_multgroups_introns_tab$splice_score_3 <- gsub("[c()]", "", trapnell_anova_multgroups_introns_tab$splice_score_3)
-trapnell_anova_multgroups_introns_tab$splice_score_5 <- gsub("[c()]", "", trapnell_anova_multgroups_introns_tab$splice_score_5)
-trapnell_anova_multgroups_introns_tab$splice_score_3 <- as.numeric(trapnell_anova_multgroups_introns_tab$splice_score_3)
-trapnell_anova_multgroups_introns_tab$splice_score_5 <- as.numeric(trapnell_anova_multgroups_introns_tab$splice_score_5)
-
-trapnell_anova_multgroups_introns_tab<-calculate_GC_percent(trapnell_anova_multgroups_introns_tab,"sequence")
-
-# Look for unique events not in the pair-wise list
-unique_trapnell_anova_multgroups_introns_tab<-trapnell_anova_multgroups_introns_tab[!trapnell_anova_multgroups_introns_tab$EVENT %in% final_intron_list$EVENT,]
-
-```
 
 
-## Gene Ontology of Filtered Splicing Events
-
-```{r gene ontology, fig.width=10, fig.height=8}
-exon_go <- bitr(final_exon_list$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
-names(exon_go)<-c("GENE","ENTREZID")
-final_exon_list <- final_exon_list %>%
-  left_join(as.data.frame(exon_go), by = "GENE")
-
-
-# GO Enrichment Analysis
-go_enrich_exon <- enrichGO(gene = exon_go$ENTREZID,
-                      OrgDb = org.Mm.eg.db,
-                      ont = "ALL",
-                      pAdjustMethod = "BH",
-                      pvalueCutoff = 0.05,
-                      qvalueCutoff = 0.05)
-speckle_related_genes<-strsplit(go_enrich_exon@result[which(go_enrich_exon@result$Description=="non-membrane-bounded organelle assembly"), "geneID"], "/")[[1]]
-final_exon_list$GO_speckle<-ifelse(final_exon_list$ENTREZID %in% speckle_related_genes, "TRUE", "FALSE")
-
-intron_go <- bitr(final_intron_list$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
-names(intron_go)<-c("GENE","ENTREZID")
-final_intron_list <- final_intron_list %>%
-  left_join(as.data.frame(intron_go), by = "GENE")
-
-
-# GO Enrichment Analysis with Error Handling
-go_enrich_intron <- enrichGO(
-  gene = intron_go$ENTREZID,
-  OrgDb = org.Mm.eg.db,
-  ont = "ALL",
-  pAdjustMethod = "BH",
-  pvalueCutoff = 0.05,
-  qvalueCutoff = 0.05
-)
-
-# Check if there are significant GO results
-if (!is.null(go_enrich_intron) && nrow(go_enrich_intron@result) > 0) {
-  # Try to extract specific GO term genes
-  if ("non-membrane-bounded organelle assembly" %in% go_enrich_intron@result$Description) {
-    speckle_related_genes <- strsplit(
-      go_enrich_intron@result[which(go_enrich_intron@result$Description == "non-membrane-bounded organelle assembly"), "geneID"], 
-      "/"
-    )[[1]]
-  } else {
-    speckle_related_genes <- character(0) # No genes found for the specific term
-  }
-} else {
-  speckle_related_genes <- character(0) # No significant enrichment found
-}
-
-# Assign the boolean flag based on the GO enrichment
-final_intron_list$GO_speckle <- ifelse(
-  final_intron_list$ENTREZID %in% speckle_related_genes, 
-  "TRUE", 
-  "FALSE"
-)
-
-
-
-
-gene_entrez <- bitr(union(final_exon_list$GENE, final_intron_list$GENE), fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
-gene_entrez_go <- enrichGO(gene = gene_entrez$ENTREZID,
-                      OrgDb = org.Mm.eg.db,
-                      ont = "ALL",
-                      pAdjustMethod = "BH",
-                      pvalueCutoff = 0.05,
-                      qvalueCutoff = 0.05)
-
-# Polished GO dot plot
-go_plot <- dotplot(
-  gene_entrez_go,
-  showCategory = 20
-) +
-  ggtitle("<b style='font-size:18px;'>GO Enrichment Analysis</b>") +
-  labs(
-    caption = paste0("Created by Andrés Gordo Ortiz on ", Sys.Date()),
-    x = "Gene Ratio",
-    y = "GO Terms"
-  ) +
-  theme_minimal(base_family = "sans") +
-  theme(
-    plot.title = element_markdown(hjust = 0.5),  # Center and style title
-    axis.text.y = element_text(size = 13, color = "black"),  # Clear, professional y-axis labels
-    axis.text.x = element_text(size = 12, color = "black"),  # Readable x-axis labels
-    axis.title = element_text(size = 15),  # Title size enhancement
-    panel.grid.major = element_line(color = "gray90"),  # Subtle gridlines
-    panel.background = element_rect(fill = "white"),  # Clean background
-    plot.caption = element_text(size = 10, hjust = 1, color = "gray50")  # Subtitle for the caption
-  ) +
-  scale_color_paletteer_c("viridis::viridis", name = "P-adjust") +  # Improve coloring for better accessibility
-  scale_y_discrete(guide = guide_axis(n.dodge = 1))  # Handle overlapping labels
-
-
-go_plot
-```
 
 ## Enrichment Analysis with EnrichR of Candidate Genes { .tabset}
 
+
+### Network
+
 ```{r pladb enrichr}
 enrichdata<-enrichr(unique(c(final_exon_list$GENE, final_intron_list$GENE)), databases = c("GO_Biological_Process_2023","GO_Cellular_Component_2023","GO_Molecular_Function_2023"))
+
+cel_comp_df<-enrichdata[[2]]
+
+library(tidygraph)
+library(ggraph)
+
+## Prepare the edges
+edges <- cel_comp_df %>%
+  mutate(
+    genes = str_split(Genes, ";"),
+    Term = str_remove(Term, "\\(GO:\\s*\\d+\\)") # Remove "(GO: XXXX)" from GO terms
+  ) %>%
+  unnest(genes) %>%
+  dplyr::select(Term, genes)
+
+# Calculate the number of genes and filter significant terms
+nodes <- tibble(
+  name = unique(c(edges$Term, edges$genes))
+) %>%
+  left_join(
+    cel_comp_df %>%
+      mutate(
+        num_genes = str_count(Genes, ";") + 1,
+        Term = str_remove(Term, "\\(GO:\\s*\\d+\\)") # Remove "(GO: XXXX)" from GO terms
+      ) %>%
+      dplyr::select(Term, Adjusted.P.value, num_genes),
+    by = c("name" = "Term")
+  )
+
+# Filter significant GO terms with at least 6 genes
+significant_terms <- nodes %>%
+  filter(!is.na(Adjusted.P.value) & Adjusted.P.value < 0.05 & num_genes >= 6) %>%
+  arrange(desc(num_genes), Adjusted.P.value) %>%
+  slice(1:7)
+
+# Filter edges to include only selected significant terms
+edges <- edges %>%
+  filter(Term %in% significant_terms$name)
+
+# Update nodes to include only selected terms and their genes
+nodes <- nodes %>%
+  filter(name %in% c(significant_terms$name, edges$genes)) %>%
+  mutate(
+    type = if_else(name %in% significant_terms$name, "GO Term", "Gene")
+  )
+
+# Create a graph object
+graph <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE)
+
+# Plot the network graph with adjustments for num_genes and color
+ccgo<-ggraph(graph, layout = "stress") + 
+  # Use stress layout for better spacing
+  geom_edge_link(color = "gray80", alpha = 1) + 
+  # Use num_genes for node size and Adjusted.P.value for color
+  geom_node_point(aes(color =Adjusted.P.value, size = c(na.omit(num_genes), rep(1,length(graph)-7))), na.rm = TRUE) + 
+  geom_node_text(
+    aes(
+      label = name, 
+      fontface = "bold"  # Genes are not bold, GO terms are bold
+    ),
+    size = c(rep(5, 7), rep(3,length(graph)-7)),  # Different size for genes and GO terms
+    repel = TRUE,
+    vjust = 0.5
+  ) + 
+  # Adjust color scale using viridis with a more fitting color palette for publication
+  scale_color_viridis_c(
+    option = "cividis", 
+    na.value = "black", 
+    guide = guide_colorbar(title = "Adjusted P-value")
+  ) + 
+  # Adjust size scale and add legend for num_genes
+  scale_size_continuous(
+    range = c(2, 10), 
+    guide = guide_legend(title = "Number of Genes", title.position = "top", order = 1)
+  ) + 
+  # Optionally, you can adjust the shape scale if you need specific point types
+  scale_shape_manual(values = c("GO Term" = 21, "Gene" = 16)) + 
+  theme_void(base_size = 14) + 
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    legend.position = "right",
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 12)
+  ) + 
+  ggtitle("Top 7 Significant CC GO Terms Network Graph")
+
+
+ccgo
 ```
 
 ### GO Biological Process
@@ -3977,6 +2709,7 @@ plotEnrich(enrichdata[[1]])
 plotEnrich(enrichdata[[2]])
 ```
 
+
 ### GO Molecular Function
 
 ```{r pladb molfunction, fig.width=10, fig.height=8}
@@ -3984,26 +2717,19 @@ plotEnrich(enrichdata[[3]])
 ```
 
 
-```{r ENTREZ ANOVA}
-exon_anova_go <- bitr(unique_tao_anova_multgroups_exons_tab$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
-names(exon_anova_go)<-c("GENE","ENTREZID")
-unique_tao_anova_multgroups_exons_tab <- unique_tao_anova_multgroups_exons_tab %>%
-  left_join(as.data.frame(exon_anova_go), by = "GENE")
+```{r ENTREZ}
+exon_go <- bitr(final_exon_list$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+names(exon_go)<-c("GENE","ENTREZID")
+final_exon_list <- final_exon_list %>%
+  left_join(as.data.frame(exon_go), by = "GENE")
 
-intron_anova_go <- bitr(unique_tao_anova_multgroups_introns_tab$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
-names(intron_anova_go)<-c("GENE","ENTREZID")
-unique_tao_anova_multgroups_introns_tab <- unique_tao_anova_multgroups_introns_tab %>%
-  left_join(as.data.frame(intron_anova_go), by = "GENE")
+intron_go <- bitr(final_intron_list$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+names(intron_go)<-c("GENE","ENTREZID")
+final_intron_list <- final_intron_list %>%
+  left_join(as.data.frame(intron_go), by = "GENE")
 
-exon_anova_go <- bitr(unique_trapnell_anova_multgroups_exons_tab$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
-names(exon_anova_go)<-c("GENE","ENTREZID")
-unique_trapnell_anova_multgroups_exons_tab <- unique_trapnell_anova_multgroups_exons_tab %>%
-  left_join(as.data.frame(exon_anova_go), by = "GENE")
 
-intron_anova_go <- bitr(unique_trapnell_anova_multgroups_introns_tab$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
-names(intron_anova_go)<-c("GENE","ENTREZID")
-unique_trapnell_anova_multgroups_introns_tab <- unique_trapnell_anova_multgroups_introns_tab %>%
-  left_join(as.data.frame(intron_anova_go), by = "GENE")
+
 
 ```
 
@@ -4025,6 +2751,7 @@ groupC_genelist <- read_excel("Table S1_GroupABC gene list.xlsx",
     sheet = "Group C")[,-1]$Geneid %>%
   lapply(function(x) gsub("\\.\\d+", "", x)) %>%
   unlist()
+
 
 
 human = useMart("ensembl", dataset = "hsapiens_gene_ensembl")
@@ -4057,55 +2784,69 @@ final_intron_list$GroupB <- ifelse(final_intron_list$ENTREZID %in% groupB_geneli
 final_intron_list$GroupC <- ifelse(final_intron_list$ENTREZID %in% groupC_genelist_mouse$ENTREZID, "TRUE", "FALSE")
 
 
-# ANOVA Exon list analysis
-unique_tao_anova_multgroups_exons_tab$GroupA <- ifelse(unique_tao_anova_multgroups_exons_tab$ENTREZID %in% groupA_genelist_mouse$ENTREZID, "TRUE", "FALSE")
 
-unique_tao_anova_multgroups_exons_tab$GroupB <- ifelse(unique_tao_anova_multgroups_exons_tab$ENTREZID %in% groupB_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+go_speckle_genes<-edges$genes[edges$Term == "Intracellular Non-Membrane-Bounded Organelle "]
 
-unique_tao_anova_multgroups_exons_tab$GroupC <- ifelse(unique_tao_anova_multgroups_exons_tab$ENTREZID %in% groupC_genelist_mouse$ENTREZID, "TRUE", "FALSE")
-
-
-# ANOVA intron list analysis
-unique_tao_anova_multgroups_introns_tab$GroupA <- ifelse(unique_tao_anova_multgroups_introns_tab$ENTREZID %in% groupA_genelist_mouse$ENTREZID, "TRUE", "FALSE")
-
-unique_tao_anova_multgroups_introns_tab$GroupB <- ifelse(unique_tao_anova_multgroups_introns_tab$ENTREZID %in% groupB_genelist_mouse$ENTREZID, "TRUE", "FALSE")
-
-unique_tao_anova_multgroups_introns_tab$GroupC <- ifelse(unique_tao_anova_multgroups_introns_tab$ENTREZID %in% groupC_genelist_mouse$ENTREZID, "TRUE", "FALSE")
-
-# ANOVA Exon list analysis
-unique_trapnell_anova_multgroups_exons_tab$GroupA <- ifelse(unique_trapnell_anova_multgroups_exons_tab$ENTREZID %in% groupA_genelist_mouse$ENTREZID, "TRUE", "FALSE")
-
-unique_trapnell_anova_multgroups_exons_tab$GroupB <- ifelse(unique_trapnell_anova_multgroups_exons_tab$ENTREZID %in% groupB_genelist_mouse$ENTREZID, "TRUE", "FALSE")
-
-unique_trapnell_anova_multgroups_exons_tab$GroupC <- ifelse(unique_trapnell_anova_multgroups_exons_tab$ENTREZID %in% groupC_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+final_exon_list$GO_speckle<-tolower(final_exon_list$GENE) %in% tolower(go_speckle_genes)
+final_intron_list$GO_speckle<-tolower(final_intron_list$GENE) %in% tolower(go_speckle_genes)
 
 
-# ANOVA intron list analysis
-unique_trapnell_anova_multgroups_introns_tab$GroupA <- ifelse(unique_trapnell_anova_multgroups_introns_tab$ENTREZID %in% groupA_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+clustered_exons<-read_tsv("results/clust_results_tao_exons/Clusters_Objects.tsv")[-1,]
 
-unique_trapnell_anova_multgroups_introns_tab$GroupB <- ifelse(unique_trapnell_anova_multgroups_introns_tab$ENTREZID %in% groupB_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+final_exon_list$zigzag_clust2<-final_exon_list$EVENT %in% clustered_exons$`C2 (250 genes)`
+final_exon_list$zigzag_clust1<-final_exon_list$EVENT %in% clustered_exons$`C1 (215 genes)`
 
-unique_trapnell_anova_multgroups_introns_tab$GroupC <- ifelse(unique_trapnell_anova_multgroups_introns_tab$ENTREZID %in% groupC_genelist_mouse$ENTREZID, "TRUE", "FALSE")
+
+splice_factors<-read_xlsx("SFs_list_ensembl_ID.xlsx")
+
+final_exon_list$splicing_factor<-tolower(final_exon_list$GENE) %in% tolower(splice_factors$symbol)
+final_intron_list$splicing_factor<-tolower(final_intron_list$GENE) %in% tolower(splice_factors$symbol)
+
+speckle_protein<-read_tsv("nuclear_speckles_protein_human_atlas.tsv")
+
+final_exon_list$HPA_speckle_protein<-tolower(final_exon_list$GENE) %in% tolower(speckle_protein$Gene)
+final_intron_list$HPA_speckle_protein<-tolower(final_intron_list$GENE) %in% tolower(speckle_protein$Gene)
+
+mouse_tf <- read_excel("mouse_tf.xlsx", 
+    sheet = "TFs_Mouse")
+
+final_exon_list$transcription_factor<-tolower(final_exon_list$GENE) %in% tolower(mouse_tf$`Gene Symbol`)
+final_intron_list$transcription_factor<-tolower(final_intron_list$GENE) %in% tolower(mouse_tf$`Gene Symbol`)
+
+
+speckle_introns_go <- enrichdata$GO_Biological_Process_2023[
+  grepl("RNA|Cell Cycle|Translation", enrichdata$GO_Biological_Process_2023$Term, ignore.case = TRUE), 
+]
+
+# Extract and split the genes into a single vector
+speckle_introns_go_genes <- unique(unlist(strsplit(speckle_introns_go$Genes, ";")))
+final_exon_list$intron_speckle_go<-tolower(final_exon_list$GENE) %in% tolower(speckle_introns_go_genes)
+final_intron_list$intron_speckle_go<-tolower(final_intron_list$GENE) %in% tolower(speckle_introns_go_genes)
+
 
 ```
 
 
 ```{r final arrange}
-final_exon_list <- final_exon_list[!duplicated(final_exon_list$EVENT), ] %>%
+final_exon_list_speckles_to_myogenesis <- final_exon_list[!duplicated(final_exon_list$EVENT), ] %>%
   filter(abs(avg_deltapsi)>=0.1) %>%
-  arrange(desc(GroupA), GroupC,desc(abs(avg_deltapsi)))
+  arrange(desc(GroupB),desc(transcription_factor),desc(zigzag_clust1),desc(zigzag_clust2),desc(abs(avg_deltapsi)),GroupC)
 
-final_intron_list<-arrange(final_intron_list, desc(GroupA), GroupC,desc(abs(avg_deltapsi))) %>%
-    filter(abs(avg_deltapsi)>=0.1) 
+final_exon_list_splicing_to_speckles <- final_exon_list[!duplicated(final_exon_list$EVENT), ] %>%
+  filter(abs(avg_deltapsi)>=0.1) %>%
+  arrange(desc(HPA_speckle_protein),desc(GO_speckle),desc(splicing_factor),desc(zigzag_clust1),desc(zigzag_clust2),desc(abs(avg_deltapsi)))
+
+final_intron_list_speckles_to_splicing <- final_intron_list[!duplicated(final_intron_list$EVENT), ] %>%
+  filter(abs(avg_deltapsi)>=0.1) %>%
+  arrange(desc(GroupB),GroupC,desc(intron_speckle_go),length,desc(GC_percent),desc(abs(avg_deltapsi)))
+
+final_intron_list_splicing_to_speckles <- final_intron_list[!duplicated(final_intron_list$EVENT), ] %>%
+  filter(abs(avg_deltapsi)>=0.1) %>%
+  arrange(desc(HPA_speckle_protein),desc(GO_speckle),desc(splicing_factor),desc(abs(avg_deltapsi)))
 
 
-unique_tao_anova_multgroups_introns_tab<-arrange(unique_tao_anova_multgroups_introns_tab, desc(GroupA), GroupC,desc(abs(medianBetweens)))
 
-unique_tao_anova_multgroups_exons_tab<-arrange(unique_tao_anova_multgroups_exons_tab, desc(GroupA), GroupC,desc(abs(medianBetweens)))
 
-unique_trapnell_anova_multgroups_introns_tab<-arrange(unique_trapnell_anova_multgroups_introns_tab, desc(GroupA), GroupC,desc(abs(medianBetweens)))
-
-unique_trapnell_anova_multgroups_exons_tab<-arrange(unique_trapnell_anova_multgroups_exons_tab, desc(GroupA), GroupC,desc(abs(medianBetweens)))
 ```
 
 
@@ -4115,7 +2856,7 @@ unique_trapnell_anova_multgroups_exons_tab<-arrange(unique_trapnell_anova_multgr
 ### Exons
 
 ```{r densities_per_event, warning=FALSE, message=FALSE, fig.width=16, fig.height=8}
-event_names_exon <- c("MmuEX1024739","MmuEX1003015","MmuEX1003015","MmuEX1022228","MmuEX0034879","MmuEX0035418","MmuEX0029580","MmuEX1022228","MmuEX0022308","MmuEX0003624")
+event_names_exon <- c("MmuEX0014029","MmuEX0041173","MmuEX0030610","MmuEX0030610","MmuEX0034879","MmuEX0035418","MmuEX0023201","MmuEX1022228","MmuEX0039215","MmuEX0044888")
 
 # Generate individual plots and store them in a list
 plots <- lapply(event_names_exon, function(eventID) {
@@ -4206,105 +2947,9 @@ final_plot_introns
 ```
 
 
-### ANOVA Exons
-
-```{r densities_per_event ANOVA exons, fig.width=16, fig.height=8, warning=FALSE, message=FALSE}
-event_names <- c("MmuEX0034298","MmuEX0034278","MmuEX0034277","MmuEX0007973", "MmuEX0044362","MmuEX0044363","MmuEX0048341", "MmuEX0005349")
-
-# Generate individual plots and store them in a list
-plots <- lapply(event_names, function(eventID) {
-  # Extract the corresponding gene name for the event
-  geneName <- unique_tao_anova_multgroups_exons_tab$GENE[unique_tao_anova_multgroups_exons_tab$EVENT == eventID]
-
-  # Generate the plot
-  tdensities <- plotIndividualDensitiesList(
-    eventID = eventID,
-    npoints = 500,
-    psitable = tao_exons$PSI,
-    qualtable = tao_exons$Qual,
-    groupList = groupList_tao,
-    maxDevTable = maxDevSimulationN100,
-    seed = TRUE,
-    CoverageWeight = FALSE
-  )
-
-  # Add titles and themes
-  tdensities +
-    theme_minimal(base_family = font) +
-    theme(
-      plot.title = element_text(size = 14, face = "bold"),  # Title size
-      axis.text = element_text(size = 12),                # Axis label size
-      axis.title = element_text(size = 14),               # Axis text size
-      axis.text.y = element_blank(),                      # Remove Y-axis text
-      axis.title.y = element_blank(),                     # Remove Y-axis title
-      axis.ticks.y = element_blank()                      # Remove Y-axis tick
-    ) +
-    ggtitle(paste(geneName, eventID))
-})
-
-# Combine all plots with patchwork
-final_plot_anova_exons <- wrap_plots(plots, ncol = 4, byrow = TRUE) +
-  plot_layout(guides = 'collect') +
-  plot_annotation(
-    caption = paste0("Created by AG on ", Sys.Date())
-  )
-# Display the combined plot
-final_plot_anova_exons
-
-```
-
-
-
-### ANOVA Introns
-
-```{r densities_per_event ANOVA introns, out.width="100%", warning=FALSE, message=FALSE}
-event_names <- c("MmuINT0015093","MmuINT1026524")
-
-# Generate individual plots and store them in a list
-plots <- lapply(event_names, function(eventID) {
-  # Extract the corresponding gene name for the event
-  geneName <- unique_tao_anova_multgroups_introns_tab$GENE[unique_tao_anova_multgroups_introns_tab$EVENT == eventID]
-
-  # Generate the plot
-  tdensities <- plotIndividualDensitiesList(
-    eventID = eventID,
-    npoints = 500,
-    psitable = tao_introns$PSI,
-    qualtable = tao_introns$Qual,
-    groupList = groupList_tao,
-    maxDevTable = maxDevSimulationN100,
-    seed = TRUE,
-    CoverageWeight = FALSE
-  )
-
-  # Add titles and themes
-  tdensities +
-    theme_minimal(base_family = font) +
-    theme(
-      plot.title = element_text(size = 14, face = "bold"),  # Title size
-      axis.text = element_text(size = 12),                # Axis label size
-      axis.title = element_text(size = 14),               # Axis text size
-      axis.text.y = element_blank(),                      # Remove Y-axis text
-      axis.title.y = element_blank(),                     # Remove Y-axis title
-      axis.ticks.y = element_blank()                      # Remove Y-axis tick
-    ) +
-    ggtitle(paste(geneName, eventID))
-})
-
-# Combine all plots with patchwork
-final_plot_anova_introns <- wrap_plots(plots, ncol = 2, byrow = TRUE) +
-  plot_layout(guides = 'collect') +
-  plot_annotation(
-    caption = paste0("Created by AG on ", Sys.Date())
-  )
-# Display the combined plot
-final_plot_anova_introns
-
-```
-
 # Final Candidates List Sorted { .tabset}
 
-These final lists show all the events found to be significant in all studies (in a pairwise comparison, myotubes vs myoblasts) or using ANOVA (between multiple timepoints, only Tao). Moreover, they are sorted by their average dPSI (the of dPSI across studies) an the average F statistic, and features such as the event length, splice scores, GC percent, whether it has an ontology related to Speckles (according to Apex2 and ARTR-seq papers) and if the gene containing the event appears in the gene lists (GroupA: permanently closed to speckles, groupB: transiently closed to speckles, GroupC: never closed to speckles) found by *Wu, J. et al. Dynamics of RNA localization to nuclear speckles are connected to splicing efficiency. Science Advances 10, eadp7727 (2024)*.
+These final lists show all the events found to be significant in all studies (in a pairwise comparison, myotubes vs myoblasts). Moreover, they are sorted by their average dPSI (the of dPSI across studies) an the average F statistic, and features such as the event length, splice scores, GC percent, whether it has an ontology related to Speckles (according to Apex2 and ARTR-seq papers) and if the gene containing the event appears in the gene lists (GroupA: permanently closed to speckles, groupB: transiently closed to speckles, GroupC: never closed to speckles) found by *Wu, J. et al. Dynamics of RNA localization to nuclear speckles are connected to splicing efficiency. Science Advances 10, eadp7727 (2024)*.
 
 
 ## Exons
@@ -4401,100 +3046,6 @@ write.csv(final_intron_list,
           row.names = FALSE)
 ```
 
-## ANOVA Exons
-
-```{r final sorted anova exons table}
-# Render DataTable with enhancements
-datatable(
-  select(unique_tao_anova_multgroups_exons_tab, -ENTREZID, -sequence, -Pdiff, -COORD),
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-)
-
-
-write.csv(unique_tao_anova_multgroups_exons_tab,
-          file = file.path(output_dir, paste0("sorted_final_anova_exons_list_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
-
-
-## ANOVA Introns
-
-```{r final sorted anova introns table}
-# Render DataTable with enhancements
-datatable(
-  select(unique_tao_anova_multgroups_introns_tab, -ENTREZID, -sequence, -Pdiff, -COORD),
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-)
-
-
-write.csv(unique_tao_anova_multgroups_introns_tab,
-          file = file.path(output_dir, paste0("sorted_final_anova_introns_list_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
 
 # Splicing Dynamics Heatmap
 
@@ -4517,8 +3068,6 @@ rownames(tao_matrix) <- tao_all$PSI$EVENT
 filtered_events <- unique(c(
   final_exon_list$EVENT,
   final_intron_list$EVENT,
-  unique_tao_anova_multgroups_exons_tab$EVENT,
-  unique_tao_anova_multgroups_introns_tab$EVENT,
   tao_exon_4vs7_tab$EVENT,
   tao_intron_4vs7_tab
 ))
@@ -4546,11 +3095,9 @@ number_splices<-8
 
 reference_table<-data.frame(EVENT=c(final_exon_list$EVENT,
   final_intron_list$EVENT,
-  unique_tao_anova_multgroups_exons_tab$EVENT,
-  unique_tao_anova_multgroups_introns_tab$EVENT,tao_exon_4vs7_tab$EVENT,tao_intron_4vs7_tab$EVENT),GENE=c(final_exon_list$GENE,
+  tao_exon_4vs7_tab$EVENT,tao_intron_4vs7_tab$EVENT),GENE=c(final_exon_list$GENE,
   final_intron_list$GENE,
-  unique_tao_anova_multgroups_exons_tab$GENE,
-  unique_tao_anova_multgroups_introns_tab$GENE,tao_exon_4vs7_tab$GENE,tao_intron_4vs7_tab$GENE))
+  tao_exon_4vs7_tab$GENE,tao_intron_4vs7_tab$GENE))
 
 
 ht<-Heatmap(
@@ -4731,667 +3278,8 @@ write.csv(heatmap_dataframe,
 ```
 
 
-```{r heatmap showing selected genes, fig.width=30, fig.height=25, echo=TRUE, out.width="100%"}
-set.seed(45)
-positions<- which(rownames(tao_matrix) %in% c(event_names_exon,event_names_intron))
-gene_marks = rowAnnotation(foo = anno_mark(at = positions, 
-    labels = heatmap_dataframe$GENE[heatmap_dataframe$EVENT %in% rownames(tao_matrix[positions,])]
-))
 
-ht <- Heatmap(
-  tao_matrix, 
-  name = "PSI",
-  clustering_distance_rows = "pearson",
-  col = col_fun,
-  cluster_columns = col_dend,
-  column_title = "C2C12 Samples at Different Stages of Development",
-  column_title_gp = gpar(fontsize = 25, fontface = "bold"),
-  row_title = "Splicing Events",
-  row_title_gp = gpar(fontsize = 16, fontface = "italic"),
-  column_names_rot = 45,
-  column_dend_reorder = c(1:12),
-  column_labels = metadata_tao$experiment_title,
-  row_km = number_splices,
-  left_annotation = left_annotation,   # Add the points on the left
-  right_annotation = gene_marks, # Add foo on the right
-  row_dend_reorder = F,
-  column_names_gp = gpar(fontsize = 18, fontface = "bold", col = "darkblue"),
-  show_row_names = FALSE,
-  row_gap = unit(6, "mm"), # Adjust the gap size between rows
-  column_gap = unit(4, "mm"), # Adjust the gap size between columns
-  heatmap_legend_param = list(
-    title = "PSI Value",
-    title_gp = gpar(fontsize = 40),
-    labels_gp = gpar(fontsize = 10),
-    legend_position = c(-20, 0),  # Move the legend closer to the center (x, y coordinates)
-    legend_direction = "vertical" # Align the legend horizontally
-  )
-)
 
-# Draw the heatmap
-ht <- draw(ht)
-
-```
-
-# Gene Co-regulatory network of Tao 4-day vs 7-day splicing
-
-This protocol is adapted from [*Identification of alternative splicing regulatory patterns and characteristic splicing factors in heart failure using RNA-seq data and machine learning*](https://www.cell.com/heliyon/fulltext/S2405-8440(24)11439-9?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS2405844024114399%3Fshowall%3Dtrue).
-
-```{r new variables 4 or 5 vs 7}
-groupA_tao<-"4_days"
-groupB_tao<-"7_days"
-
-# For Tao
-samplesA_tao <- groupList_tao[[groupA_tao]]$samples
-samplesB_tao <- groupList_tao[[groupB_tao]]$samples
-colsGroupA_tao <- convertCols(tao_exons$PSI, samplesA_tao)
-colsGroupB_tao <- convertCols(tao_exons$PSI, samplesB_tao)
-
-groupA_trapnell<-"5_days"
-groupB_trapnell<-"7_days"
-
-# For Trapnell
-samplesA_trapnell <- groupList_trapnell[[groupA_trapnell]]$samples
-samplesB_trapnell <- groupList_trapnell[[groupB_trapnell]]$samples
-colsGroupA_trapnell <- convertCols(trapnell_exons$PSI, samplesA_trapnell)
-colsGroupB_trapnell <- convertCols(trapnell_exons$PSI, samplesB_trapnell)
-```
-
-
-```{r calculations tao 4 vs 7 days, results='hide'}
-# Exons
-
-tao_pdiff_4vs7 <- prepareTableVolcano(
-  psitable = tao_all$PSI,
-  qualtable = tao_all$Qual,
-  npoints = 500,
-  colsA = colsGroupA_tao,
-  colsB = colsGroupB_tao,
-  labA = groupA_tao,
-  labB = groupB_tao,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
-
-
-tao_fdr_4vs7  <- prepareTableVolcanoFDR(
-  psitable = tao_all$PSI,
-  qualtable = tao_all$Qual,
-  npoints = 500,
-  colsA = colsGroupA_tao,
-  colsB = colsGroupB_tao,
-  labA = groupA_tao,
-  labB = groupB_tao,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  nsim = 100,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
-
-tao_pdiff_4vs7_tab <- tao_pdiff_4vs7[, c("GENE", "EVENT", "COORD", "Pdiff", "deltapsi")] %>%
-  dplyr::filter(!is.na(EVENT), Pdiff >= 0.95) %>%  # Remove rows where EVENT is NA and Pdiff >= 0.95
-  arrange(desc(Pdiff), desc(abs(deltapsi)))  # Sort by Pdiff and abs(deltapsi)
-rownames(tao_pdiff_4vs7_tab) <- 1:nrow(tao_pdiff_4vs7_tab)
-
-tao_fdr_4vs7_tab <- tao_fdr_4vs7[, c("GENE","EVENT","COORD","FDR","deltapsi")] %>%
-  dplyr::filter(!is.na(EVENT), FDR<=0.05) %>%  # Remove rows where EVENT is NA
-  arrange((FDR), desc(abs(deltapsi)))
-rownames(tao_fdr_4vs7_tab) <- 1:nrow(tao_fdr_4vs7_tab)
-
-# Find common EVENTs across all tables
-common_events <- Reduce(intersect, list(tao_pdiff_4vs7_tab$EVENT, tao_fdr_4vs7_tab$EVENT))
-
-# Filter each table to include only rows with common EVENTs
-filtered_4vs7_diff_tab <- tao_pdiff_4vs7_tab %>% dplyr::filter(EVENT %in% common_events)
-filtered_4vs7_fdr_tab <- tao_fdr_4vs7_tab %>% dplyr::filter(EVENT %in% common_events)
-
-
-# Select only unique columns from each table
-filtered_4vs7_diff_tab <- filtered_4vs7_diff_tab %>% dplyr::select(GENE,EVENT,COORD, deltapsi,Pdiff) # Extra column is Pdiff
-filtered_4vs7_fdr_tab <- filtered_4vs7_fdr_tab %>% dplyr::select(EVENT, FDR) # Extra column is FDR
-
-# Merge the data frames by EVENT
-tao_4vs7_tab <- filtered_4vs7_diff_tab %>%
-  inner_join(filtered_4vs7_fdr_tab, by = "EVENT") %>%
-  distinct() %>%
-  arrange(desc(abs(deltapsi)),desc(FDR), desc(Pdiff))
-```
-
-
-```{r tao 7 vs 4 table}
-# Render DataTable with enhancements
-datatable(
-  dplyr::select(tao_4vs7_tab,, -Pdiff, -FDR, -COORD),
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center")
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-)
-
-
-
-```
-
-## Tao 7 vs 2 Gene Expression Analysis
-
-```{r tao gene expression}
-library(DESeq2)
-library(tximport)
-library(ggplot2)
-library(viridis)
-library(rhdf5)
-library(EnsDb.Mmusculus.v79)
-library(enrichR)
-library(edgeR)
-# Load metadata
-metadata <- arrange(read.csv("metadata/tao_metadata.csv", sep = ","), experiment_title)[c(7:12),]
-
-# Subset count files and ensure proper formatting
-count_files <- file.path(paste0("Kallisto/", metadata$run_accession, "/abundance.h5"))
-metadata$experiment_title <- as.factor(metadata$experiment_title)
-
-# Load transcript-to-gene mapping
-Tx <- transcripts(EnsDb.Mmusculus.v79, columns = c("tx_id", "gene_name"))
-Tx <- as_tibble(Tx)[, c("tx_id", "gene_name")]
-
-# Import data using tximport
-txi <- tximport(
-  count_files, 
-  type = "kallisto", 
-  tx2gene = Tx, 
-  txOut = FALSE, 
-  countsFromAbundance = "lengthScaledTPM",
-  ignoreTxVersion = TRUE
-)
-
-
-# Ensure row order consistency
-rownames(metadata) <- metadata$run_accession
-
-# Create DESeq2 dataset
-dds <- DESeqDataSetFromTximport(txi, colData = metadata, design = ~experiment_title)
-
-# Filter out lowly expressed genes using CPM threshold
-cpm <- cpm(counts(dds))
-keep <- rowSums(cpm >= 1) >= 2  # At least 1 CPM in 2 or more samples
-dds <- dds[keep, ]
-
-# Perform variance stabilizing transformation (VST)
-vsd <- vst(dds, blind = FALSE)
-
-# PCA Plot for EDA
-pca_plot <- plotPCA(vsd, intgroup = "experiment_title") + 
-  ggtitle("PCA of Transformed Counts") + 
-  theme_minimal()
-
-# Run DESeq2 analysis
-dds <- DESeq(dds)
-
-# Results for the comparison "7_days" vs "4_days"
-res <- results(dds, contrast = c("experiment_title", "7_days", "4_days"), alpha = 0.05)
-
-# MA Plot
-# Convert results to a data frame
-res_df <- as.data.frame(res)
-
-# Create MA plot using ggplot2
-ma_plot <- ggplot(res_df, aes(x = baseMean, y = log2FoldChange)) +
-  geom_point(aes(color = padj < 0.05), alpha = 0.6) +
-  scale_x_log10() +
-  scale_color_manual(values = c("gray", "red")) +
-  labs(
-    title = "MA Plot: 7_days vs 4_days",
-    x = "Mean of Normalized Counts",
-    y = "Log2 Fold Change"
-  ) +
-  theme_minimal()
-
-
-# Annotate results with gene names
-res$gene <- rownames(res)
-annotated_res <- merge(as.data.frame(res), Tx, by.x = "gene", by.y = "gene_name", all.x = TRUE)
-
-# Filter significantly differentially expressed genes
-expression_genes_tao_4vs7 <- annotated_res %>% 
-  dplyr::filter(padj <= 0.05 & abs(log2FoldChange) >= 1) %>% 
-  na.omit() %>% 
-  arrange(-abs(log2FoldChange))
-
-# Export results
-write.csv(expression_genes_tao_4vs7, "deseq2_results_7vs4.csv", row.names = FALSE)
-
-# Volcano Plot
-volcano_plot <- ggplot(annotated_res, aes(x = log2FoldChange, y = -log10(padj))) +
-  geom_point(aes(color = padj <= 0.05 & abs(log2FoldChange) >= 1.5), alpha = 0.6) +
-  scale_color_manual(values = c("gray", "red")) +
-  labs(title = "Volcano Plot: 7_days vs 4_days", x = "Log2 Fold Change", y = "-Log10 Adjusted P-value") +
-  theme_minimal()
-
-
-human_sf <- read_excel("SFs_list_ensembl_ID.xlsx")
-
-# Connect to Ensembl databases using the US East mirror
-human_mart <- useMart("ensembl", dataset = "hsapiens_gene_ensembl", host = "https://sep2019.archive.ensembl.org")
-mouse_mart <- useMart("ensembl", dataset = "mmusculus_gene_ensembl", host = "https://sep2019.archive.ensembl.org")
-
-# Convert Human Ensembl IDs to Mouse Ensembl IDs
-human_to_mouse <- getLDS(
-    attributes = c("ensembl_gene_id"),    # Human Ensembl IDs
-    filters = "ensembl_gene_id",          # Filter by Human Ensembl IDs
-    values = human_sf$ensembl_ID,  # Example Human IDs
-    mart = human_mart,                    # Human BioMart
-    attributesL = c("ensembl_gene_id"),   # Mouse Ensembl IDs
-    martL = mouse_mart,
-)
-
-# Step 2: Convert human gene symbols to mouse gene symbols
-mouse_sf <- bitr(
-  human_to_mouse$Gene.stable.ID.1,
-  fromType = "ENSEMBL",
-  toType = "SYMBOL",
-  OrgDb = org.Mm.eg.db
-)
-
-
-mouse_sf_filtered<-mouse_sf$SYMBOL[mouse_sf$SYMBOL %in% expression_genes_tao_4vs7$gene]
-
-# Load metadata
-metadata <- arrange(read.csv("metadata/tao_metadata.csv", sep = ","), experiment_title)
-
-# Subset count files and ensure proper formatting
-count_files <- file.path(paste0("Kallisto/", metadata$run_accession, "/abundance.h5"))
-metadata$experiment_title <- as.factor(metadata$experiment_title)
-
-
-# Import data using tximport
-txi <- tximport(
-  count_files, 
-  type = "kallisto", 
-  tx2gene = Tx, 
-  txOut = FALSE, 
-  countsFromAbundance = "lengthScaledTPM",
-  ignoreTxVersion = TRUE
-)
-
-de_tf_tao_4vs7<-txi$counts[tolower(rownames(txi$counts)) %in% tolower(mouse_sf_filtered),]
-colnames(de_tf_tao_4vs7)<-metadata$run_accession
-de_tf_tao_4vs7<-as.data.frame(t(de_tf_tao_4vs7))
-
-de_tf_tao_4vs7$sample_id<-rownames(de_tf_tao_4vs7)
-
-```
-
-### Expression Plots { .tabset}
-
-#### PCA Plot
-
-```{r pca plto de}
-print(pca_plot)
-```
-
-#### MA Plot
-
-```{r ma plto de}
-print(ma_plot)
-```
-
-#### Volcano Plot
-
-```{r volcano plto de}
-print(volcano_plot)
-```
-
-### Correlated Events
-
-```{r correlation matrix, results='hide', warning=FALSE}
-# Filter PSI matrix with events found
-
-events_4vs7_tao<-tao_events$PSI[,c(2,7:18)]
-
-events_4vs7_tao<-events_4vs7_tao[events_4vs7_tao$EVENT %in% tao_4vs7_tab$EVENT[abs(tao_4vs7_tab$deltapsi)>=0.2],]
-
-
-rownames(events_4vs7_tao)<-events_4vs7_tao$EVENT
-events_4vs7_tao<-as.data.frame(t(events_4vs7_tao[,-1]))
-events_4vs7_tao<-events_4vs7_tao[match(metadata_tao$run_accession,rownames(events_4vs7_tao)),]
-events_4vs7_tao$sample_id<-rownames(events_4vs7_tao)
-
-
-merged_data <- merge(de_tf_tao_4vs7, events_4vs7_tao, by = "sample_id")[,-1]
-cor_results <- data.frame(SplicingFactor = character(),
-                          SplicingEvent = character(),
-                          CorrelationCoefficient = numeric(),
-                          PValue = numeric(),
-                          stringsAsFactors = FALSE)
-
-# Loop through all pairs of splicing factors and splicing events
-for (factor in colnames(dplyr::select(de_tf_tao_4vs7, -sample_id))) {
-  for (event in colnames(dplyr::select(events_4vs7_tao, -sample_id))) {
-
-    # Perform correlation test
-    cor_test <- tryCatch({
-      cor.test(merged_data[[factor]], merged_data[[event]], method = "pearson")
-    }, error = function(e) NULL)
-
-    # Check if test succeeded and meets conditions
-    if (!is.null(cor_test) && abs(cor_test$estimate) > 0.7 & cor_test$p.value < 0.01) {
-      cor_results <- rbind(cor_results, data.frame(SplicingFactor = factor,
-                                                   SplicingEvent = event,
-                                                   CorrelationCoefficient = cor_test$estimate,
-                                                   PValue = cor_test$p.value))
-    }
-  }
-}
-
-```
-
-
-```{r tao 7 vs 4 table correlated events}
-
-cor_events_df<-tao_4vs7_tab[tao_4vs7_tab$EVENT %in% cor_results$SplicingEvent,]
-
-
-cor_events_go <- bitr(cor_events_df$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
-names(cor_events_go)<-c("GENE","ENTREZID")
-cor_events_df <- cor_events_df %>%
-  
-  left_join(as.data.frame(cor_events_go), by = "GENE")
-
-
-cor_events_df$GroupA <- ifelse(cor_events_df$ENTREZID %in% groupA_genelist_mouse$ENTREZID, "TRUE", "FALSE")
-
-cor_events_df$GroupB <- ifelse(cor_events_df$ENTREZID %in% groupB_genelist_mouse$ENTREZID, "TRUE", "FALSE")
-
-cor_events_df$GroupC <- ifelse(cor_events_df$ENTREZID %in% groupC_genelist_mouse$ENTREZID, "TRUE", "FALSE")
-
-# Render DataTable with enhancements
-datatable(
-  dplyr::select(cor_events_df, -Pdiff, -FDR, -COORD, -ENTREZID) %>%
-    dplyr::arrange(desc(GroupA), desc(GroupB),desc(abs(deltapsi))),
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center")
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-)
-
-
-
-```
-
-
-### Gene Ontology of Correlated Events
-
-```{r gene ontology splicng eents correlated}
-
-enrichdata<-enrichr(unique(tao_4vs7_tab$GENE[tao_4vs7_tab$EVENT %in% cor_results$SplicingEvent]), databases = c("GO_Biological_Process_2023","GO_Cellular_Component_2023","GO_Molecular_Function_2023"))
-
-
-
-# Create a unique list of splicing factors and events
-nodes <- unique(c(cor_results_genes$SplicingFactor, cor_results_genes$SplicingEvent))
-
-# Write the nodes to a .csv file
-write.csv(nodes, "nodes.csv", row.names = FALSE, col.names = c("id"))
-
-# Create the edge list with correlation_index as a separate column
-edges <- data.frame(
-  source = cor_results_genes$SplicingFactor,
-  target = cor_results_genes$SplicingEvent,
-  correlation_index = cor_results_genes$CorrelationCoefficient
-)
-
-# Write the edges to a .csv file
-write.csv(edges, "edges.csv", row.names = FALSE)
-
-```
-
-#### GO Biological Process
-
-```{r pladb bioprocess, fig.width=10, fig.height=8}
-plotEnrich(enrichdata[[1]])
-```
-
-#### GO Cellular Component
-
-```{r pladb cellcomponent, fig.width=10, fig.height=8}
-plotEnrich(enrichdata[[2]])
-```
-
-#### GO Molecular Function
-
-```{r pladb molfunction, fig.width=10, fig.height=8}
-plotEnrich(enrichdata[[3]])
-```
-
-### Heatmap showcasing Correlated Events
-
-```{r heatmap prep cor, results='hide', fig.show='hide'}
-set.seed(45)
-
-
-events_4vs7_tao<-tao_events$PSI[,c(2,7:18)]
-
-events_4vs7_tao_cor<-events_4vs7_tao[events_4vs7_tao$EVENT %in% unique(cor_results$SplicingEvent),]
-rownames(events_4vs7_tao_cor) <- events_4vs7_tao_cor$EVENT
-events_4vs7_tao_cor<-events_4vs7_tao_cor[,-1]
-
-# Arrange columns based on metadata
-events_4vs7_tao_cor <- events_4vs7_tao_cor[, metadata_tao$run_accession] %>%
-  as.matrix()
-
-# Create a dendrogram for the columns
-col_dend <- hclust(dist(t(events_4vs7_tao_cor))) %>%
-  as.dendrogram() %>%
-  color_branches(k = 2) # Color branches with 4 clusters
-
-# Check if row names contain "EX"
-contains_EX <- grepl("EX", rownames(events_4vs7_tao_cor))
-
-# Define an improved color gradient for the heatmap
-col_fun <- colorRamp2(
-  c(0, 50, 100),
-  c("purple", "white", "orange")
-)
-
-number_splices<-5
-
-reference_table<-data.frame(EVENT=c(tao_4vs7_tab$EVENT),GENE=c(tao_4vs7_tab$GENE))
-
-
-ht<-Heatmap(
-  events_4vs7_tao_cor, name = "PSI",
-  clustering_distance_rows = "pearson",
-  col = col_fun,
-  cluster_columns  = col_dend,
-  column_title = "Myoblast Samples at Different stages f development",
-  row_title = "Splicing Events",
-  column_names_rot = 45,
-  #column_labels = metadata_tao$experiment_title,
-  column_dend_reorder = 1:12,
-  row_km = number_splices,
-  row_dend_reorder = F,
-  rect_gp = gpar(col = "white", lwd = 0.3),
-  column_names_gp = gpar(fontsize = 16),
-  show_row_names = FALSE,
-
-)
-ht = draw(ht); clustered_events<-row_order(ht)
-text_list<-list()
-# Loop through clustered events and assign dynamic names
-for (i in 1:length(clustered_events)) {
-  enrich_events <- enrichr(
-    reference_table$GENE[reference_table$EVENT %in% rownames(events_4vs7_tao_cor)[clustered_events[[i]]]],
-    databases = c("GO_Biological_Process_2023", "GO_Cellular_Component_2023", "GO_Molecular_Function_2023")
-  )
-
-  # Assign the dynamic name and value
-  text_list[[paste0("text", i)]] <- paste(
-    enrich_events$GO_Cellular_Component_2023$Term[1],
-    enrich_events$GO_Cellular_Component_2023$Term[2],
-    enrich_events$GO_Cellular_Component_2023$Term[3],
-    enrich_events$GO_Molecular_Function_2023$Term[1],
-    enrich_events$GO_Molecular_Function_2023$Term[2],
-    enrich_events$GO_Molecular_Function_2023$Term[3],
-    sep = "; \n"
-  )
-}
-
-protein_impact <- read.table("PROT_IMPACT-mm10-v2.3.tab", sep = "\t", 
-                             header = TRUE, stringsAsFactors = FALSE, fill = TRUE, quote = "")
-
-events_for_impact<-rownames(events_4vs7_tao_cor)
-
-# Ensure all events from `events_for_impact` are included in `final_impact`
-final_impact <- tibble(EventID = events_for_impact) %>%
-  left_join(protein_impact, by = "EventID") %>%
-  arrange(match(EventID, events_for_impact)) %>%
-  mutate(ONTO = ifelse(grepl("isoform", ONTO, ignore.case = TRUE), "-1", ONTO)) %>%
-  mutate(ONTO = ifelse(grepl("UTR", ONTO, ignore.case = TRUE), "-2", ONTO)) %>%
-  mutate(ONTO = case_when(
-    grepl("ORF", ONTO, ignore.case = TRUE) & grepl("inclusion", ONTO, ignore.case = TRUE) ~ "2",
-    grepl("ORF", ONTO, ignore.case = TRUE) & grepl("exclusion", ONTO, ignore.case = TRUE) ~ "1",
-    TRUE ~ ONTO
-  )) %>%
-  mutate(ONTO = as.numeric(ONTO)) %>%
-  replace_na(list(ONTO = 0))
-
-
-# Define the left annotation (points) with axis labels
-left_annotation <- rowAnnotation(
-  Impact = anno_points(
-    final_impact$ONTO,
-    width = unit(4, "cm"),  # Adjusted width
-    size = unit(4, "mm"),   # Adjusted size of points
-    axis_param = list(
-      side = "top",
-      at = -2:2, # Numeric values to label
-      labels = c(
-        "Regulatory (5´UTR)",
-        "Alternative Isoform",
-        "Unknown/NonCoding",
-        "ORF disruption upon exclusion",
-        "ORF disruption upon inclusion"
-      ),
-      labels_rot = 45, # Rotation of labels
-      gp = gpar(fontsize = 15) # Text style
-    )
-  )
-)
-
-# Define the right annotation (foo)
-right_annotation <- rowAnnotation(
-  foo = anno_empty(
-    border = FALSE,
-    width = max_text_width(unlist(text_list)) + unit(4, "mm")
-  )
-) 
-```
-
-
-**Note**: Gene ontology of *Cellular Component* and *Molecular Function* for each of the clustered blocks (splicing events that the *pearson* algorithm has found they behave similarly) appears on the right. The impact of that Event at protein level is shown on the left.
-
-```{r heatmap_plot cor, fig.width=30, fig.height=25, echo=TRUE, out.width="100%"}
-set.seed(45)
-
-ht <- Heatmap(
-  events_4vs7_tao_cor, 
-  name = "PSI",
-  clustering_distance_rows = "pearson",
-  col = col_fun,
-  cluster_columns = col_dend,
-  column_title = "C2C12 Samples at Different Stages of Development",
-  column_title_gp = gpar(fontsize = 25, fontface = "bold"),
-  row_title = "Splicing Events",
-  row_title_gp = gpar(fontsize = 16, fontface = "italic"),
-  column_names_rot = 45,
-  rect_gp = gpar(col = "white", lwd = 0.3),
-  column_dend_reorder = c(1:12),
-  column_labels = metadata_tao$experiment_title,
-  row_km = number_splices,
-  left_annotation = left_annotation,   # Add the points on the left
-  right_annotation = right_annotation, # Add foo on the right
-  row_dend_reorder = F,
-  column_names_gp = gpar(fontsize = 18, fontface = "bold", col = "darkblue"),
-  show_row_names = FALSE,
-  row_gap = unit(6, "mm"), # Adjust the gap size between rows
-  column_gap = unit(4, "mm"), # Adjust the gap size between columns
-  heatmap_legend_param = list(
-    title = "PSI Value",
-    title_gp = gpar(fontsize = 40),
-    labels_gp = gpar(fontsize = 10),
-    legend_position = c(-20, 0),  # Move the legend closer to the center (x, y coordinates)
-    legend_direction = "vertical" # Align the legend horizontally
-  )
-)
-
-# Draw the heatmap
-ht <- draw(ht)
-
-# Decorate the "foo" annotation slices (on the right)
-for (i in seq_along(clustered_events)) {
-  decorate_annotation("foo", slice = i, {
-    grid.rect(x = 0, width = unit(2, "mm"), gp = gpar(fill = i, col = NA), just = "left")
-    grid.text(paste(text_list[[i]], collapse = "\n"), x = unit(4, "mm"), just = "left", gp = gpar(fontsize = 15))
-  })
-}
-```
-
-### Table of Events from Heatmap
-
-```{r, table heatmap cor}
-row_order <- unlist(row_order(ht), use.names = F)
-col_order <- unlist(column_order(ht), use.names = F)
-
-cluster_index <- unlist(lapply(seq_along(row_order(ht)), function(i) rep(i, length(row_order(ht)[[i]]))))
-
-# Reorder the original matrix based on clustering
-clustered_matrix <- events_4vs7_tao_cor[row_order, col_order]
-final_impact_string<-protein_impact %>%
-  dplyr::filter(EventID %in% events_for_impact) %>%
-  arrange(match(EventID, events_for_impact))
-final_impact_string<- final_impact_string[match(rownames(clustered_matrix),final_impact_string$EventID),]
-
-
-heatmap_dataframe<-tibble(EVENT=rownames(clustered_matrix), heatmap_cluster=cluster_index, protein_impact=final_impact_string$ONTO)
-heatmap_dataframe$GENE<-reference_table$GENE[match(heatmap_dataframe$EVENT, reference_table$EVENT)]
-heatmap_dataframe<-dplyr::select(heatmap_dataframe, GENE, EVENT, protein_impact, heatmap_cluster)
-
-# Render DataTable with enhancements
-datatable(
-  heatmap_dataframe,
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-))
-
-
-write.csv(heatmap_dataframe,
-          file = file.path(output_dir, paste0("heatmap_cluster_events_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
 
 # System Settings
 
