@@ -1127,7 +1127,7 @@ tao_pdiff_introns_7dvs4d <- prepareTableVolcanoFDR(
   psitable = tao_introns$PSI,
   qualtable = tao_introns$Qual,
   npoints = 500,
-  colsA = colsGroupA_tao,
+  # colsA = colsGroupA_tao,
   colsB = colsGroupB_tao,
   labA = groupA_tao,
   labB = groupB_tao,
@@ -1647,7 +1647,7 @@ Volcano Plots of the FDR corrected introns for each study. In pink are the exons
 
 #### Tao
 
-```{r tao fdr volcano 4 days}
+```{r tao fdr volcano 4 days int}
 
 # INtersecting dhared introns between 10mm vs control and 1mm vs control
 differential_introns_2d<-na.omit(tao_pdiff_introns_2d[tao_pdiff_introns_2d$Pdiff >= 0.90 & abs(tao_pdiff_introns_2d$deltapsi) >= 0.1,])
@@ -1729,7 +1729,7 @@ volcano_plot
 ```
 
 
-```{r tao fdr volcano 2 days}
+```{r tao fdr volcano 2 days int}
 
 tao_pdiff_introns_2d<-na.omit(tao_pdiff_introns_2d)
 # Add a Shared column based on the shared_introns
@@ -1801,7 +1801,7 @@ volcano_plot <- ggplot(tao_pdiff_introns_2d, aes(x = deltapsi, y = negLogpvalue)
 volcano_plot
 ```
 
-```{r tao fdr volcano 4 to 2 days}
+```{r tao fdr volcano 4 to 2 days int}
 
 tao_pdiff_introns_4dvs2d<-na.omit(tao_pdiff_introns_4dvs2d)
 # Add a Shared column based on the shared_introns
@@ -3140,7 +3140,7 @@ datatable(
 
 ## Introns
 
-```{r final df}
+```{r final df int}
 
 differential_introns_4d$rbfox<-tolower(differential_introns_4d$GENE) %in% tolower(c(rbfox_events_pdac[[1]], rbfox_exons$`hg19.kgXref.
 geneSymbol` ))
