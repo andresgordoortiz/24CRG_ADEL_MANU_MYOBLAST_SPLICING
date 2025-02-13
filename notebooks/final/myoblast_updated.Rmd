@@ -262,30 +262,30 @@ The final plots showcase potentially promising events found in myoblast differen
 tao_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Tao_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
 tao_events <- getEvents(tao_data, tool = "vast-tools") # Extract alternative splicing events
 #tao_events <- alternativeEvents(tao_events, minPsi = 0, maxPsi = 100) # Filter events based on PSI thresholds
-tao_exons <- filterEvents(tao_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 2)
-tao_introns <- filterEvents(tao_events, types = c("IR"), N = 2)
+tao_exons <- filterEvents(tao_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 10)
+tao_introns <- filterEvents(tao_events, types = c("IR"), N = 10)
 
 # Christopher Azar 2021 data
 christopher_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Christopher_Physioreports_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
 christopher_events <- getEvents(christopher_data, tool = "vast-tools") # Extract alternative splicing events
 #christopher_events <- alternativeEvents(christopher_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
-christopher_exons <- filterEvents(christopher_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 2)
-christopher_introns <- filterEvents(christopher_events, types = c("IR"), N = 2)
+christopher_exons <- filterEvents(christopher_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 10)
+christopher_introns <- filterEvents(christopher_events, types = c("IR"), N = 10)
 
 
 # Dominic Data
 dominic_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Dominic_Frontiers_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
 dominic_events <- getEvents(dominic_data, tool = "vast-tools") # Extract alternative splicing events
 #dominic_events <- alternativeEvents(dominic_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
-dominic_exons <- filterEvents(dominic_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 2)
-dominic_introns <- filterEvents(dominic_events, types = c("IR"), N = 2)
+dominic_exons <- filterEvents(dominic_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 10)
+dominic_introns <- filterEvents(dominic_events, types = c("IR"), N = 10)
 
 # Kan Data
 kan_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/kan_scientific_reports_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
 kan_events <- getEvents(kan_data, tool = "vast-tools") # Extract alternative splicing events
 #kan_events <- alternativeEvents(kan_events, minPsi = 1, maxPsi = 99) # Filter events based on PSI thresholds
-kan_exons <- filterEvents(kan_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 2)
-kan_introns <- filterEvents(kan_events, types = c("IR"), N = 2)
+kan_exons <- filterEvents(kan_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 10)
+kan_introns <- filterEvents(kan_events, types = c("IR"), N = 10)
 
 
 
