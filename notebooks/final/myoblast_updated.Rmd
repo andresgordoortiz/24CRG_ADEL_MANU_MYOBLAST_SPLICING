@@ -229,7 +229,6 @@ The final plots showcase potentially promising events found in myoblast differen
 # Tao et al. 2024 data
 tao_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Tao_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
 tao_events <- getEvents(tao_data, tool = "vast-tools") # Extract alternative splicing events
-#tao_events <- alternativeEvents(tao_events, minPsi = 0, maxPsi = 100) # Filter events based on PSI thresholds
 tao_exons <- filterEvents(tao_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 10)
 tao_introns <- filterEvents(tao_events, types = c("IR"), N = 10)
 
@@ -550,16 +549,11 @@ First I classified the genes according to the number of exons they contain from 
 
 ## Exons { .tabset}
 
-```{r inclusionumber of exons tao}
+```{r inclusionumber of exons tao, fig.width=12, fig.height=8}
 tao_exons_df<-na.omit(tao_exons$PSI)
 tao_exons_df<-tao_exons_df[,c(colnames(tao_exons_df)[1:6],metadata_tao$run_accession)]
 tao_exons_df$exon_group<-vastdb_exons$exon_group[match(tao_exons_df$EVENT,vastdb_exons$EVENT)]
 
-```
-
-### 7days vs 0 days
-
-```{r 7 vs 0 exons}
 # Function to compute the difference for a single dataframe
 compute_difference <- function(df) {
   avg_7d <- rowMeans(df[, 16:18])
@@ -567,26 +561,38 @@ compute_difference <- function(df) {
   avg_7d - avg_0d
 }
 
-# Compute the difference and group by exon groups
+# Calculate the difference and remove any additional NAs
 tao_exons_df$difference <- compute_difference(tao_exons_df)
+tao_exons_df <- na.omit(tao_exons_df)
 
-tao_exons_df$exon_group<-factor(tao_exons_df$exon_group, levels = c("1-5","6-10","11-20","21+"))
-# Plot distribution of PSI difference for each exon group with fixed axis
+# Create a group variable based on whether the difference is below or above zero
+tao_exons_df$group <- ifelse(tao_exons_df$difference < 0, "Skipped", "Included")
+
+# Perform a one-sample Wilcoxon signed-rank test (null hypothesis: median = 0)
+symmetry_test <- wilcox.test(tao_exons_df$difference, mu = 0)
+
+# Compute the percentages (areas under the density curve)
+pct_below <- round(mean(tao_exons_df$difference < 0) * 100, 1)
+pct_above <- round(mean(tao_exons_df$difference > 0) * 100, 1)
+
+# ---- Plot -------------------------------------------------------------------
+
 plot_psi_distribution <- ggplot(
-  na.omit(tao_exons_df[abs(tao_exons_df$difference) >= 10,]), 
-  aes(y=..density..,x = difference, fill = ifelse(difference < 0, "Skipped", "Included"))
+  tao_exons_df[abs(tao_exons_df$difference) > 0, ], 
+  aes(x = difference, fill = group)
 ) +
-  geom_histogram(bins = 50, position = "identity") +
-  facet_wrap(~exon_group, scales = "fixed") +  # Change scales to "fixed"
+  geom_histogram(aes(y = ..density..), bins = 200, 
+                 position = "identity", alpha = 0.9) +
   labs(
-    title = "PSI Difference Distribution Grouped by Number of Exons present in a Gene",
-    subtitle = "dPSI = avg_7d - avg_0d",
-    x = "ΔPSI (DKO - WT)",
+    title = "PSI Difference Distribution of Exons Myoblasts",
+    subtitle = paste("One-sample Wilcoxon test p-value for Symmetry:", 
+                     format(symmetry_test$p.value, digits = 3)),
+    x = "ΔPSI (7d - 0d)",
     y = "Density",
-    fill = "|ΔPSI| >= 0.1",
+    fill = "Splicing Direction",
     caption = paste0("Created by AG on ", Sys.Date())
   ) +
-  theme_minimal(base_family = font) +
+  theme_minimal(base_family = "sans") +
   theme(
     legend.position = "right",
     axis.title.x = element_text(margin = margin(t = 10)),
@@ -595,164 +601,94 @@ plot_psi_distribution <- ggplot(
     panel.grid.major = element_line(color = "gray80", size = 0.5),
     panel.grid.minor = element_line(color = "gray95", size = 0.3),
     strip.text = element_text(size = 14, face = "bold"),
-    panel.spacing = unit(1.5, "lines")  # Increase the distance between facets
+    panel.spacing = unit(1.5, "lines")
   ) +
+  scale_x_continuous(
+    breaks = c(-100, -75, -50, -25, 0, 25, 50, 75, 100)
+  ) +
+  # Annotate the percentages with polished label boxes
+  annotate("label", x = -65, y = 0.1, hjust = 0, vjust = 0,
+           label = sprintf("dPSI < 0: %.1f%%", pct_below),
+           fill = alpha("white", 0.8), color = "blue", size = 7, fontface = "bold",
+           label.size = 0.5) +
+  annotate("label", x = 65, y = 0.1, hjust = 1, vjust = 0,
+           label = sprintf("dPSI > 0: %.1f%%", pct_above),
+           fill = alpha("white", 0.8), color = "red", size = 7, fontface = "bold",
+           label.size = 0.5) +
   scale_fill_brewer(palette = "Set1")
 
+# Save and display the plot
+ggsave("d7vs0_psi_distribution_exons.svg", plot_psi_distribution, width = 12, height = 8, dpi = 300)
 
 print(plot_psi_distribution)
 
 
 ```
 
-### 4days vs 0 days
+### 7days vs 0 days
 
-```{r 4 vs 0 exons}
-# Function to compute the difference for a single dataframe
-compute_difference <- function(df) {
-  avg_4d <- rowMeans(df[, 13:15])
-  avg_0d <- rowMeans(df[, 7:9])
-  avg_4d - avg_0d
-}
+```{r 7 vs 0 exons, fig.width=12, fig.height=8}
 
-# Compute the difference and group by exon groups
+# Calculate the difference and remove any additional NAs
 tao_exons_df$difference <- compute_difference(tao_exons_df)
+tao_exons_df <- na.omit(tao_exons_df)
 
-tao_exons_df$exon_group<-factor(tao_exons_df$exon_group, levels = c("1-5","6-10","11-20","21+"))
-# Plot distribution of PSI difference for each exon group with fixed axis
+tao_exons_df$group <- ifelse(tao_exons_df$difference < 0, "Skipped", "Included")
+
+library(dplyr)
+library(ggplot2)
+
+# Compute per-group percentages and Wilcoxon tests
+group_stats <- tao_exons_df %>%
+  group_by(exon_group) %>%
+  summarise(
+    p_value = wilcox.test(difference, mu = 0)$p.value,
+    pct_below = round(mean(difference < 0) * 100, 1),
+    pct_above = round(mean(difference > 0) * 100, 1)
+  )
+
+tao_exons_df <- left_join(tao_exons_df, group_stats, by = "exon_group")
+
 plot_psi_distribution <- ggplot(
-  na.omit(tao_exons_df[abs(tao_exons_df$difference) >= 10,]), 
-  aes(y=..density..,x = difference, fill = ifelse(difference < 0, "Skipped", "Included"))
+  tao_exons_df[abs(tao_exons_df$difference) > 0, ], 
+  aes(x = difference, fill = group)
 ) +
-  geom_histogram(bins = 50, position = "identity") +
-  facet_wrap(~exon_group, scales = "fixed") +  # Change scales to "fixed"
+  geom_histogram(aes(y = ..density..), bins = 200, alpha = 0.9) +
+  facet_wrap(~ exon_group) +
   labs(
-    title = "PSI Difference Distribution Grouped by Number of Exons present in a Gene",
-    subtitle = "dPSI = avg_4d - avg_0d",
-    x = "ΔPSI (DKO - WT)",
+    title = "PSI Difference Distribution by Exon Group",
+    subtitle = "Wilcoxon test p-values and percentages shown per subplot",
+    x = "ΔPSI (7d - 0d)",
     y = "Density",
-    fill = "|ΔPSI| >= 0.1",
-    caption = paste0("Created by AG on ", Sys.Date())
+    fill = "Splicing Direction"
   ) +
-  theme_minimal(base_family = font) +
+  theme_minimal(base_family = "sans") +
   theme(
-    legend.position = "right",
-    axis.title.x = element_text(margin = margin(t = 10)),
-    axis.text.x = element_text(size = 15),
-    panel.background = element_rect(fill = "white"),
-    panel.grid.major = element_line(color = "gray80", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.3),
-    strip.text = element_text(size = 14, face = "bold"),
-    panel.spacing = unit(1.5, "lines")  # Increase the distance between facets
+    strip.text = element_text(size = 12, face = "bold")
+  ) +
+  geom_text(
+    data = group_stats, 
+    aes(label = paste0("p = ", signif(p_value, 3)), x = -50, y = 0.05),
+    inherit.aes = FALSE, size = 4, color = "black"
+  ) +
+  geom_text(
+    data = group_stats, 
+    aes(label = paste0("dPSI < 0: ", pct_below, "%"), x = -65, y = 0.1),
+    inherit.aes = FALSE, size = 4, color = "blue"
+  ) +
+  geom_text(
+    data = group_stats, 
+    aes(label = paste0("dPSI > 0: ", pct_above, "%"), x = 65, y = 0.1),
+    inherit.aes = FALSE, size = 4, color = "red"
   ) +
   scale_fill_brewer(palette = "Set1")
 
-
+# Save and display
+ggsave("genenumber_psi_distribution_exons.svg", plot_psi_distribution, width = 14, height = 10, dpi = 300)
 print(plot_psi_distribution)
 
 
 ```
-
-### 7days vs 4 days
-
-```{r 7 vs 4 exons}
-# Function to compute the difference for a single dataframe
-compute_difference <- function(df) {
-  avg_4d <- rowMeans(df[, 13:15])
-  avg_7d <- rowMeans(df[, 16:18])
-  avg_7d - avg_4d
-}
-
-# Compute the difference and group by exon groups
-tao_exons_df$difference <- compute_difference(tao_exons_df)
-
-tao_exons_df$exon_group<-factor(tao_exons_df$exon_group, levels = c("1-5","6-10","11-20","21+"))
-# Plot distribution of PSI difference for each exon group with fixed axis
-plot_psi_distribution <- ggplot(
-  na.omit(tao_exons_df[abs(tao_exons_df$difference) >= 10,]), 
-  aes(y=..density..,x = difference, fill = ifelse(difference < 0, "Skipped", "Included"))
-) +
-  geom_histogram(bins = 50, position = "identity") +
-  facet_wrap(~exon_group, scales = "fixed") +  # Change scales to "fixed"
-  labs(
-    title = "PSI Difference Distribution Grouped by Number of Exons present in a Gene",
-    subtitle = "dPSI = avg_7d - avg_4d",
-    x = "ΔPSI (DKO - WT)",
-    y = "Density",
-    fill = "|ΔPSI| >= 0.1",
-    caption = paste0("Created by AG on ", Sys.Date())
-  ) +
-  theme_minimal(base_family = font) +
-  theme(
-    legend.position = "right",
-    axis.title.x = element_text(margin = margin(t = 10)),
-    axis.text.x = element_text(size = 15),
-    panel.background = element_rect(fill = "white"),
-    panel.grid.major = element_line(color = "gray80", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.3),
-    strip.text = element_text(size = 14, face = "bold"),
-    panel.spacing = unit(1.5, "lines")  # Increase the distance between facets
-  ) +
-  scale_fill_brewer(palette = "Set1")
-
-
-print(plot_psi_distribution)
-
-
-```
-
-### 4days vs 2 days
-
-```{r 4 vs 2 exons}
-# Function to compute the difference for a single dataframe
-compute_difference <- function(df) {
-  avg_4d <- rowMeans(df[, 13:15])
-  avg_2d <- rowMeans(df[, 10:12])
-  avg_4d - avg_2d
-}
-
-# Compute the difference and group by exon groups
-tao_exons_df$difference <- compute_difference(tao_exons_df)
-
-tao_exons_df$exon_group<-factor(tao_exons_df$exon_group, levels = c("1-5","6-10","11-20","21+"))
-# Plot distribution of PSI difference for each exon group with fixed axis
-plot_psi_distribution <- ggplot(
-  na.omit(tao_exons_df[abs(tao_exons_df$difference) >= 10,]), 
-  aes(y=..density..,x = difference, fill = ifelse(difference < 0, "Skipped", "Included"))
-) +
-  geom_histogram(bins = 50, position = "identity") +
-  facet_wrap(~exon_group, scales = "fixed") +  # Change scales to "fixed"
-  labs(
-    title = "PSI Difference Distribution Grouped by Number of Exons present in a Gene",
-    subtitle = "dPSI = avg_4d - avg_2d",
-    x = "ΔPSI (DKO - WT)",
-    y = "Density",
-    fill = "|ΔPSI| >= 0.1",
-    caption = paste0("Created by AG on ", Sys.Date())
-  ) +
-  theme_minimal(base_family = font) +
-  theme(
-    legend.position = "right",
-    axis.title.x = element_text(margin = margin(t = 10)),
-    axis.text.x = element_text(size = 15),
-    panel.background = element_rect(fill = "white"),
-    panel.grid.major = element_line(color = "gray80", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.3),
-    strip.text = element_text(size = 14, face = "bold"),
-    panel.spacing = unit(1.5, "lines")  # Increase the distance between facets
-  ) +
-  scale_fill_brewer(palette = "Set1")
-
-
-print(plot_psi_distribution)
-
-
-```
-
-
-
-
-
 
 
 
@@ -1127,14 +1063,15 @@ Volcano Plots of the FDR corrected exons for each study. In pink are the exons w
 #### Tao
 
 ```{r tao fdr volcano 4 days}
-
 # INtersecting dhared exons between 10mm vs control and 1mm vs control
-differential_exons_2d<-na.omit(tao_pdiff_exons_2d[tao_pdiff_exons_2d$FDR >= 0.90 & abs(tao_pdiff_exons_2d$deltapsi) >= 0.1,])
-differential_exons_4d<-na.omit(tao_pdiff_exons_4d[tao_pdiff_exons_4d$FDR >= 0.90 & abs(tao_pdiff_exons_4d$deltapsi) >= 0.1,])
-differential_exons_4dvs2d<-na.omit(tao_pdiff_exons_4dvs2d[tao_pdiff_exons_4dvs2d$Pdiff >= 0.90 & abs(tao_pdiff_exons_4dvs2d$deltapsi) >= 0.1,])
-differential_exons_7dvs4d<-na.omit(tao_pdiff_exons_7dvs4d[tao_pdiff_exons_7dvs4d$Pdiff >= 0.90 & abs(tao_pdiff_exons_7dvs4d$deltapsi) >= 0.1,])
+differential_tao_exons_4d<-na.omit(tao_pdiff_exons_4d[tao_pdiff_exons_4d$FDR<=0.05 & abs(tao_pdiff_exons_4d$deltapsi)>=0.1,])
+differential_tao_exons_2d<-na.omit(tao_pdiff_exons_2d[tao_pdiff_exons_2d$FDR<=0.05 & abs(tao_pdiff_exons_2d$deltapsi)>=0.1,])
+differential_tao_exons_4d_2d<-na.omit(tao_pdiff_exons_4dvs2d[tao_pdiff_exons_4dvs2d$FDR<=0.05 & abs(tao_pdiff_exons_4dvs2d$deltapsi)>=0.1,])
+differential_tao_exons_7d_4d<-na.omit(tao_pdiff_exons_7dvs4d[tao_pdiff_exons_7dvs4d$FDR<=0.05 & abs(tao_pdiff_exons_7dvs4d$deltapsi)>=0.1,])
 
-shared_exons<-differential_exons_4d$EVENT[differential_exons_4d$EVENT %in% differential_exons_2d$EVENT]
+
+shared_exons<-differential_tao_exons_4d$EVENT[differential_tao_exons_4d$EVENT %in% differential_tao_exons_2d$EVENT]
+
 # Volcano plot
 library(ggrepel)
 tao_pdiff_exons_4d<-na.omit(tao_pdiff_exons_4d)
@@ -1143,298 +1080,439 @@ tao_pdiff_exons_4d$Shared <- ifelse(tao_pdiff_exons_4d$EVENT %in% shared_exons, 
 
 # Classify significance
 tao_pdiff_exons_4d$Significant <- ifelse(
-  tao_pdiff_exons_4d$Pdiff >= 0.90 & tao_pdiff_exons_4d$deltapsi >= 0.1, "Overrepresented",
+  tao_pdiff_exons_4d$FDR<=0.05 & tao_pdiff_exons_4d$deltapsi >= 0.1, "Overrepresented",
   ifelse(
-    tao_pdiff_exons_4d$Pdiff >= 0.90 & tao_pdiff_exons_4d$deltapsi <= -0.1, "Underrepresented",
+    tao_pdiff_exons_4d$FDR<=0.05 & tao_pdiff_exons_4d$deltapsi <= -0.1, "Underrepresented",
     "Not Significant"
   )
 )
 
 # Convert FDR to -log10 scale for y-axis
-tao_pdiff_exons_4d$negLogpvalue <- -log10(1 - tao_pdiff_exons_4d$Pdiff)
+tao_pdiff_exons_4d$negLogpvalue <- -log10(tao_pdiff_exons_4d$FDR)
 
+# Define your maximum displayed y-value (the cap)
+max_y <- 2
 
-# Updated volcano plot with improved fonts and axis styling
-volcano_plot <- ggplot(tao_pdiff_exons_4d, aes(x = deltapsi, y = negLogpvalue)) +
-  geom_point(aes(
-    color = ifelse(Shared == "Shared", "Shared", Significant),
-    alpha = ifelse(Shared == "Shared", "Shared", Significant),
-    size = ifelse(Shared == "Shared", "Shared", Significant)
-  )) +
+# Pre-process the data:
+#  - Create plot_y: if negLogpvalue is infinite (FDR == 0) or > max_y, use max_y.
+#  - Flag these points in is_capped.
+#  - For capped points only, create a new y-value (plot_y_jitter)
+#    that subtracts a small random offset so they don't completely overlap.
+set.seed(123)  # for reproducibility of the jitter
+tao_pdiff_exons_4d <- tao_pdiff_exons_4d %>%
+  mutate(
+    plot_y = ifelse(is.infinite(negLogpvalue) | negLogpvalue > max_y, max_y, negLogpvalue),
+    is_capped = (is.infinite(negLogpvalue) | negLogpvalue > max_y),
+    # Apply a small downward jitter (up to -0.1) only to capped points
+    plot_y_jitter = ifelse(is_capped, max_y - runif(n(), 0, 0.1), plot_y)
+  )
+
+# Build the volcano plot:
+volcano_plot <- ggplot(tao_pdiff_exons_4d, aes(x = deltapsi)) +
+  # Layer for non-capped points (displayed at their true y-values)
+  geom_point(data = filter(tao_pdiff_exons_4d, !is_capped),
+             aes(y = plot_y, 
+                 color = Significant, 
+                 alpha = Significant, 
+                 size = Significant)) +
+  # Layer for capped points: keep them as circles, but use jittered y-values
+  geom_point(data = filter(tao_pdiff_exons_4d, is_capped),
+             aes(y = plot_y_jitter, 
+                 color = Significant, 
+                 alpha = Significant, 
+                 size = Significant),
+             stroke = 0.5,
+             show.legend = FALSE) +  
+  # Define the color scales
   scale_color_manual(values = c(
-    "Shared" = "yellow",
     "Overrepresented" = "#E00E73",
     "Underrepresented" = "#3E2672",
     "Not Significant" = "gray"
   )) +
   scale_alpha_manual(values = c(
-    "Shared" = 1.0,  # Fully opaque for shared exons
     "Overrepresented" = 0.6,
     "Underrepresented" = 0.6,
     "Not Significant" = 0.3
   )) +
   scale_size_manual(values = c(
-    "Shared" = 3,  # Larger size for shared exons
-    "Overrepresented" = 2,
-    "Underrepresented" = 2,
-    "Not Significant" = 1
+    "Overrepresented" = 3,
+    "Underrepresented" = 3,
+    "Not Significant" = 2
   )) +
-  labs(
-    x = "Delta PSI",
-    y = expression(-log[10](1 - Pdiff)),
-    title = "(4 Days - 0 Days) Exons",
-    subtitle = "Shared events are highlighted in golden"
+  scale_x_continuous(
+    limits = c(-1, 1),
+    breaks = seq(-1, 1, by = 0.5)
   ) +
-  theme_minimal(base_size = 14, base_family = "sans") +  # Set base font
+  # Keep the y-axis fixed from 0 to max_y. Also, modify the top label to show "≥2"
+  scale_y_continuous(
+    limits = c(0, max_y),
+    expand = c(0, 0),
+    labels = function(x) ifelse(x == max_y, paste0("≥", max_y), x)
+  ) +
+  labs(
+    x = "Delta PSI (4days - 0days)",
+    y = expression(-log[10](FDR)),
+    title = "Volcano Plot of Myoblast Exons",
+    subtitle = "Significant events are highlighted"
+  ) +
+  theme_minimal(base_size = 14, base_family = "Arial") +  
   theme(
     plot.title = element_text(
       hjust = 0.5, size = 18, face = "bold", color = "black"
-    ),  # Centered and bold title
+    ),
     plot.subtitle = element_text(
       hjust = 0.5, size = 14, face = "italic", color = "gray30"
-    ),  # Italicized subtitle
-    axis.text = element_text(size = 12, color = "black"),  # Axis text styling
-    axis.title = element_text(size = 14, face = "bold", color = "black"),  # Axis title styling
-    legend.text = element_text(size = 12),  # Larger legend text
-    legend.title = element_blank(),  # Remove legend title
-    panel.grid.major = element_line(color = "gray90"),  # Subtle grid lines
-    panel.grid.minor = element_blank(),  # Remove minor grid lines
-    panel.border = element_rect(color = "black", fill = NA, size = 1)  # Add border to plot area
-  ) +
-  scale_y_continuous(expand = c(0, 0), limits = c(0, NA))  # Extend y-axis dynamically
+    ),
+    axis.text = element_text(size = 12, color = "black"),
+    axis.title = element_text(size = 14, face = "bold", color = "black"),
+    legend.text = element_text(size = 12),
+    legend.title = element_blank(),
+    panel.grid.major = element_line(color = "gray90"),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(color = "black")
+  )
 
-# Display the plot
+
+# Save as SVG with dimensions 606 x 396
+ggsave("volcano_exons_4d.svg", plot = volcano_plot, width = 606/72, height = 396/72, dpi = 72)
+
 volcano_plot
 ```
 
 ```{r tao fdr volcano 2 days}
-
 tao_pdiff_exons_2d<-na.omit(tao_pdiff_exons_2d)
 # Add a Shared column based on the shared_exons
 tao_pdiff_exons_2d$Shared <- ifelse(tao_pdiff_exons_2d$EVENT %in% shared_exons, "Shared", "Not Shared")
 
 # Classify significance
 tao_pdiff_exons_2d$Significant <- ifelse(
-  tao_pdiff_exons_2d$Pdiff >= 0.90 & tao_pdiff_exons_2d$deltapsi >= 0.1, "Overrepresented",
+  tao_pdiff_exons_2d$FDR<=0.05 & tao_pdiff_exons_2d$deltapsi >= 0.1, "Overrepresented",
   ifelse(
-    tao_pdiff_exons_2d$Pdiff >= 0.90 & tao_pdiff_exons_2d$deltapsi <= -0.1, "Underrepresented",
+    tao_pdiff_exons_2d$FDR<=0.05 & tao_pdiff_exons_2d$deltapsi <= -0.1, "Underrepresented",
     "Not Significant"
   )
 )
 
 # Convert FDR to -log10 scale for y-axis
-tao_pdiff_exons_2d$negLogpvalue <- -log10(1 - tao_pdiff_exons_2d$Pdiff)
+tao_pdiff_exons_2d$negLogpvalue <- -log10(tao_pdiff_exons_2d$FDR)
 
+# Define your maximum displayed y-value (the cap)
+max_y <- 2
 
-# Updated volcano plot with improved fonts and axis styling
-volcano_plot <- ggplot(tao_pdiff_exons_2d, aes(x = deltapsi, y = negLogpvalue)) +
-  geom_point(aes(
-    color = ifelse(Shared == "Shared", "Shared", Significant),
-    alpha = ifelse(Shared == "Shared", "Shared", Significant),
-    size = ifelse(Shared == "Shared", "Shared", Significant)
-  )) +
+# Pre-process the data:
+#  - Create plot_y: if negLogpvalue is infinite (FDR == 0) or > max_y, use max_y.
+#  - Flag these points in is_capped.
+#  - For capped points only, create a new y-value (plot_y_jitter)
+#    that subtracts a small random offset so they don't completely overlap.
+set.seed(123)  # for reproducibility of the jitter
+tao_pdiff_exons_2d <- tao_pdiff_exons_2d %>%
+  mutate(
+    plot_y = ifelse(is.infinite(negLogpvalue) | negLogpvalue > max_y, max_y, negLogpvalue),
+    is_capped = (is.infinite(negLogpvalue) | negLogpvalue > max_y),
+    # Apply a small downward jitter (up to -0.1) only to capped points
+    plot_y_jitter = ifelse(is_capped, max_y - runif(n(), 0, 0.1), plot_y)
+  )
+
+# Build the volcano plot:
+volcano_plot <- ggplot(tao_pdiff_exons_2d, aes(x = deltapsi)) +
+  # Layer for non-capped points (displayed at their true y-values)
+  geom_point(data = filter(tao_pdiff_exons_2d, !is_capped),
+             aes(y = plot_y, 
+                 color = Significant, 
+                 alpha = Significant, 
+                 size = Significant)) +
+  # Layer for capped points: keep them as circles, but use jittered y-values
+  geom_point(data = filter(tao_pdiff_exons_2d, is_capped),
+             aes(y = plot_y_jitter, 
+                 color = Significant, 
+                 alpha = Significant, 
+                 size = Significant),
+             stroke = 0.5,
+             show.legend = FALSE) +  
+  # Define the color scales
   scale_color_manual(values = c(
-    "Shared" = "yellow",
     "Overrepresented" = "#E00E73",
     "Underrepresented" = "#3E2672",
     "Not Significant" = "gray"
   )) +
   scale_alpha_manual(values = c(
-    "Shared" = 1.0,  # Fully opaque for shared exons
     "Overrepresented" = 0.6,
     "Underrepresented" = 0.6,
     "Not Significant" = 0.3
   )) +
   scale_size_manual(values = c(
-    "Shared" = 3,  # Larger size for shared exons
-    "Overrepresented" = 2,
-    "Underrepresented" = 2,
-    "Not Significant" = 1
+    "Overrepresented" = 3,
+    "Underrepresented" = 3,
+    "Not Significant" = 2
   )) +
-  labs(
-    x = "Delta PSI",
-    y = expression(-log[10](1 - Pdiff)),
-    title = "(2 Days - 0 Days) Exons",
-    subtitle = "Shared events are highlighted in golden"
+  scale_x_continuous(
+    limits = c(-1, 1),
+    breaks = seq(-1, 1, by = 0.5)
   ) +
-  theme_minimal(base_size = 14, base_family = "sans") +  # Set base font
+  # Keep the y-axis fixed from 0 to max_y. Also, modify the top label to show "≥2"
+  scale_y_continuous(
+    limits = c(0, max_y),
+    expand = c(0, 0),
+    labels = function(x) ifelse(x == max_y, paste0("≥", max_y), x)
+  ) +
+  labs(
+    x = "Delta PSI (2days - 0days)",
+    y = expression(-log[10](FDR)),
+    title = "Volcano Plot of Myoblast Exons",
+    subtitle = "Significant events are highlighted"
+  ) +
+  theme_minimal(base_size = 14, base_family = "Arial") +  
   theme(
     plot.title = element_text(
       hjust = 0.5, size = 18, face = "bold", color = "black"
-    ),  # Centered and bold title
+    ),
     plot.subtitle = element_text(
       hjust = 0.5, size = 14, face = "italic", color = "gray30"
-    ),  # Italicized subtitle
-    axis.text = element_text(size = 12, color = "black"),  # Axis text styling
-    axis.title = element_text(size = 14, face = "bold", color = "black"),  # Axis title styling
-    legend.text = element_text(size = 12),  # Larger legend text
-    legend.title = element_blank(),  # Remove legend title
-    panel.grid.major = element_line(color = "gray90"),  # Subtle grid lines
-    panel.grid.minor = element_blank(),  # Remove minor grid lines
-    panel.border = element_rect(color = "black", fill = NA, size = 1)  # Add border to plot area
-  ) +
-  scale_y_continuous(expand = c(0, 0), limits = c(0, NA))  # Extend y-axis dynamically
+    ),
+    axis.text = element_text(size = 12, color = "black"),
+    axis.title = element_text(size = 14, face = "bold", color = "black"),
+    legend.text = element_text(size = 12),
+    legend.title = element_blank(),
+    panel.grid.major = element_line(color = "gray90"),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(color = "black")
+  )
 
-# Display the plot
+
+# Save as SVG with dimensions 606 x 396
+ggsave("volcano_exons_2d.svg", plot = volcano_plot, width = 606/72, height = 396/72, dpi = 72)
+
 volcano_plot
 ```
 
 ```{r tao fdr volcano 4 to 2 days}
-
 tao_pdiff_exons_4dvs2d<-na.omit(tao_pdiff_exons_4dvs2d)
 # Add a Shared column based on the shared_exons
 tao_pdiff_exons_4dvs2d$Shared <- ifelse(tao_pdiff_exons_4dvs2d$EVENT %in% shared_exons, "Shared", "Not Shared")
 
 # Classify significance
 tao_pdiff_exons_4dvs2d$Significant <- ifelse(
-  tao_pdiff_exons_4dvs2d$Pdiff >= 0.90 & tao_pdiff_exons_4dvs2d$deltapsi >= 0.1, "Overrepresented",
+  tao_pdiff_exons_4dvs2d$FDR<=0.05 & tao_pdiff_exons_4dvs2d$deltapsi >= 0.1, "Overrepresented",
   ifelse(
-    tao_pdiff_exons_4dvs2d$Pdiff >= 0.90 & tao_pdiff_exons_4dvs2d$deltapsi <= -0.1, "Underrepresented",
+    tao_pdiff_exons_4dvs2d$FDR<=0.05 & tao_pdiff_exons_4dvs2d$deltapsi <= -0.1, "Underrepresented",
     "Not Significant"
   )
 )
 
 # Convert FDR to -log10 scale for y-axis
-tao_pdiff_exons_4dvs2d$negLogpvalue <- -log10(1 - tao_pdiff_exons_4dvs2d$Pdiff)
+tao_pdiff_exons_4dvs2d$negLogpvalue <- -log10(tao_pdiff_exons_4dvs2d$FDR)
 
+# Define your maximum displayed y-value (the cap)
+max_y <- 2
 
-# Updated volcano plot with improved fonts and axis styling
-volcano_plot <- ggplot(tao_pdiff_exons_4dvs2d, aes(x = deltapsi, y = negLogpvalue)) +
-  geom_point(aes(
-    color = ifelse(Shared == "Shared", "Shared", Significant),
-    alpha = ifelse(Shared == "Shared", "Shared", Significant),
-    size = ifelse(Shared == "Shared", "Shared", Significant)
-  )) +
+# Pre-process the data:
+#  - Create plot_y: if negLogpvalue is infinite (FDR == 0) or > max_y, use max_y.
+#  - Flag these points in is_capped.
+#  - For capped points only, create a new y-value (plot_y_jitter)
+#    that subtracts a small random offset so they don't completely overlap.
+set.seed(123)  # for reproducibility of the jitter
+tao_pdiff_exons_4dvs2d <- tao_pdiff_exons_4dvs2d %>%
+  mutate(
+    plot_y = ifelse(is.infinite(negLogpvalue) | negLogpvalue > max_y, max_y, negLogpvalue),
+    is_capped = (is.infinite(negLogpvalue) | negLogpvalue > max_y),
+    # Apply a small downward jitter (up to -0.1) only to capped points
+    plot_y_jitter = ifelse(is_capped, max_y - runif(n(), 0, 0.1), plot_y)
+  )
+
+# Build the volcano plot:
+volcano_plot <- ggplot(tao_pdiff_exons_4dvs2d, aes(x = deltapsi)) +
+  # Layer for non-capped points (displayed at their true y-values)
+  geom_point(data = filter(tao_pdiff_exons_4dvs2d, !is_capped),
+             aes(y = plot_y, 
+                 color = Significant, 
+                 alpha = Significant, 
+                 size = Significant)) +
+  # Layer for capped points: keep them as circles, but use jittered y-values
+  geom_point(data = filter(tao_pdiff_exons_4dvs2d, is_capped),
+             aes(y = plot_y_jitter, 
+                 color = Significant, 
+                 alpha = Significant, 
+                 size = Significant),
+             stroke = 0.5,
+             show.legend = FALSE) +  
+  # Define the color scales
   scale_color_manual(values = c(
-    "Shared" = "yellow",
     "Overrepresented" = "#E00E73",
     "Underrepresented" = "#3E2672",
     "Not Significant" = "gray"
   )) +
   scale_alpha_manual(values = c(
-    "Shared" = 1.0,  # Fully opaque for shared exons
     "Overrepresented" = 0.6,
     "Underrepresented" = 0.6,
     "Not Significant" = 0.3
   )) +
   scale_size_manual(values = c(
-    "Shared" = 3,  # Larger size for shared exons
-    "Overrepresented" = 2,
-    "Underrepresented" = 2,
-    "Not Significant" = 1
+    "Overrepresented" = 3,
+    "Underrepresented" = 3,
+    "Not Significant" = 2
   )) +
-  labs(
-    x = "Delta PSI",
-    y = expression(-log[10](1 - Pdiff)),
-    title = "(4 Days - 2 Days) Exons",
-    subtitle = "Shared events are highlighted in golden"
+  scale_x_continuous(
+    limits = c(-1, 1),
+    breaks = seq(-1, 1, by = 0.5)
   ) +
-  theme_minimal(base_size = 14, base_family = "sans") +  # Set base font
+  # Keep the y-axis fixed from 0 to max_y. Also, modify the top label to show "≥2"
+  scale_y_continuous(
+    limits = c(0, max_y),
+    expand = c(0, 0),
+    labels = function(x) ifelse(x == max_y, paste0("≥", max_y), x)
+  ) +
+  labs(
+    x = "Delta PSI (4days - 2days)",
+    y = expression(-log[10](FDR)),
+    title = "Volcano Plot of Myoblast Exons",
+    subtitle = "Significant events are highlighted"
+  ) +
+  theme_minimal(base_size = 14, base_family = "Arial") +  
   theme(
     plot.title = element_text(
       hjust = 0.5, size = 18, face = "bold", color = "black"
-    ),  # Centered and bold title
+    ),
     plot.subtitle = element_text(
       hjust = 0.5, size = 14, face = "italic", color = "gray30"
-    ),  # Italicized subtitle
-    axis.text = element_text(size = 12, color = "black"),  # Axis text styling
-    axis.title = element_text(size = 14, face = "bold", color = "black"),  # Axis title styling
-    legend.text = element_text(size = 12),  # Larger legend text
-    legend.title = element_blank(),  # Remove legend title
-    panel.grid.major = element_line(color = "gray90"),  # Subtle grid lines
-    panel.grid.minor = element_blank(),  # Remove minor grid lines
-    panel.border = element_rect(color = "black", fill = NA, size = 1)  # Add border to plot area
-  ) +
-  scale_y_continuous(expand = c(0, 0), limits = c(0, NA))  # Extend y-axis dynamically
+    ),
+    axis.text = element_text(size = 12, color = "black"),
+    axis.title = element_text(size = 14, face = "bold", color = "black"),
+    legend.text = element_text(size = 12),
+    legend.title = element_blank(),
+    panel.grid.major = element_line(color = "gray90"),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(color = "black")
+  )
 
-# Display the plot
+
+# Save as SVG with dimensions 606 x 396
+ggsave("volcano_exons_4dvs2d.svg", plot = volcano_plot, width = 606/72, height = 396/72, dpi = 72)
+
 volcano_plot
 ```
 
 
 ```{r tao fdr volcano 7 vs 4 days}
-
 tao_pdiff_exons_7dvs4d<-na.omit(tao_pdiff_exons_7dvs4d)
 # Add a Shared column based on the shared_exons
-tao_pdiff_exons_7dvs4d$Shared <- FALSE
+tao_pdiff_exons_7dvs4d$Shared <- ifelse(tao_pdiff_exons_7dvs4d$EVENT %in% shared_exons, "Shared", "Not Shared")
 
 # Classify significance
 tao_pdiff_exons_7dvs4d$Significant <- ifelse(
-  tao_pdiff_exons_7dvs4d$Pdiff >= 0.90 & tao_pdiff_exons_7dvs4d$deltapsi >= 0.1, "Overrepresented",
+  tao_pdiff_exons_7dvs4d$FDR<=0.05 & tao_pdiff_exons_7dvs4d$deltapsi >= 0.1, "Overrepresented",
   ifelse(
-    tao_pdiff_exons_7dvs4d$Pdiff >= 0.90 & tao_pdiff_exons_7dvs4d$deltapsi <= -0.1, "Underrepresented",
+    tao_pdiff_exons_7dvs4d$FDR<=0.05 & tao_pdiff_exons_7dvs4d$deltapsi <= -0.1, "Underrepresented",
     "Not Significant"
   )
 )
 
 # Convert FDR to -log10 scale for y-axis
-tao_pdiff_exons_7dvs4d$negLogpvalue <- -log10(1 - tao_pdiff_exons_7dvs4d$Pdiff)
+tao_pdiff_exons_7dvs4d$negLogpvalue <- -log10(tao_pdiff_exons_7dvs4d$FDR)
 
+# Define your maximum displayed y-value (the cap)
+max_y <- 2
 
-# Updated volcano plot with improved fonts and axis styling
-volcano_plot <- ggplot(tao_pdiff_exons_7dvs4d, aes(x = deltapsi, y = negLogpvalue)) +
-  geom_point(aes(
-    color = ifelse(Shared == "Shared", "Shared", Significant),
-    alpha = ifelse(Shared == "Shared", "Shared", Significant),
-    size = ifelse(Shared == "Shared", "Shared", Significant)
-  )) +
+# Pre-process the data:
+#  - Create plot_y: if negLogpvalue is infinite (FDR == 0) or > max_y, use max_y.
+#  - Flag these points in is_capped.
+#  - For capped points only, create a new y-value (plot_y_jitter)
+#    that subtracts a small random offset so they don't completely overlap.
+set.seed(123)  # for reproducibility of the jitter
+tao_pdiff_exons_7dvs4d <- tao_pdiff_exons_7dvs4d %>%
+  mutate(
+    plot_y = ifelse(is.infinite(negLogpvalue) | negLogpvalue > max_y, max_y, negLogpvalue),
+    is_capped = (is.infinite(negLogpvalue) | negLogpvalue > max_y),
+    # Apply a small downward jitter (up to -0.1) only to capped points
+    plot_y_jitter = ifelse(is_capped, max_y - runif(n(), 0, 0.1), plot_y)
+  )
+
+# Build the volcano plot:
+volcano_plot <- ggplot(tao_pdiff_exons_7dvs4d, aes(x = deltapsi)) +
+  # Layer for non-capped points (displayed at their true y-values)
+  geom_point(data = filter(tao_pdiff_exons_7dvs4d, !is_capped),
+             aes(y = plot_y, 
+                 color = Significant, 
+                 alpha = Significant, 
+                 size = Significant)) +
+  # Layer for capped points: keep them as circles, but use jittered y-values
+  geom_point(data = filter(tao_pdiff_exons_7dvs4d, is_capped),
+             aes(y = plot_y_jitter, 
+                 color = Significant, 
+                 alpha = Significant, 
+                 size = Significant),
+             stroke = 0.5,
+             show.legend = FALSE) +  
+  # Define the color scales
   scale_color_manual(values = c(
-    "Shared" = "yellow",
     "Overrepresented" = "#E00E73",
     "Underrepresented" = "#3E2672",
     "Not Significant" = "gray"
   )) +
   scale_alpha_manual(values = c(
-    "Shared" = 1.0,  # Fully opaque for shared exons
     "Overrepresented" = 0.6,
     "Underrepresented" = 0.6,
     "Not Significant" = 0.3
   )) +
   scale_size_manual(values = c(
-    "Shared" = 3,  # Larger size for shared exons
-    "Overrepresented" = 2,
-    "Underrepresented" = 2,
-    "Not Significant" = 1
+    "Overrepresented" = 3,
+    "Underrepresented" = 3,
+    "Not Significant" = 2
   )) +
-  labs(
-    x = "Delta PSI",
-    y = expression(-log[10](1 - Pdiff)),
-    title = "(7 Days - 4 Days) Exons",
-    subtitle = "Shared events are highlighted in golden"
+  scale_x_continuous(
+    limits = c(-1, 1),
+    breaks = seq(-1, 1, by = 0.5)
   ) +
-  theme_minimal(base_size = 14, base_family = "sans") +  # Set base font
+  # Keep the y-axis fixed from 0 to max_y. Also, modify the top label to show "≥2"
+  scale_y_continuous(
+    limits = c(0, max_y),
+    expand = c(0, 0),
+    labels = function(x) ifelse(x == max_y, paste0("≥", max_y), x)
+  ) +
+  labs(
+    x = "Delta PSI (7days - 4days)",
+    y = expression(-log[10](FDR)),
+    title = "Volcano Plot of Myoblast Exons",
+    subtitle = "Significant events are highlighted"
+  ) +
+  theme_minimal(base_size = 14, base_family = "Arial") +  
   theme(
     plot.title = element_text(
       hjust = 0.5, size = 18, face = "bold", color = "black"
-    ),  # Centered and bold title
+    ),
     plot.subtitle = element_text(
       hjust = 0.5, size = 14, face = "italic", color = "gray30"
-    ),  # Italicized subtitle
-    axis.text = element_text(size = 12, color = "black"),  # Axis text styling
-    axis.title = element_text(size = 14, face = "bold", color = "black"),  # Axis title styling
-    legend.text = element_text(size = 12),  # Larger legend text
-    legend.title = element_blank(),  # Remove legend title
-    panel.grid.major = element_line(color = "gray90"),  # Subtle grid lines
-    panel.grid.minor = element_blank(),  # Remove minor grid lines
-    panel.border = element_rect(color = "black", fill = NA, size = 1)  # Add border to plot area
-  ) +
-  scale_y_continuous(expand = c(0, 0), limits = c(0, NA))  # Extend y-axis dynamically
+    ),
+    axis.text = element_text(size = 12, color = "black"),
+    axis.title = element_text(size = 14, face = "bold", color = "black"),
+    legend.text = element_text(size = 12),
+    legend.title = element_blank(),
+    panel.grid.major = element_line(color = "gray90"),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(color = "black")
+  )
 
-# Display the plot
+
+# Save as SVG with dimensions 606 x 396
+ggsave("volcano_exons_7dvs4d.svg", plot = volcano_plot, width = 606/72, height = 396/72, dpi = 72)
+
 volcano_plot
 ```
 
 ### Individual Combination Tables { .tabset}
 
-These tables show the Exons that show a FDR<=0.05 and PDiff (1-pvalue)>=0.95 in the pairwise comparison of Myotubes-Myoblasts, for each study.
+These tables show the Exons that show a FDR<=0.05 |dPSI|>=0.1 in the pairwise comparison.
 
-#### Tao
+#### Tao 4 vs 0
 
 
 ```{r tao combination table}
 # Render DataTable with enhancements
 datatable(
-  tao_pdiff_exons,
+  differential_tao_exons_4d,
   options = list(
     pageLength = 10,                      # Rows per page
     autoWidth = TRUE,                     # Adjust column widths automatically
