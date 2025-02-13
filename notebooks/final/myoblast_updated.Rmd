@@ -1,126 +1,94 @@
 ---
-title: 'Force-based regulation of splicing during Myoblast differentiation'
-subtitle: "Stage 1: Bioinformatical Analysis of Myogenic Transcripts"
+title: "Myoblast Alternative Splicing Analysis"
 author: "Andrés Gordo Ortiz @Al Jord Lab CRG"
 date: "`r Sys.Date()`"
 output:
   rmarkdown::html_document:
-    code_folding: hide
-    code_download: false
-    df_print: paged
     theme: flatly
-    highlight: tango
     toc: true
     toc_float:
       collapsed: false
       smooth_scroll: true
+    code_folding: hide
+    code_download: false
+    df_print: paged
     number_sections: true
 
 editor_options:
   markdown:
     wrap: 72
 
-
-# Finally, you must have the Mus musculus (mm10 build) EVENT_INFO-mm10.tab and SPLICE_SITE_SCORES-mm10.tab files downloaded and unzipped in the root folder of this project repository. You can download them here:https://vastdb.crg.eu/wiki/Downloads
-# The supplementary tables from Wu et al. 2024 are also needed in the root idirectory: https://www.science.org/doi/suppl/10.1126/sciadv.adp7727/suppl_file/sciadv.adp7727_tables_s1_to_s6.zip
-
-
 header-includes:
   - '<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">'
   - '<style>
-        #logos {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
+        /* Base styling */
+        body {
+          font-family: "Roboto", sans-serif;
+          color: #333;
+          background-color: #ffffff;
+          margin: 0;
+          padding: 20px;
         }
-        #logos img {
-            height: 80px;
-            margin: 0 15px;
+        .container {
+          max-width: 960px;
+          margin: auto;
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 {
+          color: #2C3E50;
+          text-align: center;
+          font-weight: 700;
+          margin: 0.5em 0;
+        }
+        h1 { font-size: 2.5em; }
+        h2 { font-size: 2em; }
+        h3 { font-size: 1.75em; }
+        
+        /* Text styling */
+        p {
+          line-height: 1.6;
+          margin-bottom: 1em;
+          text-align: justify;
+        }
+        .subtitle, .author, .date {
+          text-align: center;
+          color: #2C3E50;
+          margin-bottom: 0.5em;
+        }
+        
+        /* Links */
+        a {
+          color: #0275d8;
+          text-decoration: none;
+        }
+        a:hover {
+          text-decoration: underline;
+        }
+        
+        /* Tables */
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 20px 0;
+        }
+        th, td {
+          border: 1px solid #ddd;
+          padding: 10px;
+        }
+        th {
+          background-color: #2C3E50;
+          color: #fff;
+        }
+        tr:nth-child(even) {
+          background-color: #f9f9f9;
+        }
+        tr:hover {
+          background-color: #f1f1f1;
         }
      </style>'
-
-
 ---
 
-
-```{css, echo=FALSE}
-/* Custom CSS for styling */
-body {
-  font-family: 'Roboto', sans-serif; /* Body font */
-  color: #333; /* Neutral dark gray for body text */
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Roboto', sans-serif; /* Headers font */
-  font-weight: bold;
-}
-
-/* Header Colors */
-h1 {
-  font-size: 2.5em;
-  color: #0099CD; /* Primary blue for main headers */
-}
-
-h2 {
-  font-size: 2em;
-  color: #0077A3; /* Slightly darker shade of blue for secondary headers */
-}
-
-h3 {
-  font-size: 1.75em;
-  color: #005F8C; /* Even darker blue for tertiary headers */
-}
-
-p {
-  text-align: justify;
-  line-height: 1.6; /* Improve readability */
-}
-
-/* Styling for subtitle, authors, and date */
-.subtitle, .author, .date {
-  color: #000; /* Black text */
-  font-size: 1.25em; /* Slightly larger for emphasis */
-  margin-bottom: 0.5em;
-  text-align: center; /* Center alignment for clean layout */
-}
-
-/* Link styling */
-a {
-  color: #0099CD; /* Link color */
-  text-decoration: none;
-}
-
-a:hover {
-  color: #005F8C; /* Darker shade on hover */
-  text-decoration: underline;
-}
-
-/* Table styling */
-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-table th, table td {
-  border: 1px solid #ddd;
-  padding: 10px;
-}
-
-table th {
-  background-color: #0099CD; /* Header background blue */
-  color: white; /* White text for contrast */
-  text-align: center;
-}
-
-table tr:nth-child(even) {
-  background-color: #f9f9f9; /* Light gray for even rows */
-}
-
-table tr:hover {
-  background-color: #f1f1f1; /* Subtle highlight on hover */
-}
-```
 
 
 
