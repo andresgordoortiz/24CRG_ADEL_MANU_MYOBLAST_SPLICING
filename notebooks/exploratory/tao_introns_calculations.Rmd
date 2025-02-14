@@ -1,0 +1,162 @@
+---
+title: "introns_myoblast_calculations"
+author: "Andrés Gordo Ortiz"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# Ensure a clean environment and load required libraries.
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+
+
+# Load required libraries
+library("betAS")
+library("ggplot2")
+library("plotly")
+library("dplyr")
+library("tidyverse")
+library("cowplot")
+library("DT")
+library("paletteer")
+library("ggupset")
+library("showtext")
+library("ggtext")
+library("readxl")
+library("biomaRt")
+library("patchwork")
+library("org.Mm.eg.db")
+library("org.Hs.eg.db")
+library("enrichplot")
+library("DOSE")
+library("clusterProfiler")
+library("ReactomePA")
+library("ComplexHeatmap")
+library("enrichR")
+library("colorRamp2")
+library("dendextend")
+
+
+# Register Google fonts
+showtext_auto()
+font_add_google("Roboto", "roboto")
+font="roboto"
+```
+
+```{r analysis}
+tao_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Tao_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
+tao_events <- filterEvents(getEvents(tao_data, tool = "vast-tools"), N=10) # Extract alternative splicing events
+tao_exons <- filterEvents(tao_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 10)
+tao_introns <- filterEvents(tao_events, types = c("IR"), N = 10)
+
+# Load metadata file containing sample information
+metadata_tao <- read.csv(paste0(getwd(),"/metadata/tao_metadata.csv"), sep = ",")
+
+
+
+groupA_tao<-"0_days"
+groupB_tao<-"7_days"
+samplesA_tao <- groupList_tao[[groupA_tao]]$samples
+samplesB_tao <- groupList_tao[[groupB_tao]]$samples
+colsGroupA_tao <- convertCols(tao_introns$PSI, samplesA_tao)
+colsGroupB_tao <- convertCols(tao_introns$PSI, samplesB_tao)
+
+
+# Prepare table for Tao
+tao_pdiff_introns <- prepareTableVolcanoFDR(
+  psitable = tao_introns$PSI,
+  qualtable = tao_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_tao,
+  colsB = colsGroupB_tao,
+  labA = groupA_tao,
+  labB = groupB_tao,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  nsim=1000,
+  seed = TRUE,
+  CoverageWeight = FALSE
+)
+
+groupA_tao<-"0_days"
+groupB_tao<-"2_days"
+samplesA_tao <- groupList_tao[[groupA_tao]]$samples
+samplesB_tao <- groupList_tao[[groupB_tao]]$samples
+colsGroupA_tao <- convertCols(tao_introns$PSI, samplesA_tao)
+colsGroupB_tao <- convertCols(tao_introns$PSI, samplesB_tao)
+
+tao_pdiff_introns_2d <- prepareTableVolcanoFDR(
+  psitable = tao_introns$PSI,
+  qualtable = tao_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_tao,
+  colsB = colsGroupB_tao,
+  labA = groupA_tao,
+  labB = groupB_tao,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  nsim=1000,
+  seed = TRUE,
+  CoverageWeight = FALSE
+)
+
+groupA_tao<-"0_days"
+groupB_tao<-"4_days"
+samplesA_tao <- groupList_tao[[groupA_tao]]$samples
+samplesB_tao <- groupList_tao[[groupB_tao]]$samples
+colsGroupA_tao <- convertCols(tao_introns$PSI, samplesA_tao)
+colsGroupB_tao <- convertCols(tao_introns$PSI, samplesB_tao)
+
+tao_pdiff_introns_4d <- prepareTableVolcanoFDR(
+  psitable = tao_introns$PSI,
+  qualtable = tao_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_tao,
+  colsB = colsGroupB_tao,
+  labA = groupA_tao,
+  labB = groupB_tao,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  nsim=1000,
+  seed = TRUE,
+  CoverageWeight = FALSE
+)
+
+groupA_tao<-"2_days"
+groupB_tao<-"4_days"
+samplesA_tao <- groupList_tao[[groupA_tao]]$samples
+samplesB_tao <- groupList_tao[[groupB_tao]]$samples
+colsGroupA_tao <- convertCols(tao_introns$PSI, samplesA_tao)
+colsGroupB_tao <- convertCols(tao_introns$PSI, samplesB_tao)
+
+tao_pdiff_introns_4dvs2d <- prepareTableVolcanoFDR(
+  psitable = tao_introns$PSI,
+  qualtable = tao_introns$Qual,
+  npoints = 500,
+  colsA = colsGroupA_tao,
+  colsB = colsGroupB_tao,
+  labA = groupA_tao,
+  labB = groupB_tao,
+  basalColor = "#89C0AE",
+  interestColor = "#E69A9C",
+  maxDevTable = maxDevSimulationN100,
+  nsim=1000,
+  seed = TRUE,
+  CoverageWeight = FALSE
+)
+
+
+
+write.csv(tao_pdiff_introns, "tao_pdiff_introns.csv")
+write.csv(tao_pdiff_introns_2d,"tao_pdiff_introns_2d.csv")
+write.csv(tao_pdiff_introns_4d,"tao_pdiff_introns_4d.csv")
+write.csv(tao_pdiff_introns_4dvs2d,"tao_pdiff_introns_4dvs2d.csv")
+```
+
