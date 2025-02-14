@@ -55,8 +55,23 @@ tao_introns <- filterEvents(tao_events, types = c("IR"), N = 10)
 
 # Load metadata file containing sample information
 metadata_tao <- read.csv(paste0(getwd(),"/metadata/tao_metadata.csv"), sep = ",")
+# Extract unique groups and sample IDs
+groupingVariable <- "experiment_title"
+
+# Tao
+groups_tao <- unique(metadata_tao[, groupingVariable])
+samples_tao <- metadata_tao$run_accession
 
 
+random_colors=c("#D8D97AFF", "#95C36EFF", "#74C8C3FF", "#5A97C1FF", "#295384FF", "#0A2E57FF")
+groupList_tao <- lapply(1:length(groups_tao), function(i) {
+  list(
+    name = groups_tao[i],
+    samples = samples_tao[metadata_tao[, groupingVariable] == groups_tao[i]],
+    color = random_colors[i]
+  )
+})
+names(groupList_tao) <- groups_tao
 
 groupA_tao<-"0_days"
 groupB_tao<-"7_days"
