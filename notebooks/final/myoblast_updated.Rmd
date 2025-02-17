@@ -228,7 +228,7 @@ The final plots showcase potentially promising events found in myoblast differen
 
 # Tao et al. 2024 data
 tao_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Tao_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
-tao_events <- getEvents(tao_data, tool = "vast-tools") # Extract alternative splicing events
+tao_events <- filterEvents(getEvents(tao_data, tool = "vast-tools"), N=10) # Extract alternative splicing events
 tao_exons <- filterEvents(tao_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 10)
 tao_introns <- filterEvents(tao_events, types = c("IR"), N = 10)
 
@@ -809,6 +809,17 @@ samplesB_tao <- groupList_tao[[groupB_tao]]$samples
 colsGroupA_tao <- convertCols(tao_exons$PSI, samplesA_tao)
 colsGroupB_tao <- convertCols(tao_exons$PSI, samplesB_tao)
 
+tao_pdiff_exons<-read.csv("tables_10n/tao_pdiff_exons.csv")[,-1]
+tao_pdiff_exons_2d<-read.csv("tables_10n/tao_pdiff_exons_2d.csv")[,-1]
+tao_pdiff_exons_4d<-read.csv("tables_10n/tao_pdiff_exons_4d.csv")[,-1]
+tao_pdiff_exons_4dvs2d<-read.csv("tables_10n/tao_pdiff_exons_4dvs2d.csv")[,-1]
+tao_pdiff_introns<-read.csv("tables_10n/tao_pdiff_introns.csv")[,-1]
+tao_pdiff_introns_2d<-read.csv("tables_10n/tao_pdiff_introns_2d.csv")[,-1]
+tao_pdiff_introns_4d<-read.csv("tables_10n/tao_pdiff_introns_4d.csv")[,-1]
+tao_pdiff_introns_4dvs2d<-read.csv("tables_10n/tao_pdiff_introns_4dvs2d.csv")[,-1]
+
+
+
 
 # Prepare table for Tao
 tao_pdiff_exons <- prepareTableVolcanoFDR(
@@ -1020,28 +1031,6 @@ tao_pdiff_introns_4dvs2d <- prepareTableVolcanoFDR(
   CoverageWeight = FALSE
 )
 
-groupA_tao<-"4_days"
-groupB_tao<-"7_days"
-samplesA_tao <- groupList_tao[[groupA_tao]]$samples
-samplesB_tao <- groupList_tao[[groupB_tao]]$samples
-colsGroupA_tao <- convertCols(tao_introns$PSI, samplesA_tao)
-colsGroupB_tao <- convertCols(tao_introns$PSI, samplesB_tao)
-
-tao_pdiff_introns_7dvs4d <- prepareTableVolcanoFDR(
-  psitable = tao_introns$PSI,
-  qualtable = tao_introns$Qual,
-  npoints = 500,
-  # colsA = colsGroupA_tao,
-  colsB = colsGroupB_tao,
-  labA = groupA_tao,
-  labB = groupB_tao,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  nsim=1000,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
 
 
 write.csv(tao_pdiff_introns, "tao_pdiff_introns.csv")
@@ -1395,112 +1384,7 @@ volcano_plot
 ```
 
 
-```{r tao fdr volcano 7 vs 4 days}
-tao_pdiff_exons_7dvs4d<-na.omit(tao_pdiff_exons_7dvs4d)
-# Add a Shared column based on the shared_exons
-tao_pdiff_exons_7dvs4d$Shared <- ifelse(tao_pdiff_exons_7dvs4d$EVENT %in% shared_exons, "Shared", "Not Shared")
 
-# Classify significance
-tao_pdiff_exons_7dvs4d$Significant <- ifelse(
-  tao_pdiff_exons_7dvs4d$FDR<=0.05 & tao_pdiff_exons_7dvs4d$deltapsi >= 0.1, "Overrepresented",
-  ifelse(
-    tao_pdiff_exons_7dvs4d$FDR<=0.05 & tao_pdiff_exons_7dvs4d$deltapsi <= -0.1, "Underrepresented",
-    "Not Significant"
-  )
-)
-
-# Convert FDR to -log10 scale for y-axis
-tao_pdiff_exons_7dvs4d$negLogpvalue <- -log10(tao_pdiff_exons_7dvs4d$FDR)
-
-# Define your maximum displayed y-value (the cap)
-max_y <- 2
-
-# Pre-process the data:
-#  - Create plot_y: if negLogpvalue is infinite (FDR == 0) or > max_y, use max_y.
-#  - Flag these points in is_capped.
-#  - For capped points only, create a new y-value (plot_y_jitter)
-#    that subtracts a small random offset so they don't completely overlap.
-set.seed(123)  # for reproducibility of the jitter
-tao_pdiff_exons_7dvs4d <- tao_pdiff_exons_7dvs4d %>%
-  mutate(
-    plot_y = ifelse(is.infinite(negLogpvalue) | negLogpvalue > max_y, max_y, negLogpvalue),
-    is_capped = (is.infinite(negLogpvalue) | negLogpvalue > max_y),
-    # Apply a small downward jitter (up to -0.1) only to capped points
-    plot_y_jitter = ifelse(is_capped, max_y - runif(n(), 0, 0.1), plot_y)
-  )
-
-# Build the volcano plot:
-volcano_plot <- ggplot(tao_pdiff_exons_7dvs4d, aes(x = deltapsi)) +
-  # Layer for non-capped points (displayed at their true y-values)
-  geom_point(data = filter(tao_pdiff_exons_7dvs4d, !is_capped),
-             aes(y = plot_y, 
-                 color = Significant, 
-                 alpha = Significant, 
-                 size = Significant)) +
-  # Layer for capped points: keep them as circles, but use jittered y-values
-  geom_point(data = filter(tao_pdiff_exons_7dvs4d, is_capped),
-             aes(y = plot_y_jitter, 
-                 color = Significant, 
-                 alpha = Significant, 
-                 size = Significant),
-             stroke = 0.5,
-             show.legend = FALSE) +  
-  # Define the color scales
-  scale_color_manual(values = c(
-    "Overrepresented" = "#E00E73",
-    "Underrepresented" = "#3E2672",
-    "Not Significant" = "gray"
-  )) +
-  scale_alpha_manual(values = c(
-    "Overrepresented" = 0.6,
-    "Underrepresented" = 0.6,
-    "Not Significant" = 0.3
-  )) +
-  scale_size_manual(values = c(
-    "Overrepresented" = 3,
-    "Underrepresented" = 3,
-    "Not Significant" = 2
-  )) +
-  scale_x_continuous(
-    limits = c(-1, 1),
-    breaks = seq(-1, 1, by = 0.5)
-  ) +
-  # Keep the y-axis fixed from 0 to max_y. Also, modify the top label to show "≥2"
-  scale_y_continuous(
-    limits = c(0, max_y),
-    expand = c(0, 0),
-    labels = function(x) ifelse(x == max_y, paste0("≥", max_y), x)
-  ) +
-  labs(
-    x = "Delta PSI (7days - 4days)",
-    y = expression(-log[10](FDR)),
-    title = "Volcano Plot of Myoblast Exons",
-    subtitle = "Significant events are highlighted"
-  ) +
-  theme_minimal(base_size = 14, base_family = "Arial") +  
-  theme(
-    plot.title = element_text(
-      hjust = 0.5, size = 18, face = "bold", color = "black"
-    ),
-    plot.subtitle = element_text(
-      hjust = 0.5, size = 14, face = "italic", color = "gray30"
-    ),
-    axis.text = element_text(size = 12, color = "black"),
-    axis.title = element_text(size = 14, face = "bold", color = "black"),
-    legend.text = element_text(size = 12),
-    legend.title = element_blank(),
-    panel.grid.major = element_line(color = "gray90"),
-    panel.grid.minor = element_blank(),
-    panel.border = element_blank(),
-    axis.line = element_line(color = "black")
-  )
-
-
-# Save as SVG with dimensions 606 x 396
-ggsave("volcano_exons_7dvs4d.svg", plot = volcano_plot, width = 606/72, height = 396/72, dpi = 72)
-
-volcano_plot
-```
 
 ### Individual Combination Tables { .tabset}
 
@@ -1694,14 +1578,15 @@ Volcano Plots of the FDR corrected introns for each study. In pink are the exons
 #### Tao
 
 ```{r tao fdr volcano 4 days int}
-
 # INtersecting dhared introns between 10mm vs control and 1mm vs control
-differential_introns_2d<-na.omit(tao_pdiff_introns_2d[tao_pdiff_introns_2d$Pdiff >= 0.90 & abs(tao_pdiff_introns_2d$deltapsi) >= 0.1,])
-differential_introns_4d<-na.omit(tao_pdiff_introns_4d[tao_pdiff_introns_4d$Pdiff >= 0.90 & abs(tao_pdiff_introns_4d$deltapsi) >= 0.1,])
-differential_introns_4dvs2d<-na.omit(tao_pdiff_introns_4dvs2d[tao_pdiff_introns_4dvs2d$Pdiff >= 0.90 & abs(tao_pdiff_introns_4dvs2d$deltapsi) >= 0.1,])
-differential_introns_7dvs4d<-na.omit(tao_pdiff_introns_7dvs4d[tao_pdiff_introns_7dvs4d$Pdiff >= 0.90 & abs(tao_pdiff_introns_7dvs4d$deltapsi) >= 0.1,])
+differential_tao_introns_4d<-na.omit(tao_pdiff_introns_4d[tao_pdiff_introns_4d$FDR<=0.05 & abs(tao_pdiff_introns_4d$deltapsi)>=0.1,])
+differential_tao_introns_2d<-na.omit(tao_pdiff_introns_2d[tao_pdiff_introns_2d$FDR<=0.05 & abs(tao_pdiff_introns_2d$deltapsi)>=0.1,])
+differential_tao_introns_4d_2d<-na.omit(tao_pdiff_introns_4dvs2d[tao_pdiff_introns_4dvs2d$FDR<=0.05 & abs(tao_pdiff_introns_4dvs2d$deltapsi)>=0.1,])
 
-shared_introns<-differential_introns_4d$EVENT[differential_introns_4d$EVENT %in% differential_introns_2d$EVENT]
+
+
+shared_introns<-differential_tao_introns_4d$EVENT[differential_tao_introns_4d$EVENT %in% differential_tao_introns_2d$EVENT]
+
 # Volcano plot
 library(ggrepel)
 tao_pdiff_introns_4d<-na.omit(tao_pdiff_introns_4d)
@@ -1710,286 +1595,329 @@ tao_pdiff_introns_4d$Shared <- ifelse(tao_pdiff_introns_4d$EVENT %in% shared_int
 
 # Classify significance
 tao_pdiff_introns_4d$Significant <- ifelse(
-  tao_pdiff_introns_4d$Pdiff >= 0.90 & tao_pdiff_introns_4d$deltapsi >= 0.1, "Overrepresented",
+  tao_pdiff_introns_4d$FDR<=0.05 & tao_pdiff_introns_4d$deltapsi >= 0.1, "Overrepresented",
   ifelse(
-    tao_pdiff_introns_4d$Pdiff >= 0.90 & tao_pdiff_introns_4d$deltapsi <= -0.1, "Underrepresented",
+    tao_pdiff_introns_4d$FDR<=0.05 & tao_pdiff_introns_4d$deltapsi <= -0.1, "Underrepresented",
     "Not Significant"
   )
 )
 
 # Convert FDR to -log10 scale for y-axis
-tao_pdiff_introns_4d$negLogpvalue <- -log10(1 - tao_pdiff_introns_4d$Pdiff)
+tao_pdiff_introns_4d$negLogpvalue <- -log10(tao_pdiff_introns_4d$FDR)
 
+# Define your maximum displayed y-value (the cap)
+max_y <- 2
 
-# Updated volcano plot with improved fonts and axis styling
-volcano_plot <- ggplot(tao_pdiff_introns_4d, aes(x = deltapsi, y = negLogpvalue)) +
-  geom_point(aes(
-    color = ifelse(Shared == "Shared", "Shared", Significant),
-    alpha = ifelse(Shared == "Shared", "Shared", Significant),
-    size = ifelse(Shared == "Shared", "Shared", Significant)
-  )) +
+# Pre-process the data:
+#  - Create plot_y: if negLogpvalue is infinite (FDR == 0) or > max_y, use max_y.
+#  - Flag these points in is_capped.
+#  - For capped points only, create a new y-value (plot_y_jitter)
+#    that subtracts a small random offset so they don't completely overlap.
+set.seed(123)  # for reproducibility of the jitter
+tao_pdiff_introns_4d <- tao_pdiff_introns_4d %>%
+  mutate(
+    plot_y = ifelse(is.infinite(negLogpvalue) | negLogpvalue > max_y, max_y, negLogpvalue),
+    is_capped = (is.infinite(negLogpvalue) | negLogpvalue > max_y),
+    # Apply a small downward jitter (up to -0.1) only to capped points
+    plot_y_jitter = ifelse(is_capped, max_y - runif(n(), 0, 0.1), plot_y)
+  )
+
+# Build the volcano plot:
+volcano_plot <- ggplot(tao_pdiff_introns_4d, aes(x = deltapsi)) +
+  # Layer for non-capped points (displayed at their true y-values)
+  geom_point(data = filter(tao_pdiff_introns_4d, !is_capped),
+             aes(y = plot_y, 
+                 color = Significant, 
+                 alpha = Significant, 
+                 size = Significant)) +
+  # Layer for capped points: keep them as circles, but use jittered y-values
+  geom_point(data = filter(tao_pdiff_introns_4d, is_capped),
+             aes(y = plot_y_jitter, 
+                 color = Significant, 
+                 alpha = Significant, 
+                 size = Significant),
+             stroke = 0.5,
+             show.legend = FALSE) +  
+  # Define the color scales
   scale_color_manual(values = c(
-    "Shared" = "yellow",
     "Overrepresented" = "#E00E73",
     "Underrepresented" = "#3E2672",
     "Not Significant" = "gray"
   )) +
   scale_alpha_manual(values = c(
-    "Shared" = 1.0,  # Fully opaque for shared introns
     "Overrepresented" = 0.6,
     "Underrepresented" = 0.6,
     "Not Significant" = 0.3
   )) +
   scale_size_manual(values = c(
-    "Shared" = 3,  # Larger size for shared introns
-    "Overrepresented" = 2,
-    "Underrepresented" = 2,
-    "Not Significant" = 1
+    "Overrepresented" = 3,
+    "Underrepresented" = 3,
+    "Not Significant" = 2
   )) +
-  labs(
-    x = "Delta PSI",
-    y = expression(-log[10](1 - Pdiff)),
-    title = "(4 Days - 0 Days) Introns",
-    subtitle = "Shared events are highlighted in golden"
+  scale_x_continuous(
+    limits = c(-1, 1),
+    breaks = seq(-1, 1, by = 0.5)
   ) +
-  theme_minimal(base_size = 14, base_family = "sans") +  # Set base font
+  # Keep the y-axis fixed from 0 to max_y. Also, modify the top label to show "≥2"
+  scale_y_continuous(
+    limits = c(0, max_y),
+    expand = c(0, 0),
+    labels = function(x) ifelse(x == max_y, paste0("≥", max_y), x)
+  ) +
+  labs(
+    x = "Delta PSI (4days - 0days)",
+    y = expression(-log[10](FDR)),
+    title = "Volcano Plot of Myoblast Introns",
+    subtitle = "Significant events are highlighted"
+  ) +
+  theme_minimal(base_size = 14, base_family = "Arial") +  
   theme(
     plot.title = element_text(
       hjust = 0.5, size = 18, face = "bold", color = "black"
-    ),  # Centered and bold title
+    ),
     plot.subtitle = element_text(
       hjust = 0.5, size = 14, face = "italic", color = "gray30"
-    ),  # Italicized subtitle
-    axis.text = element_text(size = 12, color = "black"),  # Axis text styling
-    axis.title = element_text(size = 14, face = "bold", color = "black"),  # Axis title styling
-    legend.text = element_text(size = 12),  # Larger legend text
-    legend.title = element_blank(),  # Remove legend title
-    panel.grid.major = element_line(color = "gray90"),  # Subtle grid lines
-    panel.grid.minor = element_blank(),  # Remove minor grid lines
-    panel.border = element_rect(color = "black", fill = NA, size = 1)  # Add border to plot area
-  ) +
-  scale_y_continuous(expand = c(0, 0), limits = c(0, NA))  # Extend y-axis dynamically
+    ),
+    axis.text = element_text(size = 12, color = "black"),
+    axis.title = element_text(size = 14, face = "bold", color = "black"),
+    legend.text = element_text(size = 12),
+    legend.title = element_blank(),
+    panel.grid.major = element_line(color = "gray90"),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(color = "black")
+  )
 
-# Display the plot
+
+# Save as SVG with dimensions 606 x 396
+ggsave("volcano_introns_4d.svg", plot = volcano_plot, width = 606/72, height = 396/72, dpi = 72)
+
 volcano_plot
+
 ```
 
 
 ```{r tao fdr volcano 2 days int}
 
+# Volcano plot
+library(ggrepel)
 tao_pdiff_introns_2d<-na.omit(tao_pdiff_introns_2d)
 # Add a Shared column based on the shared_introns
 tao_pdiff_introns_2d$Shared <- ifelse(tao_pdiff_introns_2d$EVENT %in% shared_introns, "Shared", "Not Shared")
 
 # Classify significance
 tao_pdiff_introns_2d$Significant <- ifelse(
-  tao_pdiff_introns_2d$Pdiff >= 0.90 & tao_pdiff_introns_2d$deltapsi >= 0.1, "Overrepresented",
+  tao_pdiff_introns_2d$FDR<=0.05 & tao_pdiff_introns_2d$deltapsi >= 0.1, "Overrepresented",
   ifelse(
-    tao_pdiff_introns_2d$Pdiff >= 0.90 & tao_pdiff_introns_2d$deltapsi <= -0.1, "Underrepresented",
+    tao_pdiff_introns_2d$FDR<=0.05 & tao_pdiff_introns_2d$deltapsi <= -0.1, "Underrepresented",
     "Not Significant"
   )
 )
 
 # Convert FDR to -log10 scale for y-axis
-tao_pdiff_introns_2d$negLogpvalue <- -log10(1 - tao_pdiff_introns_2d$Pdiff)
+tao_pdiff_introns_2d$negLogpvalue <- -log10(tao_pdiff_introns_2d$FDR)
 
+# Define your maximum displayed y-value (the cap)
+max_y <- 2
 
-# Updated volcano plot with improved fonts and axis styling
-volcano_plot <- ggplot(tao_pdiff_introns_2d, aes(x = deltapsi, y = negLogpvalue)) +
-  geom_point(aes(
-    color = ifelse(Shared == "Shared", "Shared", Significant),
-    alpha = ifelse(Shared == "Shared", "Shared", Significant),
-    size = ifelse(Shared == "Shared", "Shared", Significant)
-  )) +
+# Pre-process the data:
+#  - Create plot_y: if negLogpvalue is infinite (FDR == 0) or > max_y, use max_y.
+#  - Flag these points in is_capped.
+#  - For capped points only, create a new y-value (plot_y_jitter)
+#    that subtracts a small random offset so they don't completely overlap.
+set.seed(123)  # for reproducibility of the jitter
+tao_pdiff_introns_2d <- tao_pdiff_introns_2d %>%
+  mutate(
+    plot_y = ifelse(is.infinite(negLogpvalue) | negLogpvalue > max_y, max_y, negLogpvalue),
+    is_capped = (is.infinite(negLogpvalue) | negLogpvalue > max_y),
+    # Apply a small downward jitter (up to -0.1) only to capped points
+    plot_y_jitter = ifelse(is_capped, max_y - runif(n(), 0, 0.1), plot_y)
+  )
+
+# Build the volcano plot:
+volcano_plot <- ggplot(tao_pdiff_introns_2d, aes(x = deltapsi)) +
+  # Layer for non-capped points (displayed at their true y-values)
+  geom_point(data = filter(tao_pdiff_introns_2d, !is_capped),
+             aes(y = plot_y, 
+                 color = Significant, 
+                 alpha = Significant, 
+                 size = Significant)) +
+  # Layer for capped points: keep them as circles, but use jittered y-values
+  geom_point(data = filter(tao_pdiff_introns_2d, is_capped),
+             aes(y = plot_y_jitter, 
+                 color = Significant, 
+                 alpha = Significant, 
+                 size = Significant),
+             stroke = 0.5,
+             show.legend = FALSE) +  
+  # Define the color scales
   scale_color_manual(values = c(
-    "Shared" = "yellow",
     "Overrepresented" = "#E00E73",
     "Underrepresented" = "#3E2672",
     "Not Significant" = "gray"
   )) +
   scale_alpha_manual(values = c(
-    "Shared" = 1.0,  # Fully opaque for shared introns
     "Overrepresented" = 0.6,
     "Underrepresented" = 0.6,
     "Not Significant" = 0.3
   )) +
   scale_size_manual(values = c(
-    "Shared" = 3,  # Larger size for shared introns
-    "Overrepresented" = 2,
-    "Underrepresented" = 2,
-    "Not Significant" = 1
+    "Overrepresented" = 3,
+    "Underrepresented" = 3,
+    "Not Significant" = 2
   )) +
-  labs(
-    x = "Delta PSI",
-    y = expression(-log[10](1 - Pdiff)),
-    title = "(2 Days - 0 Days) Introns",
-    subtitle = "Shared events are highlighted in golden"
+  scale_x_continuous(
+    limits = c(-1, 1),
+    breaks = seq(-1, 1, by = 0.5)
   ) +
-  theme_minimal(base_size = 14, base_family = "sans") +  # Set base font
+  # Keep the y-axis fixed from 0 to max_y. Also, modify the top label to show "≥2"
+  scale_y_continuous(
+    limits = c(0, max_y),
+    expand = c(0, 0),
+    labels = function(x) ifelse(x == max_y, paste0("≥", max_y), x)
+  ) +
+  labs(
+    x = "Delta PSI (2days - 0days)",
+    y = expression(-log[10](FDR)),
+    title = "Volcano Plot of Myoblast Introns",
+    subtitle = "Significant events are highlighted"
+  ) +
+  theme_minimal(base_size = 14, base_family = "Arial") +  
   theme(
     plot.title = element_text(
       hjust = 0.5, size = 18, face = "bold", color = "black"
-    ),  # Centered and bold title
+    ),
     plot.subtitle = element_text(
       hjust = 0.5, size = 14, face = "italic", color = "gray30"
-    ),  # Italicized subtitle
-    axis.text = element_text(size = 12, color = "black"),  # Axis text styling
-    axis.title = element_text(size = 14, face = "bold", color = "black"),  # Axis title styling
-    legend.text = element_text(size = 12),  # Larger legend text
-    legend.title = element_blank(),  # Remove legend title
-    panel.grid.major = element_line(color = "gray90"),  # Subtle grid lines
-    panel.grid.minor = element_blank(),  # Remove minor grid lines
-    panel.border = element_rect(color = "black", fill = NA, size = 1)  # Add border to plot area
-  ) +
-  scale_y_continuous(expand = c(0, 0), limits = c(0, NA))  # Extend y-axis dynamically
+    ),
+    axis.text = element_text(size = 12, color = "black"),
+    axis.title = element_text(size = 14, face = "bold", color = "black"),
+    legend.text = element_text(size = 12),
+    legend.title = element_blank(),
+    panel.grid.major = element_line(color = "gray90"),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(color = "black")
+  )
 
-# Display the plot
+
+# Save as SVG with dimensions 606 x 396
+ggsave("volcano_introns_2d.svg", plot = volcano_plot, width = 606/72, height = 396/72, dpi = 72)
+
 volcano_plot
+
 ```
 
 ```{r tao fdr volcano 4 to 2 days int}
 
+# Volcano plot
+library(ggrepel)
 tao_pdiff_introns_4dvs2d<-na.omit(tao_pdiff_introns_4dvs2d)
 # Add a Shared column based on the shared_introns
 tao_pdiff_introns_4dvs2d$Shared <- ifelse(tao_pdiff_introns_4dvs2d$EVENT %in% shared_introns, "Shared", "Not Shared")
 
 # Classify significance
 tao_pdiff_introns_4dvs2d$Significant <- ifelse(
-  tao_pdiff_introns_4dvs2d$Pdiff >= 0.90 & tao_pdiff_introns_4dvs2d$deltapsi >= 0.1, "Overrepresented",
+  tao_pdiff_introns_4dvs2d$FDR<=0.05 & tao_pdiff_introns_4dvs2d$deltapsi >= 0.1, "Overrepresented",
   ifelse(
-    tao_pdiff_introns_4dvs2d$Pdiff >= 0.90 & tao_pdiff_introns_4dvs2d$deltapsi <= -0.1, "Underrepresented",
+    tao_pdiff_introns_4dvs2d$FDR<=0.05 & tao_pdiff_introns_4dvs2d$deltapsi <= -0.1, "Underrepresented",
     "Not Significant"
   )
 )
 
 # Convert FDR to -log10 scale for y-axis
-tao_pdiff_introns_4dvs2d$negLogpvalue <- -log10(1 - tao_pdiff_introns_4dvs2d$Pdiff)
+tao_pdiff_introns_4dvs2d$negLogpvalue <- -log10(tao_pdiff_introns_4dvs2d$FDR)
 
+# Define your maximum displayed y-value (the cap)
+max_y <- 2
 
-# Updated volcano plot with improved fonts and axis styling
-volcano_plot <- ggplot(tao_pdiff_introns_4dvs2d, aes(x = deltapsi, y = negLogpvalue)) +
-  geom_point(aes(
-    color = ifelse(Shared == "Shared", "Shared", Significant),
-    alpha = ifelse(Shared == "Shared", "Shared", Significant),
-    size = ifelse(Shared == "Shared", "Shared", Significant)
-  )) +
-  scale_color_manual(values = c(
-    "Shared" = "yellow",
-    "Overrepresented" = "#E00E73",
-    "Underrepresented" = "#3E2672",
-    "Not Significant" = "gray"
-  )) +
-  scale_alpha_manual(values = c(
-    "Shared" = 1.0,  # Fully opaque for shared introns
-    "Overrepresented" = 0.6,
-    "Underrepresented" = 0.6,
-    "Not Significant" = 0.3
-  )) +
-  scale_size_manual(values = c(
-    "Shared" = 3,  # Larger size for shared introns
-    "Overrepresented" = 2,
-    "Underrepresented" = 2,
-    "Not Significant" = 1
-  )) +
-  labs(
-    x = "Delta PSI",
-    y = expression(-log[10](1 - Pdiff)),
-    title = "(4 Days - 2 Days) Introns",
-    subtitle = "Shared events are highlighted in golden"
-  ) +
-  theme_minimal(base_size = 14, base_family = "sans") +  # Set base font
-  theme(
-    plot.title = element_text(
-      hjust = 0.5, size = 18, face = "bold", color = "black"
-    ),  # Centered and bold title
-    plot.subtitle = element_text(
-      hjust = 0.5, size = 14, face = "italic", color = "gray30"
-    ),  # Italicized subtitle
-    axis.text = element_text(size = 12, color = "black"),  # Axis text styling
-    axis.title = element_text(size = 14, face = "bold", color = "black"),  # Axis title styling
-    legend.text = element_text(size = 12),  # Larger legend text
-    legend.title = element_blank(),  # Remove legend title
-    panel.grid.major = element_line(color = "gray90"),  # Subtle grid lines
-    panel.grid.minor = element_blank(),  # Remove minor grid lines
-    panel.border = element_rect(color = "black", fill = NA, size = 1)  # Add border to plot area
-  ) +
-  scale_y_continuous(expand = c(0, 0), limits = c(0, NA))  # Extend y-axis dynamically
-
-# Display the plot
-volcano_plot
-```
-
-```{r tao fdr volcano 7 to 4 days}
-
-tao_pdiff_introns_7dvs4d<-na.omit(tao_pdiff_introns_7dvs4d)
-# Add a Shared column based on the shared_introns
-tao_pdiff_introns_7dvs4d$Shared <- ifelse(tao_pdiff_introns_7dvs4d$EVENT %in% shared_introns, "Shared", "Not Shared")
-
-# Classify significance
-tao_pdiff_introns_7dvs4d$Significant <- ifelse(
-  tao_pdiff_introns_7dvs4d$Pdiff >= 0.90 & tao_pdiff_introns_7dvs4d$deltapsi >= 0.1, "Overrepresented",
-  ifelse(
-    tao_pdiff_introns_7dvs4d$Pdiff >= 0.90 & tao_pdiff_introns_7dvs4d$deltapsi <= -0.1, "Underrepresented",
-    "Not Significant"
+# Pre-process the data:
+#  - Create plot_y: if negLogpvalue is infinite (FDR == 0) or > max_y, use max_y.
+#  - Flag these points in is_capped.
+#  - For capped points only, create a new y-value (plot_y_jitter)
+#    that subtracts a small random offset so they don't completely overlap.
+set.seed(123)  # for reproducibility of the jitter
+tao_pdiff_introns_4dvs2d <- tao_pdiff_introns_4dvs2d %>%
+  mutate(
+    plot_y = ifelse(is.infinite(negLogpvalue) | negLogpvalue > max_y, max_y, negLogpvalue),
+    is_capped = (is.infinite(negLogpvalue) | negLogpvalue > max_y),
+    # Apply a small downward jitter (up to -0.1) only to capped points
+    plot_y_jitter = ifelse(is_capped, max_y - runif(n(), 0, 0.1), plot_y)
   )
-)
 
-# Convert FDR to -log10 scale for y-axis
-tao_pdiff_introns_7dvs4d$negLogpvalue <- -log10(1 - tao_pdiff_introns_7dvs4d$Pdiff)
-
-
-# Updated volcano plot with improved fonts and axis styling
-volcano_plot <- ggplot(tao_pdiff_introns_7dvs4d, aes(x = deltapsi, y = negLogpvalue)) +
-  geom_point(aes(
-    color = ifelse(Shared == "Shared", "Shared", Significant),
-    alpha = ifelse(Shared == "Shared", "Shared", Significant),
-    size = ifelse(Shared == "Shared", "Shared", Significant)
-  )) +
+# Build the volcano plot:
+volcano_plot <- ggplot(tao_pdiff_introns_4dvs2d, aes(x = deltapsi)) +
+  # Layer for non-capped points (displayed at their true y-values)
+  geom_point(data = filter(tao_pdiff_introns_4dvs2d, !is_capped),
+             aes(y = plot_y, 
+                 color = Significant, 
+                 alpha = Significant, 
+                 size = Significant)) +
+  # Layer for capped points: keep them as circles, but use jittered y-values
+  geom_point(data = filter(tao_pdiff_introns_4dvs2d, is_capped),
+             aes(y = plot_y_jitter, 
+                 color = Significant, 
+                 alpha = Significant, 
+                 size = Significant),
+             stroke = 0.5,
+             show.legend = FALSE) +  
+  # Define the color scales
   scale_color_manual(values = c(
-    "Shared" = "yellow",
     "Overrepresented" = "#E00E73",
     "Underrepresented" = "#3E2672",
     "Not Significant" = "gray"
   )) +
   scale_alpha_manual(values = c(
-    "Shared" = 1.0,  # Fully opaque for shared introns
     "Overrepresented" = 0.6,
     "Underrepresented" = 0.6,
     "Not Significant" = 0.3
   )) +
   scale_size_manual(values = c(
-    "Shared" = 3,  # Larger size for shared introns
-    "Overrepresented" = 2,
-    "Underrepresented" = 2,
-    "Not Significant" = 1
+    "Overrepresented" = 3,
+    "Underrepresented" = 3,
+    "Not Significant" = 2
   )) +
-  labs(
-    x = "Delta PSI",
-    y = expression(-log[10](1 - Pdiff)),
-    title = "(7 Days - 4 Days) Introns",
-    subtitle = "Shared events are highlighted in golden"
+  scale_x_continuous(
+    limits = c(-1, 1),
+    breaks = seq(-1, 1, by = 0.5)
   ) +
-  theme_minimal(base_size = 14, base_family = "sans") +  # Set base font
+  # Keep the y-axis fixed from 0 to max_y. Also, modify the top label to show "≥2"
+  scale_y_continuous(
+    limits = c(0, max_y),
+    expand = c(0, 0),
+    labels = function(x) ifelse(x == max_y, paste0("≥", max_y), x)
+  ) +
+  labs(
+    x = "Delta PSI (4days - 2days)",
+    y = expression(-log[10](FDR)),
+    title = "Volcano Plot of Myoblast Introns",
+    subtitle = "Significant events are highlighted"
+  ) +
+  theme_minimal(base_size = 14, base_family = "Arial") +  
   theme(
     plot.title = element_text(
       hjust = 0.5, size = 18, face = "bold", color = "black"
-    ),  # Centered and bold title
+    ),
     plot.subtitle = element_text(
       hjust = 0.5, size = 14, face = "italic", color = "gray30"
-    ),  # Italicized subtitle
-    axis.text = element_text(size = 12, color = "black"),  # Axis text styling
-    axis.title = element_text(size = 14, face = "bold", color = "black"),  # Axis title styling
-    legend.text = element_text(size = 12),  # Larger legend text
-    legend.title = element_blank(),  # Remove legend title
-    panel.grid.major = element_line(color = "gray90"),  # Subtle grid lines
-    panel.grid.minor = element_blank(),  # Remove minor grid lines
-    panel.border = element_rect(color = "black", fill = NA, size = 1)  # Add border to plot area
-  ) +
-  scale_y_continuous(expand = c(0, 0), limits = c(0, NA))  # Extend y-axis dynamically
+    ),
+    axis.text = element_text(size = 12, color = "black"),
+    axis.title = element_text(size = 14, face = "bold", color = "black"),
+    legend.text = element_text(size = 12),
+    legend.title = element_blank(),
+    panel.grid.major = element_line(color = "gray90"),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(color = "black")
+  )
 
-# Display the plot
+
+# Save as SVG with dimensions 606 x 396
+ggsave("volcano_introns_4dvs2d.svg", plot = volcano_plot, width = 606/72, height = 396/72, dpi = 72)
+
 volcano_plot
 ```
+
 
 ### Individual Combination Tables { .tabset}
 
@@ -2051,56 +1979,7 @@ datatable(
 ```
 
 
-# PSI Distribution Plots { .tabset}
 
-These plots aim to explore any enrichment of either (intron/exon) retention or (intron/exon) exclusion. Symmetric plots show that inclusion and retention are equally common between conditions. Only showing events with |dPSI|>=0.1 for higher clarity. Transparency shows different studies.
-
-```{r splicing distribution plot, fig.width=10}
-
-# List of dataframes with metadata
-dfs <- list(
-  list(df = differential_exons_4d, group = "Exons", study = "Tao"),
-  list(df = differential_introns_4d, group = "Introns", study = "Tao")
-)
-
-# Add metadata columns to each dataframe beforehand
-dfs_with_metadata <- lapply(dfs, function(x) {
-  x$df %>%
-    mutate(Group = x$group, Study = x$study)
-})
-
-# Combine all dataframes into one using bind_rows() for faster merging
-final_df <- bind_rows(dfs_with_metadata) %>%
-  dplyr::select(EVENT, Group, Study, deltapsi) %>%
-  dplyr::filter(abs(deltapsi)>=0.1) %>%
-  na.omit()# Adjust this line if other columns should be prioritized
-
-
-plot_psi_distribution <- ggplot(final_df, aes(y=..density..,x = deltapsi, fill = ifelse(deltapsi < 0, "Skipped", "Included"))) +
-  geom_histogram( bins = 50, position = "identity") +
-  labs(
-    title = "PSI Distribution",
-    x = "ΔPSI (Myotubes-Myoblasts)",
-    y = "Density",
-    fill = "|ΔPSI| >= 0.1",
-    caption = paste0("Created by AG on ", Sys.Date())
-  ) +
-  theme_minimal(base_family = font) +
-  theme(
-    legend.position = "right",
-    axis.title.x = element_text(margin = margin(t = 10)),
-    axis.text.x = element_text(size = 15),
-    panel.background = element_rect(fill = "white"),
-    panel.grid.major = element_line(color = "gray80", size = 0.5),
-    panel.grid.minor = element_line(color = "gray95", size = 0.3),
-    strip.text = element_text(size = 14, face = "bold"),
-    panel.spacing = unit(1.5, "lines")  # Increase the distance between facets
-  ) +
-  scale_fill_brewer(palette = "Set1") +
-  facet_wrap(~Group)
-
-plot_psi_distribution
-```
 
 
 ```{r loading data from vastdb}
@@ -2108,6 +1987,135 @@ events_info<-read.table("EVENT_INFO-mm10.tab", header = TRUE, sep = "\t")
 splice_scores<-read.table("SPLICE_SITE_SCORES-mm10.tab", header = FALSE, sep = "\t")
 ```
 
+# Basic Stats on Found Events
+
+## Events-level stats
+
+```{r basic stats, fig.width=12, fig.height=6}
+
+# Define study-specific data
+myo_exons_4 <- data.frame(EVENT = differential_tao_exons_4d$EVENT, Type = "Exons", Comparison = "4d vs 0 d")
+myo_exons_2 <- data.frame(EVENT = differential_tao_exons_2d$EVENT, Type = "Exons", Comparison = "2d vs 0d")
+myo_exons_4vs2 <- data.frame(EVENT = differential_tao_exons_4d_2d$EVENT, Type = "Exons", Comparison = "4d vs 2d")
+
+myo_introns_4 <- data.frame(EVENT = differential_tao_introns_4d$EVENT, Type = "Introns", Comparison = "4d vs 0 d")
+myo_introns_2 <- data.frame(EVENT = differential_tao_introns_2d$EVENT, Type = "Introns", Comparison = "2d vs 0d")
+myo_introns_4vs2 <- data.frame(EVENT = differential_tao_introns_4d_2d$EVENT, Type = "Introns", Comparison = "4d vs 2d")
+
+
+
+
+
+# Combine all events into one dataframe
+all_events <- bind_rows(myo_exons_4, myo_exons_2, myo_exons_4vs2, myo_introns_4, myo_introns_2, myo_introns_4vs2)
+
+# Determine the number of studies each event appears in
+event_counts <- all_events %>%
+  group_by(EVENT, Type) %>%
+  summarize(Appearance_Count = n(), .groups = "drop") %>%
+  mutate(Appearance = case_when(
+    Appearance_Count == 3 ~ "All Three Studies",
+    Appearance_Count == 2 ~ "Two Studies",
+    TRUE ~ "Single Study"
+  ))
+
+# Merge back to the original dataset
+all_events <- all_events %>%
+  left_join(event_counts, by = c("EVENT", "Type"))
+
+# Create the bar plot
+p <- ggplot(all_events, aes(x = Comparison, fill = Appearance)) +
+  geom_bar(position = "stack") +
+  facet_wrap(~Type) +
+  theme_minimal(base_size = 16, base_family = "sans") +
+  scale_fill_manual(values = c(
+    "All Three Studies" = "#117733",
+    "Two Studies" = "#4E79A7",
+    "Single Study" = "#F28E2B"
+  )) +  # Nicer colors
+  labs(
+    title = "Comparison of Differentially Spliced Events Myoblast Differentiation",
+    x = "Study",
+    y = "Count of Events",
+    fill = "Event Presence"
+  ) +
+  theme(
+    legend.position = "top",
+    strip.text = element_text(size = 18, face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12, face = "bold"),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    axis.line = element_line(color = "black")
+  )
+
+# Save the plot
+ggsave("stats_events_tao.svg", p, width = 12, height = 6, units = "in", dpi = 300)
+
+# Display the plot
+print(p)
+
+
+```
+
+## Gene-level stats
+
+```{r, basic gene stats, fig.width=12, fig.height=8}
+# Define study-specific data
+myo_genes_4 <- data.frame(GENE = unique(c(differential_tao_exons_4d$GENE, differential_tao_introns_4d$GENE)), Study = "4d vs 0d")
+myo_genes_2 <- data.frame(GENE = unique(c(differential_tao_exons_2d$GENE, differential_tao_introns_2d$GENE)), Study = "2d vs 0d")
+myo_genes_4vs2 <- data.frame(GENE = unique(c(differential_tao_exons_4d_2d$GENE, differential_tao_introns_4d_2d$GENE)), Study = "4d vs 2d")
+
+# Combine all genes into one dataframe
+all_genes <- bind_rows(myo_genes_4, myo_genes_2, myo_genes_4vs2)
+
+# Determine the number of studies each gene appears in
+gene_counts <- all_genes %>%
+  group_by(GENE) %>%
+  summarize(Appearance_Count = n(), .groups = "drop") %>%
+  mutate(Appearance = case_when(
+    Appearance_Count == 3 ~ "All Three Studies",
+    Appearance_Count == 2 ~ "Two Studies",
+    TRUE ~ "Single Study"
+  ))
+
+# Merge back to the original dataset
+all_genes <- all_genes %>%
+  left_join(gene_counts, by = "GENE")
+
+# Create the bar plot
+p <- ggplot(all_genes, aes(x = Study, fill = Appearance)) +
+  geom_bar(position = "stack") +
+  theme_minimal(base_size = 16, base_family = "sans") +
+  scale_fill_manual(values = c(
+    "All Three Studies" = "#117733",
+    "Two Studies" = "#4E79A7",
+    "Single Study" = "#F28E2B"
+  )) +  # Improved color scheme
+  labs(
+    title = "Comparison of Differentially Spliced Genes in Myoblast Differentiation",
+    x = "Study",
+    y = "Count of Genes",
+    fill = "Gene Presence"
+  ) +
+  theme(
+    legend.position = "top",
+    strip.text = element_text(size = 18, face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12, face = "bold"),
+    panel.grid = element_blank(),  
+    panel.background = element_blank(),  
+    axis.line = element_line(color = "black")  
+  )
+
+# Save the plot
+ggsave("stats_genes_tao.svg", p, width = 12, height = 8, units = "in", dpi = 300)
+
+# Display the plot
+print(p)
+
+
+```
 
 
 # Sorting Out according to features
@@ -2151,9 +2159,9 @@ extract_V3_for_event <- function(event_value, splice_scores) {
 
 ```{r final list features extraction}
 # Exon List features
-differential_exons_4d$sequence<-events_info$Seq_A[match(differential_exons_4d$EVENT, events_info$EVENT)]
+differential_tao_exons_4d$sequence<-events_info$Seq_A[match(differential_tao_exons_4d$EVENT, events_info$EVENT)]
 
-differential_exons_4d$splice_scores <- apply(differential_exons_4d, 1, function(row) {
+differential_tao_exons_4d$splice_scores <- apply(differential_tao_exons_4d, 1, function(row) {
   # Get the event value from the current row
   event_value <- row["EVENT"]
 
@@ -2162,22 +2170,22 @@ differential_exons_4d$splice_scores <- apply(differential_exons_4d, 1, function(
 })
 
 # Unnest the list in V3_values into two separate columns
-differential_exons_4d <- differential_exons_4d %>%
+differential_tao_exons_4d <- differential_tao_exons_4d %>%
   unnest(cols = splice_scores) %>%
   separate(splice_scores, into = c("splice_score_3", "splice_score_5"), sep = ",")
 
 # If necessary, clean up the new columns
-differential_exons_4d$splice_score_3 <- gsub("[c()]", "", differential_exons_4d$splice_score_3)
-differential_exons_4d$splice_score_5 <- gsub("[c()]", "", differential_exons_4d$splice_score_5)
-differential_exons_4d$splice_score_3 <- as.numeric(differential_exons_4d$splice_score_3)
-differential_exons_4d$splice_score_5 <- as.numeric(differential_exons_4d$splice_score_5)
+differential_tao_exons_4d$splice_score_3 <- gsub("[c()]", "", differential_tao_exons_4d$splice_score_3)
+differential_tao_exons_4d$splice_score_5 <- gsub("[c()]", "", differential_tao_exons_4d$splice_score_5)
+differential_tao_exons_4d$splice_score_3 <- as.numeric(differential_tao_exons_4d$splice_score_3)
+differential_tao_exons_4d$splice_score_5 <- as.numeric(differential_tao_exons_4d$splice_score_5)
 
-differential_exons_4d<-calculate_GC_percent(differential_exons_4d,"sequence")
+differential_tao_exons_4d<-calculate_GC_percent(differential_tao_exons_4d,"sequence")
 
 # Intron List features
-differential_introns_4d$sequence<-events_info$Seq_A[match(differential_introns_4d$EVENT, events_info$EVENT)]
+differential_tao_introns_4d$sequence<-events_info$Seq_A[match(differential_tao_introns_4d$EVENT, events_info$EVENT)]
 
-differential_introns_4d$splice_scores <- apply(differential_introns_4d, 1, function(row) {
+differential_tao_introns_4d$splice_scores <- apply(differential_tao_introns_4d, 1, function(row) {
   # Get the event value from the current row
   event_value <- row["EVENT"]
 
@@ -2186,17 +2194,17 @@ differential_introns_4d$splice_scores <- apply(differential_introns_4d, 1, funct
 })
 
 # Unnest the list in V3_values into two separate columns
-differential_introns_4d <- differential_introns_4d %>%
+differential_tao_introns_4d <- differential_tao_introns_4d %>%
   unnest(cols = splice_scores) %>%
   separate(splice_scores, into = c("splice_score_3", "splice_score_5"), sep = ",")
 
 # If necessary, clean up the new columns
-differential_introns_4d$splice_score_3 <- gsub("[c()]", "", differential_introns_4d$splice_score_3)
-differential_introns_4d$splice_score_5 <- gsub("[c()]", "", differential_introns_4d$splice_score_5)
-differential_introns_4d$splice_score_3 <- as.numeric(differential_introns_4d$splice_score_3)
-differential_introns_4d$splice_score_5 <- as.numeric(differential_introns_4d$splice_score_5)
+differential_tao_introns_4d$splice_score_3 <- gsub("[c()]", "", differential_tao_introns_4d$splice_score_3)
+differential_tao_introns_4d$splice_score_5 <- gsub("[c()]", "", differential_tao_introns_4d$splice_score_5)
+differential_tao_introns_4d$splice_score_3 <- as.numeric(differential_tao_introns_4d$splice_score_3)
+differential_tao_introns_4d$splice_score_5 <- as.numeric(differential_tao_introns_4d$splice_score_5)
 
-differential_introns_4d<-calculate_GC_percent(differential_introns_4d,"sequence")
+differential_tao_introns_4d<-calculate_GC_percent(differential_tao_introns_4d,"sequence")
 
 ```
 
@@ -2207,7 +2215,7 @@ differential_introns_4d<-calculate_GC_percent(differential_introns_4d,"sequence"
 
 
 ```{r pladb enrichr}
-enrichdata<-enrichr(unique(c(differential_exons_4d$GENE,differential_introns_4d$GENE)), databases = c("GO_Biological_Process_2023","GO_Cellular_Component_2023","GO_Molecular_Function_2023"))
+enrichdata<-enrichr(unique(c(differential_tao_exons_4d$GENE,differential_tao_introns_4d$GENE)), databases = c("GO_Biological_Process_2023","GO_Cellular_Component_2023","GO_Molecular_Function_2023"))
 
 ```
 
@@ -2232,14 +2240,14 @@ plotEnrich(enrichdata[[3]])
 
 
 ```{r ENTREZ}
-exon_go <- bitr(differential_exons_4d$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+exon_go <- bitr(differential_tao_exons_4d$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
 names(exon_go)<-c("GENE","ENTREZID")
-differential_exons_4d <- differential_exons_4d %>%
+differential_tao_exons_4d <- differential_tao_exons_4d %>%
   left_join(as.data.frame(exon_go), by = "GENE")
 
-intron_go <- bitr(differential_introns_4d$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
+intron_go <- bitr(differential_tao_introns_4d$GENE, fromType = "ALIAS", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
 names(intron_go)<-c("GENE","ENTREZID")
-differential_introns_4d <- differential_introns_4d %>%
+differential_tao_introns_4d <- differential_tao_introns_4d %>%
   left_join(as.data.frame(intron_go), by = "GENE")
 
 
@@ -2284,18 +2292,18 @@ groupB_genelist_mouse <- bitr(groupB_genelist_mouse, fromType = "ENSEMBL", toTyp
 groupC_genelist_mouse <- bitr(groupC_genelist_mouse, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb = org.Mm.eg.db)
 
 # Exon list analysis
-differential_exons_4d$GroupA <- ifelse(differential_exons_4d$ENTREZID %in% groupA_genelist_mouse$ENTREZID, TRUE, FALSE)
+differential_tao_exons_4d$GroupA <- ifelse(differential_tao_exons_4d$ENTREZID %in% groupA_genelist_mouse$ENTREZID, TRUE, FALSE)
 
-differential_exons_4d$GroupB <- ifelse(differential_exons_4d$ENTREZID %in% groupB_genelist_mouse$ENTREZID, TRUE, FALSE)
+differential_tao_exons_4d$GroupB <- ifelse(differential_tao_exons_4d$ENTREZID %in% groupB_genelist_mouse$ENTREZID, TRUE, FALSE)
 
-differential_exons_4d$GroupC <- ifelse(differential_exons_4d$ENTREZID %in% groupC_genelist_mouse$ENTREZID, TRUE, FALSE)
+differential_tao_exons_4d$GroupC <- ifelse(differential_tao_exons_4d$ENTREZID %in% groupC_genelist_mouse$ENTREZID, TRUE, FALSE)
 
 # Intron list analysis
-differential_introns_4d$GroupA <- ifelse(differential_introns_4d$ENTREZID %in% groupA_genelist_mouse$ENTREZID, TRUE, FALSE)
+differential_tao_introns_4d$GroupA <- ifelse(differential_tao_introns_4d$ENTREZID %in% groupA_genelist_mouse$ENTREZID, TRUE, FALSE)
 
-differential_introns_4d$GroupB <- ifelse(differential_introns_4d$ENTREZID %in% groupB_genelist_mouse$ENTREZID, TRUE, FALSE)
+differential_tao_introns_4d$GroupB <- ifelse(differential_tao_introns_4d$ENTREZID %in% groupB_genelist_mouse$ENTREZID, TRUE, FALSE)
 
-differential_introns_4d$GroupC <- ifelse(differential_introns_4d$ENTREZID %in% groupC_genelist_mouse$ENTREZID, TRUE, FALSE)
+differential_tao_introns_4d$GroupC <- ifelse(differential_tao_introns_4d$ENTREZID %in% groupC_genelist_mouse$ENTREZID, TRUE, FALSE)
 
 
 
@@ -2304,19 +2312,19 @@ differential_introns_4d$GroupC <- ifelse(differential_introns_4d$ENTREZID %in% g
 
 splice_factors<-read_xlsx("SFs_list_ensembl_ID.xlsx")
 
-differential_exons_4d$splicing_factor<-tolower(differential_exons_4d$GENE) %in% tolower(splice_factors$symbol)
-differential_introns_4d$splicing_factor<-tolower(differential_introns_4d$GENE) %in% tolower(splice_factors$symbol)
+differential_tao_exons_4d$splicing_factor<-tolower(differential_tao_exons_4d$GENE) %in% tolower(splice_factors$symbol)
+differential_tao_introns_4d$splicing_factor<-tolower(differential_tao_introns_4d$GENE) %in% tolower(splice_factors$symbol)
 
 speckle_protein<-read_tsv("nuclear_speckles_protein_human_atlas.tsv")
 
-differential_exons_4d$HPA_speckle_protein<-tolower(differential_exons_4d$GENE) %in% tolower(speckle_protein$Gene)
-differential_introns_4d$HPA_speckle_protein<-tolower(differential_introns_4d$GENE) %in% tolower(speckle_protein$Gene)
+differential_tao_exons_4d$HPA_speckle_protein<-tolower(differential_tao_exons_4d$GENE) %in% tolower(speckle_protein$Gene)
+differential_tao_introns_4d$HPA_speckle_protein<-tolower(differential_tao_introns_4d$GENE) %in% tolower(speckle_protein$Gene)
 
 mouse_tf <- read_excel("mouse_tf.xlsx", 
     sheet = "TFs_Mouse")
 
-differential_exons_4d$transcription_factor<-tolower(differential_exons_4d$GENE) %in% tolower(mouse_tf$`Gene Symbol`)
-differential_introns_4d$transcription_factor<-tolower(differential_introns_4d$GENE) %in% tolower(mouse_tf$`Gene Symbol`)
+differential_tao_exons_4d$transcription_factor<-tolower(differential_tao_exons_4d$GENE) %in% tolower(mouse_tf$`Gene Symbol`)
+differential_tao_introns_4d$transcription_factor<-tolower(differential_tao_introns_4d$GENE) %in% tolower(mouse_tf$`Gene Symbol`)
 
 
 speckle_introns_go <- enrichdata$GO_Biological_Process_2023[
@@ -2325,8 +2333,8 @@ speckle_introns_go <- enrichdata$GO_Biological_Process_2023[
 
 # Extract and split the genes into a single vector
 speckle_introns_go_genes <- unique(unlist(strsplit(speckle_introns_go$Genes, ";")))
-differential_exons_4d$intron_speckle_go<-tolower(differential_exons_4d$GENE) %in% tolower(speckle_introns_go_genes)
-differential_introns_4d$intron_speckle_go<-tolower(differential_introns_4d$GENE) %in% tolower(speckle_introns_go_genes)
+differential_tao_exons_4d$intron_speckle_go<-tolower(differential_tao_exons_4d$GENE) %in% tolower(speckle_introns_go_genes)
+differential_tao_introns_4d$intron_speckle_go<-tolower(differential_tao_introns_4d$GENE) %in% tolower(speckle_introns_go_genes)
 
 
 ```
@@ -2335,12 +2343,12 @@ differential_introns_4d$intron_speckle_go<-tolower(differential_introns_4d$GENE)
 # Rbfox2 Splicing Analysis
 
 ```{r final arrange exons}
-differential_exons_4d <- differential_exons_4d[!duplicated(differential_exons_4d$EVENT), ] %>%
+differential_tao_exons_4d <- differential_tao_exons_4d[!duplicated(differential_tao_exons_4d$EVENT), ] %>%
   arrange(desc(GroupB),desc(intron_speckle_go),desc(abs(deltapsi)),GroupC)
 
 
-event_list_corr<-c(differential_exons_4d$splicing_factor,differential_introns_4d$splicing_factor)
-correlation_matrix<-rbind(differential_exons_4d[,-c(3:6,19:34)],differential_introns_4d[,-c(3:6,19:34)])
+event_list_corr<-c(differential_tao_exons_4d$splicing_factor,differential_tao_introns_4d$splicing_factor)
+correlation_matrix<-rbind(differential_tao_exons_4d[,-c(3:6,19:34)],differential_tao_introns_4d[,-c(3:6,19:34)])
 
 
 
@@ -2408,7 +2416,7 @@ corr_plot<-ggplot(significant_results, aes(x = Gene1, y = Gene2, fill = Correlat
     axis.text.y = element_text(size = 0)
   ) 
 
-corr_plot
+
 
 
 # Assign numeric indices to non-splicing factor genes
@@ -2421,6 +2429,8 @@ plot_data <- significant_results %>%
   group_by(Gene1) %>%
   arrange(Index) %>%
   mutate(Cumulative_Count = row_number())
+
+rbfox_genes<-unique(plot_data$Gene2[plot_data$Gene1=="Rbfox2"])
 
 # Generate a sufficient number of colors
 num_genes <- length(unique(plot_data$Gene1))
@@ -2454,72 +2464,8 @@ corr_plot <- ggplot(plot_data, aes(x = Index, y = Cumulative_Count, group = Gene
 print(corr_plot)
 ```
 
-```{r rbfox characteristics gc}
-rbfox_genes<-significant_results$Gene2[significant_results$Gene1 =="Rbfox2"]
-all_events_4d<-rbind(differential_exons_4d,differential_introns_4d)
 
 
-
-
-
-# Separate non-Rbfox events
-non_rbfox_introns <-  differential_introns_4d %>%
-  filter(!GENE %in% c("Rbfox2",rbfox_genes)) %>% 
-  mutate(Group = "Non-Rbfox")
-
-# Combine data for plotting
-rbfox_introns <- differential_introns_4d %>%
-  filter(GENE %in% c("Rbfox2",rbfox_genes)) %>% 
-  mutate(Group = "Rbfox")
-
-combined_data <- rbind(rbfox_introns, non_rbfox_introns)
-
-rbfox_introns_filtered<-filter(combined_data, LENGTH<=7000, deltapsi>0)
-# Perform ANOVA
-anova_result <- aov(GC_percent ~ intron_speckle_go, data = differential_introns_4d)
-
-# Extract the p-value from the ANOVA summary
-anova_summary <- summary(anova_result)
-p_value <- anova_summary[[1]]["Pr(>F)"][[1]][1]
-
-# Create the boxplot with the p-value
-library(ggplot2)
-
-ggplot(differential_introns_4d, aes(x = intron_speckle_go, y = GC_percent, fill = intron_speckle_go)) +
-  geom_boxplot() +
-  labs(
-    title = "GC Content Comparison",
-    subtitle = paste("ANOVA p-value:", signif(p_value, digits = 3)),
-    x = "Group",
-    y = "GC Content (%)"
-  ) +
-  theme_minimal() +
-  scale_fill_manual(values = c("Rbfox" = "blue", "Non-Rbfox" = "gray"))
-
-```
-
-```{r anova length}
-# Perform ANOVA
-anova_result <- aov(LENGTH ~ intron_speckle_go, data = differential_introns_4d)
-
-# Extract the p-value from the ANOVA summary
-anova_summary <- summary(anova_result)
-p_value <- anova_summary[[1]]["Pr(>F)"][[1]][1]
-
-# Create the boxplot with the p-value
-library(ggplot2)
-
-ggplot(differential_introns_4d, aes(x = intron_speckle_go, y = LENGTH, fill = intron_speckle_go)) +
-  geom_boxplot() +
-  labs(
-    title = "Intron Length Comparison",
-    subtitle = paste("ANOVA p-value:", signif(p_value, digits = 3)),
-    x = "Group",
-    y = "Length"
-  ) +
-  theme_minimal() +
-  scale_fill_manual(values = c("Rbfox" = "blue", "Non-Rbfox" = "gray"))
-```
 
 ```{r plot splicing factors correlation}
 # Subset the rows based on the selected events
@@ -2576,205 +2522,6 @@ tmp<-read_tsv("results/clust_results_tao_exons/Clusters_Objects.tsv")[-1,]
 
 ```
 
-
-
-```{r final arrange introns}
-differential_introns_4d <- differential_introns_4d[!duplicated(differential_introns_4d$EVENT), ] %>%
-  arrange(desc(GroupB),desc(intron_speckle_go),desc(abs(deltapsi)),GroupC)
-
-event_list_corr<-c("MmuEX0039032","MmuEX0039029","MmuEX0039030","MmuEX0039092")
-correlation_matrix_exons<-differential_introns_4d[,-c(3:6,19:34)]
-
-correlation_matrix_exons<-correlation_matrix_exons[, c(colnames(correlation_matrix_exons)[1:2], metadata_tao$run_accession)]
-subset_genes <- correlation_matrix_exons[correlation_matrix_exons$EVENT %in% differential_introns_4d$EVENT[differential_introns_4d$splicing_factor], ]
-rest_genes <- correlation_matrix_exons[!correlation_matrix_exons$EVENT %in% differential_introns_4d$EVENT[differential_introns_4d$splicing_factor], ]
-subset_matrix <- as.matrix(subset_genes[, 3:14])
-rest_matrix <- as.matrix(rest_genes[, 3:14])
-
-
-results <- data.frame(
-  Gene1 = character(),
-  Gene2 = character(),
-  Correlation = numeric(),
-  P_value = numeric(),
-  Adjusted_P_value = numeric(),
-  stringsAsFactors = FALSE
-)
-
-# Compute correlations and p-values
-all_p_values <- c()
-for (i in 1:nrow(subset_matrix)) {
-  for (j in 1:nrow(rest_matrix)) {
-    # Perform correlation test
-    test <- cor.test(subset_matrix[i, ], rest_matrix[j, ], method = "pearson")
-    
-    # Store the raw p-values for later adjustment
-    all_p_values <- c(all_p_values, test$p.value)
-    
-    # Temporarily store the results (to be adjusted later)
-    results <- rbind(results, data.frame(
-      Gene1 = subset_genes$GENE[i],
-      Gene2 = rest_genes$GENE[j],
-      Correlation = test$estimate,
-      P_value = test$p.value,
-      Adjusted_P_value = NA  # Placeholder for the adjusted p-value
-    ))
-  }
-}
-
-# Apply multiple testing correction (Benjamini-Hochberg)
-adjusted_p_values <- p.adjust(all_p_values, method = "BH")
-
-# Update the results data frame with adjusted p-values
-results$Adjusted_P_value <- adjusted_p_values
-
-# Filter significant results (adjusted p-value < 0.05)
-significant_results <- results[results$Adjusted_P_value < 0.01 & abs(results$Correlation) >=0.9, ]
-
-# Plot heatmap
-corr_plot<-ggplot(significant_results, aes(x = Gene1, y = Gene2, fill = Correlation)) +
-  geom_tile(color = "white") +
-  scale_fill_gradient2(
-    low = "blue", mid = "white", high = "red", midpoint = 0,
-    name = "Correlation"
-  ) +
-  labs(
-    title = "Significant Correlations After Multiple Testing Correction",
-    x = "Subset Genes (Gene1)",
-    y = "Rest Genes (Gene2)"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    axis.text.y = element_text(size = 10)
-  ) +
-  geom_text(aes(label = round(Correlation, 2)), size = 3, color = "black")
-```
-
-```{r plot splicing factors correlation introns}
-# Subset the rows based on the selected events
-subset_events <- differential_introns_4d[differential_introns_4d$EVENT %in% event_list_corr, ]
-
-# Extract the corresponding gene names for these events
-gene_names <- subset_events$GENE
-
-# Extract the numeric columns (expression values for events) - columns 3 to 14 in this example
-subset_matrix <- as.matrix(subset_events[,-c(1:6,19:34)])
-rownames(subset_matrix) <- subset_events$EVENT
-# Compute the correlation matrix for the selected events (genes are rows)
-cor_matrix <- cor(t(subset_matrix), method = "pearson", use = "complete.obs")
-
-# Perform hierarchical clustering on the correlation matrix (both rows and columns)
-distance_matrix <- dist(1 - cor_matrix)  # Compute distance as 1 - correlation
-hc <- hclust(distance_matrix, method = "complete")  # Hierarchical clustering
-
-# Reorder the correlation matrix based on the clustering result
-ordered_cor_matrix <- cor_matrix[hc$order, hc$order]
-
-# Convert the reordered correlation matrix into a long-format data frame for ggplot2
-library(reshape2)
-cor_df <- melt(ordered_cor_matrix)
-
-# Create a data frame for event names with gene names appended
-ordered_event_names <- rownames(ordered_cor_matrix)
-ordered_event_labels <- paste(ordered_event_names, gene_names[hc$order], sep = " - ")
-
-# Plot the clustered heatmap with gene names next to the event names
-library(ggplot2)
-ggplot(cor_df, aes(x = Var1, y = Var2, fill = value)) +
-  geom_tile(color = "white") +  # Tiles with white borders
-  scale_fill_gradient2(
-    low = "blue", mid = "white", high = "red", midpoint = 0,
-    name = "Correlation"
-  ) +
-  labs(
-    title = "Clustered Correlation Heatmap Among Selected Genes",
-    x = "Genes",
-    y = "Genes"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),  # Rotate x-axis labels
-    axis.text.y = element_text(size = 10)  # Keep y-axis labels simple for now
-  ) +
-  scale_x_discrete(labels = ordered_event_labels) +  # Set x-axis labels to include gene names
-  scale_y_discrete(labels = ordered_event_labels) +  # Set y-axis labels to include gene names
-  geom_text(aes(label = round(value, 2)), size = 3, color = "black")  # Add correlation values
-
-```
-
-
-```{r motif enrichment fasta prep}
-library(BSgenome.Mmusculus.UCSC.mm10)  # mm10 genome sequence
-library(GenomicFeatures)               # For handling genomic features
-library(Biostrings)                    # For DNA sequence handling
-library(org.Mm.eg.db)                  # Mouse gene annotation
-library(AnnotationDbi)   
-BiocManager::install("TxDb.Mmusculus.UCSC.mm10.knownGene")
-library(TxDb.Mmusculus.UCSC.mm10.knownGene)
-
-
-
-non_rbfox_genes<-head(unique(significant_results$Gene2[!significant_results$Gene1 =="Rbfox2"]), 370)
-
-txdb <- TxDb.Mmusculus.UCSC.mm10.knownGene
-
-# Convert gene symbols to Entrez IDs
-entrez_ids <- mapIds(org.Mm.eg.db, keys = non_rbfox_genes, column = "ENTREZID", keytype = "SYMBOL", multiVals = "first")
-
-# Remove missing (NA) mappings
-valid_indices <- !is.na(entrez_ids)
-entrez_ids <- entrez_ids[valid_indices]
-valid_gene_list <- gene_list[valid_indices]  # Keep only valid genes
-
-# Get gene coordinates
-gene_coords <- genes(txdb)[names(genes(txdb)) %in% entrez_ids]
-
-# Extract sequences from mm10 genome
-mm10_genome <- BSgenome.Mmusculus.UCSC.mm10
-gene_sequences <- getSeq(mm10_genome, gene_coords)
-
-# Ensure the names are assigned correctly
-if (length(gene_sequences) == length(valid_gene_list)) {
-    names(gene_sequences) <- valid_gene_list  # Assign only matching names
-} else {
-    warning("Mismatch between extracted sequences and gene names. Check manually.")
-}
-
-# Write to a FASTA file
-output_fasta <- "non_rbfox_genes.fasta"
-writeXStringSet(gene_sequences, filepath = output_fasta, format = "fasta")
-
-
-rbfox_genes<-unique(significant_results$Gene2[significant_results$Gene1 =="Rbfox2"])
-
-
-# Convert gene symbols to Entrez IDs
-entrez_ids <- mapIds(org.Mm.eg.db, keys = rbfox_genes, column = "ENTREZID", keytype = "SYMBOL", multiVals = "first")
-
-# Remove missing (NA) mappings
-valid_indices <- !is.na(entrez_ids)
-entrez_ids <- entrez_ids[valid_indices]
-valid_gene_list <- gene_list[valid_indices]  # Keep only valid genes
-
-# Get gene coordinates
-gene_coords <- genes(txdb)[names(genes(txdb)) %in% entrez_ids]
-
-# Extract sequences from mm10 genome
-gene_sequences <- getSeq(mm10_genome, gene_coords)
-
-# Ensure the names are assigned correctly
-if (length(gene_sequences) == length(valid_gene_list)) {
-    names(gene_sequences) <- valid_gene_list  # Assign only matching names
-} else {
-    warning("Mismatch between extracted sequences and gene names. Check manually.")
-}
-
-# Write to a FASTA file
-output_fasta <- "rbfox_genes.fasta"
-writeXStringSet(gene_sequences, filepath = output_fasta, format = "fasta")
-
-```
 
 
 
@@ -2887,7 +2634,7 @@ set.seed(45)
 tao_all <- filterEvents(
   tao_events,
   types = c("C1", "C2", "C3", "S", "MIC", "IR"),
-  N = 2
+  N = 10
 )
 
 # Convert PSI values to a matrix and set row names
@@ -2897,8 +2644,8 @@ rownames(tao_matrix) <- tao_all$PSI$EVENT
 
 # Filter rows based on the final event lists
 filtered_events <- unique(c(
-  differential_exons_4d$EVENT[differential_exons_4d$GENE %in% rbfox_genes],
-  differential_introns_4d$EVENT[differential_introns_4d$GENE %in% rbfox_genes]
+  differential_tao_exons_4d$EVENT[differential_tao_exons_4d$GENE %in% rbfox_genes],
+  differential_tao_introns_4d$EVENT[differential_tao_introns_4d$GENE %in% rbfox_genes]
 ))
 tao_matrix <- tao_matrix[rownames(tao_matrix) %in% filtered_events, ]
 
@@ -2922,7 +2669,7 @@ col_fun <- colorRamp2(
 
 number_splices<-8
 
-reference_table<-data.frame(EVENT=c(differential_exons_4d$EVENT,differential_introns_4d$EVENT),GENE=c(differential_exons_4d$GENE,differential_introns_4d$GENE))
+reference_table<-data.frame(EVENT=c(differential_tao_exons_4d$EVENT,differential_tao_introns_4d$EVENT),GENE=c(differential_tao_exons_4d$GENE,differential_tao_introns_4d$GENE))
 
 
 ht<-Heatmap(
@@ -3166,14 +2913,14 @@ datatable(
 speckles_molecularcell<-read_xlsx("apex2_seq_molecularcell.xlsx")
 rbfox_exons<-read_excel("rbfox_exons.xls")
 rbfox_events_pdac <- read_excel("rbfox_events_frompdac_good.xlsx")
-differential_exons_4d$rbfox<-tolower(differential_exons_4d$GENE) %in% tolower(c(rbfox_events_pdac[[1]], rbfox_exons$`hg19.kgXref.
+differential_tao_exons_4d$rbfox<-tolower(differential_tao_exons_4d$GENE) %in% tolower(c(rbfox_events_pdac[[1]], rbfox_exons$`hg19.kgXref.
 geneSymbol` ))
 
-differential_exons_4d$speckle_molecularcell<-tolower(differential_exons_4d$GENE) %in% tolower(speckles_molecularcell$`Table S4 - Related to Figure 2- Dual Index scores of transcripts identified with the markers belonging to each nuclear domain`)
+differential_tao_exons_4d$speckle_molecularcell<-tolower(differential_tao_exons_4d$GENE) %in% tolower(speckles_molecularcell$`Table S4 - Related to Figure 2- Dual Index scores of transcripts identified with the markers belonging to each nuclear domain`)
 
 
 datatable(
-  arrange(differential_exons_4d[differential_exons_4d$GENE %in% c("Rbfox2",rbfox_genes),], desc(speckle_molecularcell),desc(GroupA),desc(GroupB),desc(rbfox), desc(intron_speckle_go),desc(abs(deltapsi))),
+  arrange(differential_tao_exons_4d[differential_tao_exons_4d$GENE %in% c("Rbfox2",rbfox_genes),], desc(speckle_molecularcell),desc(GroupA),desc(GroupB),desc(rbfox), desc(intron_speckle_go),desc(abs(deltapsi))),
   options = list(
     pageLength = 10,                      # Rows per page
     autoWidth = TRUE,                     # Adjust column widths automatically
@@ -3188,14 +2935,14 @@ datatable(
 
 ```{r final df int}
 
-differential_introns_4d$rbfox<-tolower(differential_introns_4d$GENE) %in% tolower(c(rbfox_events_pdac[[1]], rbfox_exons$`hg19.kgXref.
+differential_tao_introns_4d$rbfox<-tolower(differential_tao_introns_4d$GENE) %in% tolower(c(rbfox_events_pdac[[1]], rbfox_exons$`hg19.kgXref.
 geneSymbol` ))
 
-differential_introns_4d$speckle_molecularcell<-tolower(differential_introns_4d$GENE) %in% tolower(speckles_molecularcell$`Table S4 - Related to Figure 2- Dual Index scores of transcripts identified with the markers belonging to each nuclear domain`)
+differential_tao_introns_4d$speckle_molecularcell<-tolower(differential_tao_introns_4d$GENE) %in% tolower(speckles_molecularcell$`Table S4 - Related to Figure 2- Dual Index scores of transcripts identified with the markers belonging to each nuclear domain`)
 
 
 datatable(
-  arrange(differential_introns_4d[differential_introns_4d$GENE %in% c("Rbfox2",rbfox_genes),], desc(speckle_molecularcell),desc(GroupA),desc(GroupB),desc(rbfox), desc(intron_speckle_go),desc(abs(deltapsi))),
+  arrange(differential_tao_introns_4d[differential_tao_introns_4d$GENE %in% c("Rbfox2",rbfox_genes),], desc(speckle_molecularcell),desc(GroupA),desc(GroupB),desc(rbfox), desc(intron_speckle_go),desc(abs(deltapsi))),
   options = list(
     pageLength = 10,                      # Rows per page
     autoWidth = TRUE,                     # Adjust column widths automatically
