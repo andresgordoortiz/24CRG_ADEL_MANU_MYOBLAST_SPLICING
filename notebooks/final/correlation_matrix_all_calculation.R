@@ -31,6 +31,7 @@ tao_events <- filterEvents(getEvents(tao_data, tool = "vast-tools"), N=10) # Ext
 tao_exons <- filterEvents(tao_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 10)
 tao_introns <- filterEvents(tao_events, types = c("IR"), N = 10)
 
+metadata_tao <- read.csv(paste0(getwd(),"/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/notebooks/final/metadata/tao_metadata.csv"), sep = ",")
 splice_factors<-read_xlsx("/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/notebooks/final/SFs_list_ensembl_ID.xlsx")
 
 correlation_matrix<-tao_events$PSI[,-c(3:6)]
