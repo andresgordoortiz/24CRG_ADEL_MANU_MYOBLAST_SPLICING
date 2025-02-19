@@ -26,7 +26,7 @@ library("dendextend")
 
 
 
-tao_data <- getDataset(pathTables = "/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/inclusion_tables/Tao_INCLUSION_LEVELS_FULL-mm10.tab", tool = "vast-tools")
+tao_data <- getDataset(pathTables = "/users/aaljord/agordo/git/24CRG_ADEL_MANU_MYOBLAST_SPLICING/notebooks/final/inclusion_tables/Tao_INCLUSION_LEVELS_FULL-mm10.tab", tool = "vast-tools")
 tao_events <- filterEvents(getEvents(tao_data, tool = "vast-tools"), N=10) # Extract alternative splicing events
 tao_exons <- filterEvents(tao_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 10)
 tao_introns <- filterEvents(tao_events, types = c("IR"), N = 10)
