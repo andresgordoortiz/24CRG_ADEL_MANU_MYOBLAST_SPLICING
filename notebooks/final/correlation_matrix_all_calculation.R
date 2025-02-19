@@ -1,3 +1,31 @@
+
+library("betAS")
+library("ggplot2")
+library("plotly")
+library("dplyr")
+library("tidyverse")
+library("cowplot")
+library("DT")
+library("paletteer")
+library("ggupset")
+library("showtext")
+library("ggtext")
+library("readxl")
+library("biomaRt")
+library("patchwork")
+library("org.Mm.eg.db")
+library("org.Hs.eg.db")
+library("enrichplot")
+library("DOSE")
+library("clusterProfiler")
+library("ReactomePA")
+library("ComplexHeatmap")
+library("enrichR")
+library("colorRamp2")
+library("dendextend")
+
+
+
 tao_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Tao_INCLUSION_LEVELS_FULL-mm10.tab"), tool = "vast-tools")
 tao_events <- filterEvents(getEvents(tao_data, tool = "vast-tools"), N=10) # Extract alternative splicing events
 tao_exons <- filterEvents(tao_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 10)
