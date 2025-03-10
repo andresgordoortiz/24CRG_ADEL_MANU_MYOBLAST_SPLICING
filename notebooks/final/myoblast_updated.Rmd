@@ -126,7 +126,10 @@ library("ComplexHeatmap")
 library("enrichR")
 library("colorRamp2")
 library("dendextend")
-
+library("ggrepel")
+library("ggVennDiagram")
+library("UpSetR")
+library("ComplexUpset")
 
 # Register Google fonts
 showtext_auto()
@@ -266,7 +269,7 @@ kan_introns <- filterEvents(kan_events, types = c("IR"), N = 10)
 
 ```{r metadata tao}
 # Load metadata file containing sample information
-metadata_tao <- read.csv(paste0(getwd(),"/metadata/tao_metadata.csv"), sep = ",")
+metadata_tao <- arrange(read.csv(paste0(getwd(),"/metadata/tao_metadata.csv"), sep = ","), experiment_title)
 DT::datatable(metadata_tao, options = list(pageLength = nrow(metadata_tao), scrollX = TRUE))
 ```
 
@@ -401,33 +404,32 @@ pca_data$Sample <- rownames(pca_data)
 pca_data$condition<-condition_pca
 ```
 
-```{r pca plotting tao}
-# Create PCA plot
+```{r pca plotting tao, warning=FALSE}
 pca_plot <- ggplot(pca_data, aes(x = PC1, y = PC2, color = as.factor(condition))) +
-  geom_point(size = 6) +
+  geom_point(size = 6, alpha = 0.8) +
   labs(
-    title = "<b style='font-size:18px;'>PCA of Tao Samples (PSI Data)</b>",
+    title = "Principal Component Analysis shows time-dependent clustering of splicing",
     x = paste("PC1 (", round(100 * summary(pca_result)$importance[2, 1], 1), "%)", sep = ""),
-    y = paste("PC2 (", round(100 * summary(pca_result)$importance[2, 2], 1), "%)", sep = ""),
-    caption = paste0("Created by AG on ", Sys.Date()), size=3
+    y = paste("PC2 (", round(100 * summary(pca_result)$importance[2, 2], 1), "%)", sep = "")
   ) +
-  theme_minimal(base_family = "roboto") +
+  scale_colour_paletteer_d("lisa::OskarSchlemmer") +
+  theme_minimal(base_family = "Roboto") +
   theme(
-    plot.title = element_markdown(),
-    plot.title.position = "plot",
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5, margin = margin(b = 10)),
     axis.title = element_text(size = 14),
     axis.text = element_text(size = 12),
     legend.position = "right",
     legend.title = element_blank(),
-    panel.background = element_rect(fill = "gray98"),
-    panel.grid = element_line(color = "gray90", size = 0.5),
+    legend.text = element_text(size = 12),
+    panel.background = element_rect(fill = "gray98", color = NA),
     panel.grid.major = element_line(color = "gray90", size = 0.5),
-    panel.grid.minor = element_blank()
+    panel.grid.minor = element_blank(),
+    plot.caption = element_text(size = 10, hjust = 1, margin = margin(t = 10))
   ) +
-  scale_colour_paletteer_d("lisa::OskarSchlemmer") +
   coord_fixed()
 
 pca_plot
+
 
 ```
 
@@ -552,13 +554,12 @@ First I classified the genes according to the number of exons they contain from 
 ```{r inclusionumber of exons tao, fig.width=12, fig.height=8}
 tao_exons_df<-na.omit(tao_exons$PSI)
 tao_exons_df<-tao_exons_df[,c(colnames(tao_exons_df)[1:6],metadata_tao$run_accession)]
-tao_exons_df$exon_group<-vastdb_exons$exon_group[match(tao_exons_df$EVENT,vastdb_exons$EVENT)]
 
 # Function to compute the difference for a single dataframe
 compute_difference <- function(df) {
-  avg_7d <- rowMeans(df[, 16:18])
+  avg_4d <- rowMeans(df[, 13:15])
   avg_0d <- rowMeans(df[, 7:9])
-  avg_7d - avg_0d
+  avg_4d - avg_0d
 }
 
 # Calculate the difference and remove any additional NAs
@@ -587,7 +588,7 @@ plot_psi_distribution <- ggplot(
     title = "PSI Difference Distribution of Exons Myoblasts",
     subtitle = paste("One-sample Wilcoxon test p-value for Symmetry:", 
                      format(symmetry_test$p.value, digits = 3)),
-    x = "ΔPSI (7d - 0d)",
+    x = "ΔPSI (4d - 0d)",
     y = "Density",
     fill = "Splicing Direction",
     caption = paste0("Created by AG on ", Sys.Date())
@@ -618,7 +619,7 @@ plot_psi_distribution <- ggplot(
   scale_fill_brewer(palette = "Set1")
 
 # Save and display the plot
-ggsave("d7vs0_psi_distribution_exons.svg", plot_psi_distribution, width = 12, height = 8, dpi = 300)
+ggsave("d4vs0_psi_distribution_exons.svg", plot_psi_distribution, width = 12, height = 8, dpi = 300)
 
 print(plot_psi_distribution)
 
@@ -1056,13 +1057,13 @@ Volcano Plots of the FDR corrected exons for each study. In pink are the exons w
 differential_tao_exons_4d<-na.omit(tao_pdiff_exons_4d[tao_pdiff_exons_4d$FDR<=0.05 & abs(tao_pdiff_exons_4d$deltapsi)>=0.1,])
 differential_tao_exons_2d<-na.omit(tao_pdiff_exons_2d[tao_pdiff_exons_2d$FDR<=0.05 & abs(tao_pdiff_exons_2d$deltapsi)>=0.1,])
 differential_tao_exons_4d_2d<-na.omit(tao_pdiff_exons_4dvs2d[tao_pdiff_exons_4dvs2d$FDR<=0.05 & abs(tao_pdiff_exons_4dvs2d$deltapsi)>=0.1,])
-differential_tao_exons_7d_4d<-na.omit(tao_pdiff_exons_7dvs4d[tao_pdiff_exons_7dvs4d$FDR<=0.05 & abs(tao_pdiff_exons_7dvs4d$deltapsi)>=0.1,])
+differential_tao_exons<-na.omit(tao_pdiff_exons[tao_pdiff_exons$FDR<=0.05 & abs(tao_pdiff_exons$deltapsi)>=0.1,])
 
 
 shared_exons<-differential_tao_exons_4d$EVENT[differential_tao_exons_4d$EVENT %in% differential_tao_exons_2d$EVENT]
 
+
 # Volcano plot
-library(ggrepel)
 tao_pdiff_exons_4d<-na.omit(tao_pdiff_exons_4d)
 # Add a Shared column based on the shared_exons
 tao_pdiff_exons_4d$Shared <- ifelse(tao_pdiff_exons_4d$EVENT %in% shared_exons, "Shared", "Not Shared")
@@ -1139,22 +1140,22 @@ volcano_plot <- ggplot(tao_pdiff_exons_4d, aes(x = deltapsi)) +
     labels = function(x) ifelse(x == max_y, paste0("≥", max_y), x)
   ) +
   labs(
-    x = "Delta PSI (4days - 0days)",
+    x = "Splicing Percentage Change",
     y = expression(-log[10](FDR)),
-    title = "Volcano Plot of Myoblast Exons",
+    title = "4 Days vs 0 Days",
     subtitle = "Significant events are highlighted"
   ) +
   theme_minimal(base_size = 14, base_family = "Arial") +  
   theme(
     plot.title = element_text(
-      hjust = 0.5, size = 18, face = "bold", color = "black"
+      hjust = 0.5, size = 90, face = "bold", color = "black"
     ),
     plot.subtitle = element_text(
-      hjust = 0.5, size = 14, face = "italic", color = "gray30"
+      hjust = 0.5, size = 90, face = "italic", color = "gray30"
     ),
-    axis.text = element_text(size = 12, color = "black"),
-    axis.title = element_text(size = 14, face = "bold", color = "black"),
-    legend.text = element_text(size = 12),
+    axis.text = element_text(size = 90, color = "black"),
+    axis.title = element_text(size = 90, face = "bold", color = "black"),
+    legend.text = element_text(size = 90),
     legend.title = element_blank(),
     panel.grid.major = element_line(color = "gray90"),
     panel.grid.minor = element_blank(),
@@ -1164,7 +1165,7 @@ volcano_plot <- ggplot(tao_pdiff_exons_4d, aes(x = deltapsi)) +
 
 
 # Save as SVG with dimensions 606 x 396
-ggsave("volcano_exons_4d.svg", plot = volcano_plot, width = 606/72, height = 396/72, dpi = 72)
+ggsave("volcano_exons_4d.png", plot = volcano_plot, width = 606/72, height = 396/72, dpi = 600)
 
 volcano_plot
 ```
@@ -1583,7 +1584,7 @@ differential_tao_introns_4d<-na.omit(tao_pdiff_introns_4d[tao_pdiff_introns_4d$F
 differential_tao_introns_2d<-na.omit(tao_pdiff_introns_2d[tao_pdiff_introns_2d$FDR<=0.05 & abs(tao_pdiff_introns_2d$deltapsi)>=0.1,])
 differential_tao_introns_4d_2d<-na.omit(tao_pdiff_introns_4dvs2d[tao_pdiff_introns_4dvs2d$FDR<=0.05 & abs(tao_pdiff_introns_4dvs2d$deltapsi)>=0.1,])
 
-
+differential_tao_introns<-na.omit(tao_pdiff_introns[tao_pdiff_introns$FDR<=0.05 & abs(tao_pdiff_introns$deltapsi)>=0.1,])
 
 shared_introns<-differential_tao_introns_4d$EVENT[differential_tao_introns_4d$EVENT %in% differential_tao_introns_2d$EVENT]
 
@@ -1665,32 +1666,30 @@ volcano_plot <- ggplot(tao_pdiff_introns_4d, aes(x = deltapsi)) +
     labels = function(x) ifelse(x == max_y, paste0("≥", max_y), x)
   ) +
   labs(
-    x = "Delta PSI (4days - 0days)",
+    x = "Splicing Percentage Change",
     y = expression(-log[10](FDR)),
-    title = "Volcano Plot of Myoblast Introns",
+    title = "4 Days vs 0 Days",
     subtitle = "Significant events are highlighted"
   ) +
   theme_minimal(base_size = 14, base_family = "Arial") +  
   theme(
     plot.title = element_text(
-      hjust = 0.5, size = 18, face = "bold", color = "black"
+      hjust = 0.5, size = 90, face = "bold", color = "black"
     ),
     plot.subtitle = element_text(
-      hjust = 0.5, size = 14, face = "italic", color = "gray30"
+      hjust = 0.5, size = 90, face = "italic", color = "gray30"
     ),
-    axis.text = element_text(size = 12, color = "black"),
-    axis.title = element_text(size = 14, face = "bold", color = "black"),
-    legend.text = element_text(size = 12),
+    axis.text = element_text(size = 90, color = "black"),
+    axis.title = element_text(size = 90, face = "bold", color = "black"),
+    legend.text = element_text(size = 90),
     legend.title = element_blank(),
     panel.grid.major = element_line(color = "gray90"),
     panel.grid.minor = element_blank(),
     panel.border = element_blank(),
     axis.line = element_line(color = "black")
   )
-
-
 # Save as SVG with dimensions 606 x 396
-ggsave("volcano_introns_4d.svg", plot = volcano_plot, width = 606/72, height = 396/72, dpi = 72)
+ggsave("volcano_introns_4d.png", plot = volcano_plot, width = 606/72, height = 396/72, dpi = 600)
 
 volcano_plot
 
@@ -2222,20 +2221,106 @@ enrichdata<-enrichr(unique(c(differential_tao_exons_4d$GENE,differential_tao_int
 ### GO Biological Process
 
 ```{r pladb bioprocess, fig.width=10, fig.height=8}
-plotEnrich(enrichdata[[1]])
+
+results <- enrichdata[[1]] %>%
+  mutate(
+    log_pval = -log10(P.value),  # Convert p-value
+    Overlap = as.numeric(str_extract(Overlap, "^\\d+")),  # Extract first number
+    Term = factor(Term, levels = rev(Term))  # Ensure correct term order
+  ) %>%
+  filter(P.value<=0.05)%>%
+  arrange(P.value) %>%  # Order by p-value (smallest first)
+  slice_head(n = 20)  # Select top 20
+
+# Step 3: Create Dot Plot
+ggplot(results, aes(x = log_pval, y = Term, size = Overlap, color = P.value)) +
+  geom_point(alpha = 0.85) +
+  scale_color_gradient(low = "blue", high = "red", trans = "reverse") +
+  scale_size_continuous(range = c(4, 10)) +
+  labs(x = "-log(p-value)", 
+       y = "GO Terms", 
+       color = "P-value", 
+       size = "Gene Overlap") +
+  theme_minimal(base_size = 14, base_family = "Helvetica") +
+  theme(
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 12),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_blank()
+  )
+
 ```
 
 ### GO Cellular Component
 
+
 ```{r pladb cellcomponent, fig.width=10, fig.height=8}
-plotEnrich(enrichdata[[2]])
+results <- enrichdata[[2]] %>%
+  mutate(
+    log_pval = -log10(P.value),  # Convert p-value
+    Overlap = as.numeric(str_extract(Overlap, "^\\d+")),  # Extract first number
+    Term = factor(Term, levels = rev(Term))  # Ensure correct term order
+  ) %>%
+  filter(P.value<=0.05)%>%
+  arrange(P.value) %>%  # Order by p-value (smallest first)
+  slice_head(n = 20)  # Select top 20
+
+# Step 3: Create Dot Plot
+ggplot(results, aes(x = log_pval, y = Term, size = Overlap, color = P.value)) +
+  geom_point(alpha = 0.85) +
+  scale_color_gradient(low = "blue", high = "red", trans = "reverse") +
+  scale_size_continuous(range = c(4, 10)) +
+  labs(x = "-log(p-value)", 
+       y = "GO Terms", 
+       color = "P-value", 
+       size = "Gene Overlap") +
+  theme_minimal(base_size = 14, base_family = "Helvetica") +
+  theme(
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 12),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_blank()
+  )
+
 ```
 
 
 ### GO Molecular Function
 
 ```{r pladb molfunction, fig.width=10, fig.height=8}
-plotEnrich(enrichdata[[3]])
+results <- enrichdata[[3]] %>%
+  mutate(
+    log_pval = -log10(P.value),  # Convert p-value
+    Overlap = as.numeric(str_extract(Overlap, "^\\d+")),  # Extract first number
+    Term = factor(Term, levels = rev(Term))  # Ensure correct term order
+  ) %>%
+  filter(P.value<=0.05)%>%
+  arrange(P.value) %>%  # Order by p-value (smallest first)
+  slice_head(n = 20)  # Select top 20
+
+# Step 3: Create Dot Plot
+ggplot(results, aes(x = log_pval, y = Term, size = Overlap, color = P.value)) +
+  geom_point(alpha = 0.85) +
+  scale_color_gradient(low = "blue", high = "red", trans = "reverse") +
+  scale_size_continuous(range = c(4, 10)) +
+  labs(x = "-log(p-value)", 
+       y = "GO Terms", 
+       color = "P-value", 
+       size = "Gene Overlap") +
+  theme_minimal(base_size = 14, base_family = "Helvetica") +
+  theme(
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 12),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_blank()
+  )
+
 ```
 
 
@@ -2342,7 +2427,9 @@ differential_tao_introns_4d$intron_speckle_go<-tolower(differential_tao_introns_
 
 # Rbfox2 Splicing Analysis
 
-```{r final arrange exons}
+## Significant Events
+
+```{r final arrange exons, warning=FALSE}
 differential_tao_exons_4d <- differential_tao_exons_4d[!duplicated(differential_tao_exons_4d$EVENT), ] %>%
   arrange(desc(GroupB),desc(intron_speckle_go),desc(abs(deltapsi)),GroupC)
 
@@ -2369,14 +2456,14 @@ results <- data.frame(
 )
 
 # Compute correlations and p-values
-all_p_values <- c()
+significant_p_values <- c()
 for (i in 1:nrow(subset_matrix)) {
   for (j in 1:nrow(rest_matrix)) {
     # Perform correlation test
     test <- cor.test(subset_matrix[i, ], rest_matrix[j, ], method = "pearson")
     
     # Store the raw p-values for later adjustment
-    all_p_values <- c(all_p_values, test$p.value)
+    significant_p_values <- c(significant_p_values, test$p.value)
     
     # Temporarily store the results (to be adjusted later)
     results <- rbind(results, data.frame(
@@ -2390,7 +2477,7 @@ for (i in 1:nrow(subset_matrix)) {
 }
 
 # Apply multiple testing correction (Benjamini-Hochberg)
-adjusted_p_values <- p.adjust(all_p_values, method = "BH")
+adjusted_p_values <- p.adjust(significant_p_values, method = "BH")
 
 # Update the results data frame with adjusted p-values
 results$Adjusted_P_value <- adjusted_p_values
@@ -2518,7 +2605,6 @@ ggplot(cor_df, aes(x = Var1, y = Var2, fill = value)) +
   geom_text(aes(label = round(value, 2)), size = 3, color = "black")  # Add correlation values
 
 
-tmp<-read_tsv("results/clust_results_tao_exons/Clusters_Objects.tsv")[-1,]
 
 ```
 
@@ -2530,7 +2616,444 @@ tmp<-read_tsv("results/clust_results_tao_exons/Clusters_Objects.tsv")[-1,]
 These final lists show all the events found to be significant in all studies (in a pairwise comparison, myotubes vs myoblasts). Moreover, they are sorted by their average dPSI (the of dPSI across studies) an the average F statistic, and features such as the event length, splice scores, GC percent, whether it has an ontology related to Speckles (according to Apex2 and ARTR-seq papers) and if the gene containing the event appears in the gene lists (GroupA: permanently closed to speckles, groupB: transiently closed to speckles, GroupC: never closed to speckles) found by *Wu, J. et al. Dynamics of RNA localization to nuclear speckles are connected to splicing efficiency. Science Advances 10, eadp7727 (2024)*.
 
 
-## Exons
+
+
+
+
+### Stats
+
+```{r upset}
+
+speckles_molecularcell<-read_xlsx("apex2_seq_molecularcell.xlsx", sheet = "NuclearSpeckle")
+# -------------------------------
+# 1. Combine Spire and FMN2 Events
+# -------------------------------
+spire_events <- unique(read.csv("spire_significant_events.csv")[, -1]$GENE)
+fmn2_events <- unique(read.csv("fmn2_significant_events.csv")[, -1]$GENE)
+spire_fmn2_events <- tolower(unique(c(fmn2_events, spire_events)))
+# -------------------------------
+# 2. Process Additional Gene Lists
+# -------------------------------
+# Speckle-associated genes based on dual index scores (> 0.8)
+speckle_associated <- tolower(speckles_molecularcell$`Table S4 - Related to Figure 2- Dual Index scores of transcripts identified with the markers belonging to each nuclear domain`[
+  speckles_molecularcell$...2 > 0.8 & speckles_molecularcell$...3 > 0.8
+])
+
+# Convert ENSEMBL IDs to gene symbols, ensuring uniqueness
+groupA_genelist_mouse_symbol <- bitr(groupA_genelist_mouse$ENSEMBL, 
+                                     fromType = "ENSEMBL", 
+                                     toType = "SYMBOL", 
+                                     OrgDb = org.Mm.eg.db) %>%
+                                     distinct(SYMBOL, .keep_all = TRUE)
+
+groupB_genelist_mouse_symbol <- bitr(groupB_genelist_mouse$ENSEMBL, 
+                                     fromType = "ENSEMBL", 
+                                     toType = "SYMBOL", 
+                                     OrgDb = org.Mm.eg.db) %>%
+                                     distinct(SYMBOL, .keep_all = TRUE)
+
+# Read in Nocodazole treatment data
+molecularcell_speckles_nocodazole <- read_excel("molecularcell_speckles_nocodazole.xlsx", 
+                                                sheet = "Nocodazole treatment")
+
+# -------------------------------
+# 3. Define Muscle Spliced Gene Sets
+# -------------------------------
+muscle_spliced_4d <- tolower(unique(c(differential_tao_exons_4d$GENE, 
+                                      differential_tao_introns_4d$GENE)))
+muscle_spliced_7d <- tolower(unique(c(differential_tao_exons$GENE, 
+                                      differential_tao_introns$GENE)))
+
+# Define the gene sets
+genes_upset <- list(
+  "Muscle Differentiation" = muscle_spliced_4d,
+  Force_disrupted_genes = tolower(unique(c(
+    molecularcell_speckles_nocodazole$Common_Gene[
+      molecularcell_speckles_nocodazole$OMM_30m_p <= 0.05], spire_fmn2_events))),
+  Associated_with_Speckles = tolower(unique(c(groupA_genelist_mouse_symbol$SYMBOL, 
+                                              groupB_genelist_mouse_symbol$SYMBOL, speckle_associated)))
+)
+
+# Generate the Venn diagram
+ggVennDiagram(genes_upset, label = "count") +  # Ensure only counts are shown
+  scale_fill_gradient(low = "#6A5ACD", high = "#4682B4") +  # Shades of blue & purple
+  scale_color_manual(values = c("#4B0082", "#4169E1", "#8A2BE2")) +  # Outline colors
+  theme(plot.title = element_text(size = 16, face = "bold"),
+        legend.position = "none")  # Hide legend if not needed
+
+
+merged_myo_4d<-rbind(differential_tao_exons_4d,differential_tao_introns_4d)
+
+
+all_layers<-filter(merged_myo_4d, tolower(GENE) %in% tolower(unique(c(groupA_genelist_mouse_symbol$SYMBOL, 
+                                              groupB_genelist_mouse_symbol$SYMBOL, speckle_associated))) & tolower(GENE) %in% tolower(unique(c(molecularcell_speckles_nocodazole$Common_Gene[
+      molecularcell_speckles_nocodazole$OMM_30m_p <= 0.05], spire_fmn2_events)))) %>%
+  arrange(desc(abs(deltapsi)))
+
+write.csv(all_layers, "final_all_layers.csv")
+
+myo_forces_layers<-filter(merged_myo_4d, !tolower(GENE) %in% tolower(unique(c(groupA_genelist_mouse_symbol$SYMBOL, 
+                                              groupB_genelist_mouse_symbol$SYMBOL, speckle_associated))) & tolower(GENE) %in% tolower(unique(c(molecularcell_speckles_nocodazole$Common_Gene[
+      molecularcell_speckles_nocodazole$OMM_30m_p <= 0.05], spire_fmn2_events)))) %>%
+  arrange(desc(abs(deltapsi)))
+
+write.csv(myo_forces_layers, "final_myo_forces_layers.csv")
+
+myo_associated_layers<-filter(merged_myo_4d, tolower(GENE) %in% tolower(unique(c(groupA_genelist_mouse_symbol$SYMBOL, 
+                                              groupB_genelist_mouse_symbol$SYMBOL, speckle_associated))) & !tolower(GENE) %in% tolower(unique(c(molecularcell_speckles_nocodazole$Common_Gene[
+      molecularcell_speckles_nocodazole$OMM_30m_p <= 0.05], spire_fmn2_events))))
+
+write.csv(myo_associated_layers, "final_myo_associated_layers.csv")
+
+
+only_myo_layers<-filter(merged_myo_4d, !tolower(GENE) %in% tolower(unique(c(groupA_genelist_mouse_symbol$SYMBOL, 
+                                              groupB_genelist_mouse_symbol$SYMBOL, speckle_associated))) & !tolower(GENE) %in% tolower(unique(c(molecularcell_speckles_nocodazole$Common_Gene[
+      molecularcell_speckles_nocodazole$OMM_30m_p <= 0.05], spire_fmn2_events)))) %>%
+  arrange(desc(abs(deltapsi)))
+write.csv(only_myo_layers, "final_only_myo_layers.csv")
+
+
+```
+
+
+## Enrichment Analysis with EnrichR of Candidate Genes { .tabset}
+
+
+```{r pladb enrichr}
+enrichdata<-enrichr(unique(final_good_list$GENE), databases = c("GO_Biological_Process_2023","GO_Cellular_Component_2023","GO_Molecular_Function_2023"))
+
+```
+
+### GO Biological Process
+
+```{r pladb bioprocess, fig.width=10, fig.height=8, warning=FALSE}
+
+results <- enrichdata[[2]] %>%
+  mutate(
+    log_pval = -log10(P.value),  # Convert p-value
+    Overlap = as.numeric(str_extract(Overlap, "^\\d+")),  # Extract first number
+    Term = str_remove(Term, "\\s*\\(GO:\\d+\\)"),  # Remove GO ID in parentheses
+    Term = factor(Term, levels = rev(Term))  # Ensure correct term order
+  ) %>%
+  filter(P.value <= 0.05) %>%
+  arrange(P.value) %>%  # Order by p-value (smallest first)
+  slice_head(n = 10)  # Select top 20
+
+
+# Step 3: Create Dot Plot
+p<-ggplot(results, aes(x = log_pval, y = Term, size = Overlap, color = P.value)) +
+  geom_point(alpha = 0.85) +
+  scale_color_gradient(low = "blue", high = "red", trans = "reverse") +
+  scale_size_continuous(range = c(4, 10)) +
+  labs(x = "-log(p-value)", 
+       y= "",
+       color = "P-value", 
+       size = "Gene Overlap") +
+  theme_minimal(base_size = 14, base_family = "Helvetica") +
+  theme(
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    axis.text.y = element_text(face = "bold", color = "black", size = 12, margin = margin(r = 10)),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 12),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_blank()
+  )
+
+ggsave("final_go_BP.svg", plot = p, width = 12, height = 8)
+p
+```
+
+### GO Cellular Component
+
+
+```{r pladb cellcomponent, fig.width=10, fig.height=8, warning=FALSE}
+results <- enrichdata[[2]] %>%
+  mutate(
+    log_pval = -log10(P.value),  # Convert p-value
+    Overlap = as.numeric(str_extract(Overlap, "^\\d+")),  # Extract first number
+    Term = factor(Term, levels = rev(Term))  # Ensure correct term order
+  ) %>%
+  filter(P.value<=0.05)%>%
+  arrange(P.value) %>%  # Order by p-value (smallest first)
+  slice_head(n = 20)  # Select top 20
+
+# Step 3: Create Dot Plot
+ggplot(results, aes(x = log_pval, y = Term, size = Overlap, color = P.value)) +
+  geom_point(alpha = 0.85) +
+  scale_color_gradient(low = "blue", high = "red", trans = "reverse") +
+  scale_size_continuous(range = c(4, 10)) +
+  labs(x = "-log(p-value)", 
+       y = "GO Terms", 
+       color = "P-value", 
+       size = "Gene Overlap") +
+  theme_minimal(base_size = 14, base_family = "Helvetica") +
+  theme(
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 12),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_blank()
+  )
+
+```
+
+
+### GO Molecular Function
+
+```{r pladb molfunction, fig.width=10, fig.height=8, warning=FALSE}
+results <- enrichdata[[3]] %>%
+  mutate(
+    log_pval = -log10(P.value),  # Convert p-value
+    Overlap = as.numeric(str_extract(Overlap, "^\\d+")),  # Extract first number
+    Term = factor(Term, levels = rev(Term))  # Ensure correct term order
+  ) %>%
+  filter(P.value<=0.05)%>%
+  arrange(P.value) %>%  # Order by p-value (smallest first)
+  slice_head(n = 20)  # Select top 20
+
+# Step 3: Create Dot Plot
+ggplot(results, aes(x = log_pval, y = Term, size = Overlap, color = P.value)) +
+  geom_point(alpha = 0.85) +
+  scale_color_gradient(low = "blue", high = "red", trans = "reverse") +
+  scale_size_continuous(range = c(4, 10)) +
+  labs(x = "-log(p-value)", 
+       y = "GO Terms", 
+       color = "P-value", 
+       size = "Gene Overlap") +
+  theme_minimal(base_size = 14, base_family = "Helvetica") +
+  theme(
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 12),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_blank()
+  )
+
+
+
+```
+
+
+## Splicing Dynamics Heatmap of Final list
+
+```{r heatmap prep, results='hide', fig.show='hide'}
+set.seed(45)
+
+
+
+# Convert PSI values to a matrix and set row names
+tao_matrix <- tao_all$PSI[, 7:18] %>%
+  as.matrix()
+rownames(tao_matrix) <- tao_all$PSI$EVENT
+
+# Filter rows based on the final event lists
+filtered_events <- unique(final_good_list$EVENT
+)
+tao_matrix <- tao_matrix[rownames(tao_matrix) %in% filtered_events, ]
+
+# Arrange columns based on metadata
+metadata_tao <- arrange(metadata_tao, experiment_title)
+tao_matrix <- tao_matrix[, metadata_tao$run_accession]
+
+# Create a dendrogram for the columns
+col_dend <- hclust(dist(t(tao_matrix))) %>%
+  as.dendrogram() %>%
+  color_branches(k = 4) # Color branches with 4 clusters
+
+# Check if row names contain "EX"
+contains_EX <- grepl("EX", rownames(tao_matrix))
+
+# Define an improved color gradient for the heatmap
+col_fun <- colorRamp2(
+  c(0, 50, 100),
+  c("purple", "white", "orange")
+)
+
+number_splices<-3
+
+reference_table<-data.frame(EVENT=c(differential_tao_exons_4d$EVENT,differential_tao_introns_4d$EVENT),GENE=c(differential_tao_exons_4d$GENE,differential_tao_introns_4d$GENE))
+
+
+ht<-Heatmap(
+  tao_matrix, name = "PSI",
+  clustering_distance_rows = "pearson",
+  col = col_fun,
+  cluster_columns  = col_dend,
+  column_title = "Myoblast Samples at Different stages f development",
+  row_title = "Splicing Events",
+  column_names_rot = 45,
+  column_labels = metadata_tao$experiment_title,
+  column_dend_reorder = 1:12,
+  row_km = number_splices,
+  row_dend_reorder = F,
+  rect_gp = gpar(col = "white", lwd = 0.3),
+  column_names_gp = gpar(fontsize = 16),
+  show_row_names = FALSE,
+
+)
+ht = draw(ht); clustered_events<-row_order(ht)
+text_list<-list()
+# Loop through clustered events and assign dynamic names
+for (i in 1:length(clustered_events)) {
+  enrich_events <- enrichr(
+    reference_table$GENE[reference_table$EVENT %in% rownames(tao_matrix)[clustered_events[[i]]]],
+    databases = c("GO_Biological_Process_2023", "GO_Cellular_Component_2023", "GO_Molecular_Function_2023")
+  )
+
+  # Assign the dynamic name and value
+  text_list[[paste0("text", i)]] <- paste(
+    enrich_events$GO_Cellular_Component_2023$Term[1],
+    enrich_events$GO_Cellular_Component_2023$Term[2],
+    enrich_events$GO_Cellular_Component_2023$Term[3],
+    enrich_events$GO_Molecular_Function_2023$Term[1],
+    enrich_events$GO_Molecular_Function_2023$Term[2],
+    enrich_events$GO_Molecular_Function_2023$Term[3],
+    sep = "; \n"
+  )
+}
+
+protein_impact <- read.table("PROT_IMPACT-mm10-v2.3.tab", sep = "\t", 
+                             header = TRUE, stringsAsFactors = FALSE, fill = TRUE, quote = "")
+
+events_for_impact<-rownames(tao_matrix)
+
+final_impact <- protein_impact %>%
+  filter(EventID %in% events_for_impact) %>%
+  arrange(match(EventID, events_for_impact)) %>%
+  mutate(ONTO = ifelse(grepl("isoform", ONTO, ignore.case = TRUE), "-1", ONTO)) %>%
+  mutate(ONTO = ifelse(grepl("UTR", ONTO, ignore.case = TRUE), "-2", ONTO)) %>%
+  mutate(ONTO = case_when(
+    grepl("ORF", ONTO, ignore.case = TRUE) & grepl("inclusion", ONTO, ignore.case = TRUE) ~ "2",
+    grepl("ORF", ONTO, ignore.case = TRUE) & grepl("exclusion", ONTO, ignore.case = TRUE) ~ "1",
+    TRUE ~ ONTO
+  )) %>%
+  mutate(ONTO = as.numeric(ONTO)) %>%
+  replace_na(list(ONTO = 0))
+
+# Remove non-annotated EVENTS from tao_matrix
+tao_matrix <- tao_matrix[rownames(tao_matrix) %in% final_impact$EventID, ]
+
+# Define the left annotation (points) with axis labels
+left_annotation <- rowAnnotation(
+  Impact = anno_points(
+    final_impact$ONTO,
+    width = unit(4, "cm"),  # Adjusted width
+    size = unit(4, "mm"),   # Adjusted size of points
+    axis_param = list(
+      side = "top",
+      at = -2:2, # Numeric values to label
+      labels = c(
+        "Regulatory (5´UTR)",
+        "Alternative Isoform",
+        "Unknown/NonCoding",
+        "ORF disruption upon exclusion",
+        "ORF disruption upon inclusion"
+      ),
+      labels_rot = 45, # Rotation of labels
+      gp = gpar(fontsize = 15) # Text style
+    )
+  )
+)
+
+# Define the right annotation (foo)
+right_annotation <- rowAnnotation(
+  foo = anno_empty(
+    border = FALSE,
+    width = max_text_width(unlist(text_list)) + unit(4, "mm")
+  )
+)
+```
+
+### Heatmap showcasing the PSI of every candidate EX and IN
+
+**Note**: Gene ontology of *Cellular Component* and *Molecular Function* for each of the clustered blocks (splicing events that the *pearson* algorithm has found they behave similarly) appears on the right. The impact of that Event at protein level is shown on the left.
+
+```{r heatmap_plot, fig.width=30, fig.height=25, echo=TRUE, out.width="100%"}
+set.seed(45)
+
+ht <- Heatmap(
+  tao_matrix, 
+  name = "PSI",
+  clustering_distance_rows = "pearson",
+  col = col_fun,
+  cluster_columns = col_dend,
+  column_title = "C2C12 Samples at Different Stages of Development",
+  column_title_gp = gpar(fontsize = 25, fontface = "bold"),
+  row_title = "Splicing Events",
+  row_title_gp = gpar(fontsize = 16, fontface = "italic"),
+  column_names_rot = 45,
+  column_dend_reorder = c(1:12),
+  column_labels = metadata_tao$experiment_title,
+  row_km = number_splices,
+  left_annotation = left_annotation,   # Add the points on the left
+  right_annotation = right_annotation, # Add foo on the right
+  row_dend_reorder = F,
+  column_names_gp = gpar(fontsize = 18, fontface = "bold", col = "darkblue"),
+  show_row_names = FALSE,
+  rect_gp = gpar(col = "white", lwd = 0.5),
+  row_gap = unit(6, "mm"), # Adjust the gap size between rows
+  column_gap = unit(4, "mm"), # Adjust the gap size between columns
+  heatmap_legend_param = list(
+    title = "PSI Value",
+    title_gp = gpar(fontsize = 40),
+    labels_gp = gpar(fontsize = 10),
+    legend_position = c(-20, 0),  # Move the legend closer to the center (x, y coordinates)
+    legend_direction = "vertical" # Align the legend horizontally
+  )
+)
+
+# Draw the heatmap
+ht <- draw(ht)
+
+# Decorate the "foo" annotation slices (on the right)
+for (i in seq_along(clustered_events)) {
+  decorate_annotation("foo", slice = i, {
+    grid.rect(x = 0, width = unit(2, "mm"), gp = gpar(fill = i, col = NA), just = "left")
+    grid.text(paste(text_list[[i]], collapse = "\n"), x = unit(4, "mm"), just = "left", gp = gpar(fontsize = 15))
+  })
+}
+```
+
+### Table of Events from Heatmap
+
+```{r, table heatmap final}
+row_order <- unlist(row_order(ht), use.names = F)
+col_order <- unlist(column_order(ht), use.names = F)
+
+cluster_index <- unlist(lapply(seq_along(row_order(ht)), function(i) rep(i, length(row_order(ht)[[i]]))))
+
+# Reorder the original matrix based on clustering
+clustered_matrix <- tao_matrix[row_order, col_order]
+final_impact_string<-protein_impact %>%
+  filter(EventID %in% events_for_impact) %>%
+  arrange(match(EventID, events_for_impact))
+final_impact_string<- final_impact_string[match(rownames(clustered_matrix),final_impact_string$EventID),]
+
+
+heatmap_dataframe<-tibble(EVENT=rownames(clustered_matrix), heatmap_cluster=cluster_index, protein_impact=final_impact_string$ONTO)
+heatmap_dataframe$GENE<-reference_table$GENE[match(heatmap_dataframe$EVENT, reference_table$EVENT)]
+heatmap_dataframe<-select(heatmap_dataframe, GENE, EVENT, protein_impact, heatmap_cluster)
+
+# Render DataTable with enhancements
+datatable(
+  heatmap_dataframe,
+  options = list(
+    pageLength = 10,                      # Rows per page
+    autoWidth = TRUE,                     # Adjust column widths automatically
+    dom = 'Bfrtip',                       # Add buttons for export
+    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
+  rownames = FALSE,                       # Disable row names
+  extensions = "Buttons"                  # Enable export buttons
+))
+
+
+```
+
+
+### Table
 
 ```{r final sorted exons table}
 # Render DataTable with enhancements
@@ -2574,53 +3097,6 @@ datatable(
 
 write.csv(final_exon_list,
           file = file.path(output_dir, paste0("sorted_final_exon_list_", format(Sys.Date(), "%Y%m%d"), ".csv")),
-          row.names = FALSE)
-```
-
-## Introns
-
-```{r final sorted intron table}
-# Render DataTable with enhancements
-datatable(
-  select(final_intron_list, -ENTREZID, -avg_Pdiff, -sequence,-avg_FDR, -COORD),
-  options = list(
-    pageLength = 10,                      # Rows per page
-    autoWidth = TRUE,                     # Adjust column widths automatically
-    dom = 'Bfrtip',                       # Add buttons for export
-    buttons = c("copy", "csv", "excel", "pdf"),  # Simplified button definitions
-    columnDefs = list(
-      list(targets = "_all", className = "dt-center"),    # Center-align all columns
-      list(
-        targets = 3,  # Highlight significant Pdiff
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && parseFloat(data) > 0.99) {
-               return '<span style=\"color: green; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      ),
-      list(
-        targets = 4,  # Highlight large deltapsi values
-        render = JS(
-          "function(data, type, row) {
-             if (type === 'display' && Math.abs(parseFloat(data)) > 0.5) {
-               return '<span style=\"color: red; font-weight: bold;\">' + data + '</span>';
-             }
-             return data;
-           }"
-        )
-      )
-    )
-  ),
-  rownames = FALSE,                       # Disable row names
-  extensions = "Buttons"                  # Enable export buttons
-)
-
-
-write.csv(final_intron_list,
-          file = file.path(output_dir, paste0("sorted_final_intron_list_", format(Sys.Date(), "%Y%m%d"), ".csv")),
           row.names = FALSE)
 ```
 
@@ -2910,7 +3386,7 @@ datatable(
 
 ```{r final df}
 
-speckles_molecularcell<-read_xlsx("apex2_seq_molecularcell.xlsx")
+
 rbfox_exons<-read_excel("rbfox_exons.xls")
 rbfox_events_pdac <- read_excel("rbfox_events_frompdac_good.xlsx")
 differential_tao_exons_4d$rbfox<-tolower(differential_tao_exons_4d$GENE) %in% tolower(c(rbfox_events_pdac[[1]], rbfox_exons$`hg19.kgXref.
