@@ -844,7 +844,9 @@ create_boxplot <- function(data, x, y, title, p_value, y_transform = "none", y_l
       method = "t.test", 
       label = "p.signif", 
       paired = FALSE, 
-      var.equal = FALSE
+      var.equal = FALSE,
+      hide.ns = TRUE
+    
     )
   
   # Apply log10 transformation if specified (ensure y > 0)
