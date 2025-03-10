@@ -2623,7 +2623,8 @@ These final lists show all the events found to be significant in all studies (in
 ### Stats
 
 ```{r upset}
-
+# https://www.cell.com/molecular-cell/fulltext/S1097-2765(21)01072-8?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS1097276521010728%3Fshowall%3Dtrue
+# https://www.cell.com/cms/10.1016/j.molcel.2021.12.010/attachment/f3e6b74f-1196-43d1-be04-2aa3cc230713/mmc5.xlsx
 speckles_molecularcell<-read_xlsx("apex2_seq_molecularcell.xlsx", sheet = "NuclearSpeckle")
 # -------------------------------
 # 1. Combine Spire and FMN2 Events
@@ -2652,10 +2653,6 @@ groupB_genelist_mouse_symbol <- bitr(groupB_genelist_mouse$ENSEMBL,
                                      OrgDb = org.Mm.eg.db) %>%
                                      distinct(SYMBOL, .keep_all = TRUE)
 
-# Read in Nocodazole treatment data
-molecularcell_speckles_nocodazole <- read_excel("molecularcell_speckles_nocodazole.xlsx", 
-                                                sheet = "Nocodazole treatment")
-
 # -------------------------------
 # 3. Define Muscle Spliced Gene Sets
 # -------------------------------
@@ -2667,9 +2664,7 @@ muscle_spliced_7d <- tolower(unique(c(differential_tao_exons$GENE,
 # Define the gene sets
 genes_upset <- list(
   "Muscle Differentiation" = muscle_spliced_4d,
-  Force_disrupted_genes = tolower(unique(c(
-    molecularcell_speckles_nocodazole$Common_Gene[
-      molecularcell_speckles_nocodazole$OMM_30m_p <= 0.05], spire_fmn2_events))),
+  Force_disrupted_genes = tolower(unique(c(spire_fmn2_events))),
   Associated_with_Speckles = tolower(unique(c(groupA_genelist_mouse_symbol$SYMBOL, 
                                               groupB_genelist_mouse_symbol$SYMBOL, speckle_associated)))
 )
