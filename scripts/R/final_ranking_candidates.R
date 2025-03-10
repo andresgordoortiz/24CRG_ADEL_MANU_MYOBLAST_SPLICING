@@ -740,10 +740,10 @@ kable(summary_INT, caption = "INT Summary Statistics")
 
 # Create a named list of your four data frames
 df_list <- list(
-  All_Layers = all_layers,
-  Myo_Forces_Layers = myo_forces_layers,
-  Myo_Associated_Layers = myo_associated_layers,
-  Only_Myo_Layers = only_myo_layers
+  All_Combined = all_layers,
+  Myogenesis_Forces = myo_forces_layers,
+  Myogenesis_Speckles = myo_associated_layers,
+  Only_Myogenesis = only_myo_layers
 )
 
 # Function to combine data for a given event type for plotting
@@ -798,11 +798,12 @@ library(ggplot2)
 library(ggpubr)
 library(extrafont)
 
-# Load fonts (use "win" for Windows, "pdf" for PDFs, or adjust/remove as needed)
+# Ensure fonts are imported and loaded
+# font_import(pattern = "Arial", prompt = FALSE) # Run once if needed
 loadfonts(device = "win")
 
 # Define a refined theme for publication-quality plots
-theme_pub <- theme_minimal(base_family = "Arial") + 
+theme_pub <- theme_minimal(base_family = "sans") + 
   theme(
     plot.title = element_text(size = 16, face = "bold", hjust = 0.5, color = "#333333"),
     axis.title = element_text(size = 14, face = "bold", color = "#333333"),
@@ -814,27 +815,79 @@ theme_pub <- theme_minimal(base_family = "Arial") +
     panel.background = element_rect(fill = "transparent", color = NA)
   )
 
-# Function to create styled boxplots using modern tidy evaluation
-create_boxplot <- function(data, x, y, title, p_value) {
-  ggplot(data, aes(x = .data[[x]], y = .data[[y]], fill = .data[[x]])) +
+# Enhanced plotting function with optional y-axis transformation or limits
+create_boxplot <- function(data, x, y, title, p_value, y_transform = "none", y_limits = NULL) {
+  # Define the specific pairwise comparisons
+  comparisons_list <- list(
+    c("All_Combined", "Myogenesis_Speckles"), 
+    c("All_Combined", "Myogenesis_Forces"),
+    c("All_Combined", "Only_Myogenesis"),
+    c("Myogenesis_Speckles", "Myogenesis_Forces"),
+    c("Myogenesis_Speckles", "Only_Myogenesis"),
+    c("Myogenesis_Forces", "Only_Myogenesis")
+  )
+  
+  p <- ggplot(data, aes(x = .data[[x]], y = .data[[y]], fill = .data[[x]])) +
     geom_boxplot(outlier.shape = NA, alpha = 0.7, width = 0.6, color = "black") + 
     geom_jitter(width = 0.2, alpha = 0.6, size = 2, color = "#444444") +
     scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73", "#F0E442")) +
+    scale_x_discrete(limits = c("All_Combined", "Myogenesis_Speckles", "Myogenesis_Forces", "Only_Myogenesis")) +
     labs(
       title = paste0(title, "\nANOVA Welch p-value = ", round(p_value, 4)),
       x = "Group",
       y = y
     ) +
-    theme_pub
+    theme_pub +
+    # Add pairwise comparisons (using Welch's t-test)
+    stat_compare_means(
+      comparisons = comparisons_list, 
+      method = "t.test", 
+      label = "p.signif", 
+      paired = FALSE, 
+      var.equal = FALSE
+    )
+  
+  # Apply log10 transformation if specified (ensure y > 0)
+  if (y_transform == "log10") {
+    p <- p + scale_y_log10()
+  }
+  
+  # Zoom in using specified y-axis limits if provided
+  if (!is.null(y_limits)) {
+    p <- p + coord_cartesian(ylim = y_limits)
+  }
+  
+  return(p)
 }
 
-# Generate plots with updated function calls
-p_length_ex <- create_boxplot(combined_ex, "group", "LENGTH", "LENGTH by Group (EX events)", anova_ex_length)
+
+
+# Example usage for the LENGTH plots:
+# Option 1: Use a log transformation (if appropriate)
+p_length_ex <- create_boxplot(combined_ex, "group", "LENGTH", 
+                              "LENGTH by Group (EX events)", anova_ex_length, 
+                              y_transform = "log10")
+p_length_int <- create_boxplot(combined_int, "group", "LENGTH", 
+                               "LENGTH by Group (INT events)", anova_int_length, 
+                               y_transform = "log10")
+
+# Option 2: Zoom in on the bulk of the data using y-axis limits 
+# (for instance, limiting the upper bound to the 99th percentile)
+upper_limit_ex <- quantile(combined_ex$LENGTH, 0.99)
+upper_limit_int <- quantile(combined_int$LENGTH, 0.99)
+
+p_length_ex_zoom <- create_boxplot(combined_ex, "group", "LENGTH", 
+                                   "LENGTH by Group (EX events)", anova_ex_length, 
+                                   y_limits = c(min(combined_ex$LENGTH), upper_limit_ex))
+p_length_int_zoom <- create_boxplot(combined_int, "group", "LENGTH", 
+                                    "LENGTH by Group (INT events)", anova_int_length, 
+                                    y_limits = c(min(combined_int$LENGTH), upper_limit_int))
+
+# Generate the other plots (GC plots) without transformation
 p_gc_ex     <- create_boxplot(combined_ex, "group", "GC", "GC Content by Group (EX events)", anova_ex_gc)
-p_length_int<- create_boxplot(combined_int, "group", "LENGTH", "LENGTH by Group (INT events)", anova_int_length)
 p_gc_int    <- create_boxplot(combined_int, "group", "GC", "GC Content by Group (INT events)", anova_int_gc)
 
-# Arrange the plots in a grid
+# Arrange the plots in a grid (choose the appropriate LENGTH plot version)
 final_plot <- ggarrange(
   p_length_ex, p_gc_ex, p_length_int, p_gc_int, 
   ncol = 2, nrow = 2, 
