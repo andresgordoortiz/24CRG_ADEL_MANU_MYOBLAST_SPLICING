@@ -797,7 +797,6 @@ anova_int_gc     <- oneway.test(GC ~ group, data = combined_int, var.equal = FAL
 library(ggplot2)
 library(ggpubr)
 library(extrafont)
-
 # Ensure fonts are imported and loaded
 # font_import(pattern = "Arial", prompt = FALSE) # Run once if needed
 loadfonts(device = "win")
@@ -815,7 +814,7 @@ theme_pub <- theme_minimal(base_family = "sans") +
     panel.background = element_rect(fill = "transparent", color = NA)
   )
 
-# Enhanced plotting function with optional y-axis transformation or limits
+# Enhanced plotting function with GC-specific y-axis breaks and removal of non-significant comparison bars
 create_boxplot <- function(data, x, y, title, p_value, y_transform = "none", y_limits = NULL) {
   # Define the specific pairwise comparisons
   comparisons_list <- list(
@@ -827,9 +826,29 @@ create_boxplot <- function(data, x, y, title, p_value, y_transform = "none", y_l
     c("Myogenesis_Forces", "Only_Myogenesis")
   )
   
+  # Compute pairwise comparisons using t.test
+  comp_res <- compare_means(
+    formula = as.formula(paste(y, "~", x)), 
+    data = data,
+    method = "t.test", 
+    paired = FALSE,
+    comparisons = comparisons_list
+  )
+  # Filter to include only significant comparisons (p < 0.05)
+  signif_comps <- comp_res[comp_res$p < 0.05, c("group1", "group2")]
+  if (nrow(signif_comps) > 0) {
+    comparisons_to_plot <- apply(signif_comps, 1, function(x) c(x[1], x[2]))
+    comparisons_to_plot <- split(t(comparisons_to_plot), seq(nrow(signif_comps)))
+  } else {
+    comparisons_to_plot <- NULL
+  }
+  
+  # Build the plot
   p <- ggplot(data, aes(x = .data[[x]], y = .data[[y]], fill = .data[[x]])) +
     geom_boxplot(outlier.shape = NA, alpha = 0.7, width = 0.6, color = "black") + 
-    geom_jitter(width = 0.2, alpha = 0.6, size = 2, color = "#444444") +
+    geom_jitter(width = 0.2, alpha = 0.4, size = 2.5, color = "#444444") +
+    # Add mean points for additional clarity
+    stat_summary(fun = mean, geom = "point", shape = 23, size = 3, fill = "white", color = "black") +
     scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73", "#F0E442")) +
     scale_x_discrete(limits = c("All_Combined", "Myogenesis_Speckles", "Myogenesis_Forces", "Only_Myogenesis")) +
     labs(
@@ -837,17 +856,23 @@ create_boxplot <- function(data, x, y, title, p_value, y_transform = "none", y_l
       x = "Group",
       y = y
     ) +
-    theme_pub +
-    # Add pairwise comparisons (using Welch's t-test)
-    stat_compare_means(
-      comparisons = comparisons_list, 
+    theme_pub
+  
+  # If the y variable is GC, set specific breaks to show percentages
+  if (y == "GC") {
+    p <- p + scale_y_continuous(breaks = c(0, 25, 50, 75, 100))
+  }
+  
+  # Add pairwise comparisons only if there are significant ones
+  if (!is.null(comparisons_to_plot)) {
+    p <- p + stat_compare_means(
+      comparisons = comparisons_to_plot, 
       method = "t.test", 
       label = "p.signif", 
       paired = FALSE, 
-      var.equal = FALSE,
-      hide.ns = TRUE
-    
+      var.equal = FALSE
     )
+  }
   
   # Apply log10 transformation if specified (ensure y > 0)
   if (y_transform == "log10") {
@@ -862,8 +887,6 @@ create_boxplot <- function(data, x, y, title, p_value, y_transform = "none", y_l
   return(p)
 }
 
-
-
 # Example usage for the LENGTH plots:
 # Option 1: Use a log transformation (if appropriate)
 p_length_ex <- create_boxplot(combined_ex, "group", "LENGTH", 
@@ -874,7 +897,6 @@ p_length_int <- create_boxplot(combined_int, "group", "LENGTH",
                                y_transform = "log10")
 
 # Option 2: Zoom in on the bulk of the data using y-axis limits 
-# (for instance, limiting the upper bound to the 99th percentile)
 upper_limit_ex <- quantile(combined_ex$LENGTH, 0.99)
 upper_limit_int <- quantile(combined_int$LENGTH, 0.99)
 
@@ -885,9 +907,9 @@ p_length_int_zoom <- create_boxplot(combined_int, "group", "LENGTH",
                                     "LENGTH by Group (INT events)", anova_int_length, 
                                     y_limits = c(min(combined_int$LENGTH), upper_limit_int))
 
-# Generate the other plots (GC plots) without transformation
-p_gc_ex     <- create_boxplot(combined_ex, "group", "GC", "GC Content by Group (EX events)", anova_ex_gc)
-p_gc_int    <- create_boxplot(combined_int, "group", "GC", "GC Content by Group (INT events)", anova_int_gc)
+# Generate the GC plots (the y-axis will now show only 0, 25, 50, 75, 100)
+p_gc_ex  <- create_boxplot(combined_ex, "group", "GC", "GC Content by Group (EX events)", anova_ex_gc)
+p_gc_int <- create_boxplot(combined_int, "group", "GC", "GC Content by Group (INT events)", anova_int_gc)
 
 # Arrange the plots in a grid (choose the appropriate LENGTH plot version)
 final_plot <- ggarrange(
@@ -900,3 +922,221 @@ final_plot <- ggarrange(
 # Display the final arranged plot
 final_plot
 
+
+
+
+#####
+# Inclusion patterns
+######
+
+
+# Function to compute the difference for a single dataframe
+compute_difference <- function(df) {
+  avg_4d <- rowMeans(df[, 9:11])
+  avg_0d <- rowMeans(df[, 3:5])
+  avg_4d - avg_0d
+}
+
+
+
+all_layers_matrix <- bind_rows(final_myo_forces_layers, final_all_layers) %>%
+  distinct(.data$EVENT, .keep_all = TRUE) %>%
+  select(1, 2, 7:18)
+
+
+all_layers_matrix<-all_layers_matrix[, c("GENE","EVENT", metadata_tao$run_accession)]
+# Calculate the difference and remove any additional NAs
+all_layers_matrix$difference <- compute_difference(all_layers_matrix)
+all_layers_matrix <- na.omit(all_layers_matrix)
+
+# Create a group variable based on whether the difference is below or above zero
+all_layers_matrix$group <- ifelse(all_layers_matrix$difference < 0, "Skipped", "Included")
+
+# Perform a one-sample Wilcoxon signed-rank test (null hypothesis: median = 0)
+symmetry_test <- wilcox.test(all_layers_matrix$difference, mu = 0)
+
+# Compute the percentages (areas under the density curve)
+pct_below <- round(mean(all_layers_matrix$difference < 0) * 100, 1)
+pct_above <- round(mean(all_layers_matrix$difference > 0) * 100, 1)
+
+# ---- Plot -------------------------------------------------------------------
+
+plot_psi_distribution <- ggplot(
+  all_layers_matrix[abs(all_layers_matrix$difference) > 0, ], 
+  aes(x = difference, fill = group)
+) +
+  geom_histogram(aes(y = ..density..), bins = 200, 
+                 position = "identity", alpha = 0.9) +
+  labs(
+    title = "Delta PSI Distribution of Significant Exons Myo and Forces",
+    subtitle = paste("One-sample Wilcoxon test p-value for Symmetry:", 
+                     format(symmetry_test$p.value, digits = 3)),
+    x = "ΔPSI (4d - 0d)",
+    y = "Density",
+    fill = "Splicing Direction",
+    caption = paste0("Created by AG on ", Sys.Date())
+  ) +
+  theme_minimal(base_family = "sans") +
+  theme(
+    legend.position = "right",
+    axis.title.x = element_text(margin = margin(t = 10)),
+    axis.text.x = element_text(size = 15),
+    panel.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(color = "gray80", size = 0.5),
+    panel.grid.minor = element_line(color = "gray95", size = 0.3),
+    strip.text = element_text(size = 14, face = "bold"),
+    panel.spacing = unit(1.5, "lines")
+  ) +
+  scale_x_continuous(
+    breaks = c(-100, -75, -50, -25, 0, 25, 50, 75, 100)
+  ) +
+  # Annotate the percentages with polished label boxes
+  annotate("label", x = -65, y = 0.05, hjust = 0, vjust = 0,
+           label = sprintf("dPSI < 0: %.1f%%", pct_below),
+           fill = alpha("white", 0.8), color = "blue", size = 7, fontface = "bold",
+           label.size = 0.5) +
+  annotate("label", x = 65, y = 0.05, hjust = 1, vjust = 0,
+           label = sprintf("dPSI > 0: %.1f%%", pct_above),
+           fill = alpha("white", 0.8), color = "red", size = 7, fontface = "bold",
+           label.size = 0.5) +
+  scale_fill_brewer(palette = "Set1")
+
+# Save and display the plot
+ggsave("d4vs0_psi_distribution_exons.svg", plot_psi_distribution, width = 12, height = 8, dpi = 300)
+
+print(plot_psi_distribution)
+
+
+#####
+# Gene centric Analysis
+#####
+
+# Set seed for reproducibility
+set.seed(44)
+
+# -------------------------------
+# 0. Read protein impact data and combine your events
+# -------------------------------
+protein_impact <- read.table("notebooks/final/PROT_IMPACT-mm10-v2.3.tab", sep = "\t",
+                             header = TRUE, stringsAsFactors = FALSE, 
+                             fill = TRUE, quote = "")
+
+# Combine exon and intron event data (with a column "source" indicating the origin)
+combined_df <- bind_rows(
+  all  = final_all_layers,
+  myo_speckle = final_myo_associated_layers,
+  myo_force = final_myo_forces_layers,
+  only_myo= final_only_myo_layers,
+  .id = "source"
+)
+
+# Add protein impact info by matching on event IDs
+combined_df$protein_impact <- protein_impact$ONTO[match(combined_df$EVENT, protein_impact$EventID)]
+
+# Keep one row per EVENT (if duplicates exist)
+combined_df <- combined_df %>% distinct(EVENT, .keep_all = TRUE) %>%
+  filter(!GENE == "")
+
+# -------------------------------
+# 1. Create per-gene summary statistics
+# -------------------------------
+combined_df_summary <- combined_df %>%
+  distinct(GENE, EVENT, .keep_all = TRUE) %>%  # remove duplicate gene/event rows if any
+  group_by(GENE) %>%
+  summarise(
+    nEvents   = n(),                                        # number of events per gene
+    meanDelta = mean(abs(deltapsi), na.rm = TRUE),          # mean absolute |dPSI|
+    sdDelta   = sd(abs(deltapsi), na.rm = TRUE)             # standard deviation (for reference)
+  ) %>%
+  arrange(desc(nEvents), desc(meanDelta)) %>%              # sort: genes with more events first
+  mutate(GENE = factor(GENE, levels = unique(GENE)))        # set ordering for later plotting
+
+# -------------------------------
+# 2. Add ORF information to gene-level summary
+#    (We consider a gene “ORF disrupted” if any of its events has impact labeled as "ORF")
+# -------------------------------
+# First, mark each event as ORF or Non-ORF
+combined_df <- combined_df %>%
+  mutate(
+    absDelta = abs(deltapsi),
+    impact   = ifelse(!is.na(protein_impact) & grepl("ORF", protein_impact, ignore.case = TRUE),
+                      "ORF", "Non-ORF")
+  )
+
+# First, compute per-gene ORF counts and the proportion of ORF events
+gene_ORF_stats <- combined_df %>%
+  distinct(GENE, EVENT, .keep_all = TRUE) %>%  # ensure one row per gene-event
+  group_by(GENE) %>%
+  summarise(
+    total_events = n(),
+    ORF_events   = sum(impact == "ORF", na.rm = TRUE),
+    prop_ORF     = ORF_events / total_events
+  )
+
+# Merge these stats with your existing gene-level summary
+combined_df_summary <- combined_df_summary %>%
+  left_join(gene_ORF_stats, by = "GENE")
+
+# Create the summary table, now using the proportion of ORF events
+table_summary <- combined_df_summary %>%
+  group_by(nEvents) %>%
+  summarise(
+    n_genes         = n(),
+    avg_prop_ORF    = paste0(round(mean(prop_ORF, na.rm = TRUE), 3)*100, "%")
+  ) %>%
+  rename(
+    "Number of Significant Events" = nEvents,
+    "Number of Genes"              = n_genes,
+    "Average Proportion of ORF"    = avg_prop_ORF
+  )
+
+library(DT)
+datatable(table_summary, 
+          rownames = FALSE,
+          caption = 'Summary of Genes by Number of Significant Events')
+
+
+# -------------------------------
+# Filter for genes with >2 events and compute SD
+# -------------------------------
+df_summary_gt2 <- combined_df_summary %>%
+  filter(nEvents > 2) %>%
+  arrange(desc(nEvents), desc(meanDelta)) %>%
+  mutate(
+    GENE = factor(GENE, levels = unique(GENE))
+  )
+
+# -------------------------------
+# Build the publication-ready plot:
+# - Bars show the mean |dPSI| per gene.
+# - Upper error bars show mean + SD.
+# -------------------------------
+
+p2 <- ggplot(df_summary_gt2, aes(x = GENE, y = meanDelta, fill = factor(nEvents))) +
+  # Bar plot for mean |dPSI|
+  geom_bar(stat = "identity", width = 0.7, alpha = 0.8) +
+  # Upper error bar: from meanDelta to meanDelta + SD
+  geom_errorbar(aes(ymin = meanDelta, ymax = meanDelta + sdDelta),
+                width = 0.2, color = "black", alpha = 0.6) +
+  # Define fill colors (using a color palette) and label for the legend
+  scale_fill_brewer(palette = "Set2", name = "Number of Events") +
+  # Improved axis and plot annotations
+  labs(
+    x = "Gene ID",
+    y = "Mean |dPSI|",
+    title = "Genes with >2 Differential Splicing Events in Myoblasts",
+    subtitle = "Bar height = mean |dPSI|; Upper error bar = SD"
+  ) +
+  # Use a clean, publication-ready theme with custom font settings
+  theme_classic(base_size = 16, base_family = "sans") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 6),
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    axis.title = element_text(face = "bold"),
+    legend.title = element_text(face = "bold"),
+    plot.margin = margin(10, 10, 10, 20) # Ensure enough space
+  )
+
+# Display the plot
+print(p2)
