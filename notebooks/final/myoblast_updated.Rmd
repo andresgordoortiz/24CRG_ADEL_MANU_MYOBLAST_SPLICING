@@ -1433,11 +1433,6 @@ datatable(
   extensions = "Buttons"                  # Enable export buttons
 ) %>%
   formatStyle(
-    columns = "Pdiff",
-    color = styleInterval(0.99, c("black", "green")),
-    fontWeight = styleEqual(0.99, "bold")  # Ensure consistent styling
-  ) %>%
-  formatStyle(
   columns = "deltapsi",
   color = styleInterval(c(-0.5, 0.5), c("black", "red", "black")),  # Three colors for two intervals
   fontWeight = styleInterval(c(-0.5, 0.5), c("normal", "bold", "normal"))  # Three weights for two intervals
@@ -2626,6 +2621,11 @@ These final lists show all the events found to be significant in all studies (in
 # https://www.cell.com/molecular-cell/fulltext/S1097-2765(21)01072-8?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS1097276521010728%3Fshowall%3Dtrue
 # https://www.cell.com/cms/10.1016/j.molcel.2021.12.010/attachment/f3e6b74f-1196-43d1-be04-2aa3cc230713/mmc5.xlsx
 speckles_molecularcell<-read_xlsx("apex2_seq_molecularcell.xlsx", sheet = "NuclearSpeckle")
+
+# https://www.cell.com/molecular-cell/fulltext/S1097-2765(25)00143-1?rss=yes
+speckles_nadiya_cell2025_hek<-read_xlsx("nadiya_khyzha_cell.xlsx", sheet = "HEK293T_SC35")
+speckles_nadiya_cell2025_k562<-read_xlsx("nadiya_khyzha_cell.xlsx", sheet = "K562_SC35")
+
 # -------------------------------
 # 1. Combine Spire and FMN2 Events
 # -------------------------------
@@ -2636,9 +2636,9 @@ spire_fmn2_events <- tolower(unique(c(fmn2_events, spire_events)))
 # 2. Process Additional Gene Lists
 # -------------------------------
 # Speckle-associated genes based on dual index scores (> 0.8)
-speckle_associated <- tolower(speckles_molecularcell$`Table S4 - Related to Figure 2- Dual Index scores of transcripts identified with the markers belonging to each nuclear domain`[
+speckle_associated <- tolower(unique(c(speckles_molecularcell$`Table S4 - Related to Figure 2- Dual Index scores of transcripts identified with the markers belonging to each nuclear domain`[
   speckles_molecularcell$...2 > 0.8 & speckles_molecularcell$...3 > 0.8
-])
+], speckles_nadiya_cell2025_hek$gene_name[speckles_nadiya_cell2025_hek$diffexpressed=="UP"],speckles_nadiya_cell2025_k562$gene_name[speckles_nadiya_cell2025_k562$diffexpressed=="UP"])))
 
 # Convert ENSEMBL IDs to gene symbols, ensuring uniqueness
 groupA_genelist_mouse_symbol <- bitr(groupA_genelist_mouse$ENSEMBL, 
