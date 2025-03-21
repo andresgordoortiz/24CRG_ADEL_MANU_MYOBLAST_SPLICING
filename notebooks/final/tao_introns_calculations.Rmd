@@ -52,6 +52,7 @@ tao_data <- getDataset(pathTables = paste0(getwd(),"/inclusion_tables/Tao_INCLUS
 tao_events <- filterEvents(getEvents(tao_data, tool = "vast-tools"), N=10) # Extract alternative splicing events
 tao_exons <- filterEvents(tao_events, types = c("C1", "C2", "C3", "S", "MIC"), N = 10)
 tao_introns <- filterEvents(tao_events, types = c("IR"), N = 10)
+tao_alt <- filterEvents(tao_events, types = c("Alt5", "Alt3"), N = 10)
 
 # Load metadata file containing sample information
 metadata_tao <- read.csv(paste0(getwd(),"/metadata/tao_metadata.csv"), sep = ",")
@@ -73,7 +74,7 @@ groupList_tao <- lapply(1:length(groups_tao), function(i) {
 })
 names(groupList_tao) <- groups_tao
 
-groupA_tao<-"0_days"
+groupA_tao<-"4_days"
 groupB_tao<-"7_days"
 samplesA_tao <- groupList_tao[[groupA_tao]]$samples
 samplesB_tao <- groupList_tao[[groupB_tao]]$samples
@@ -98,16 +99,16 @@ tao_pdiff_introns <- prepareTableVolcanoFDR(
   CoverageWeight = FALSE
 )
 
-groupA_tao<-"0_days"
-groupB_tao<-"2_days"
+groupA_tao<-"4_days"
+groupB_tao<-"7_days"
 samplesA_tao <- groupList_tao[[groupA_tao]]$samples
 samplesB_tao <- groupList_tao[[groupB_tao]]$samples
-colsGroupA_tao <- convertCols(tao_introns$PSI, samplesA_tao)
-colsGroupB_tao <- convertCols(tao_introns$PSI, samplesB_tao)
+colsGroupA_tao <- convertCols(tao_exons$PSI, samplesA_tao)
+colsGroupB_tao <- convertCols(tao_exons$PSI, samplesB_tao)
 
 tao_pdiff_introns_2d <- prepareTableVolcanoFDR(
-  psitable = tao_introns$PSI,
-  qualtable = tao_introns$Qual,
+  psitable = tao_exons$PSI,
+  qualtable = tao_exons$Qual,
   npoints = 500,
   colsA = colsGroupA_tao,
   colsB = colsGroupB_tao,
@@ -121,39 +122,16 @@ tao_pdiff_introns_2d <- prepareTableVolcanoFDR(
   CoverageWeight = FALSE
 )
 
-groupA_tao<-"0_days"
-groupB_tao<-"4_days"
+groupA_tao<-"4_days"
+groupB_tao<-"7_days"
 samplesA_tao <- groupList_tao[[groupA_tao]]$samples
 samplesB_tao <- groupList_tao[[groupB_tao]]$samples
-colsGroupA_tao <- convertCols(tao_introns$PSI, samplesA_tao)
-colsGroupB_tao <- convertCols(tao_introns$PSI, samplesB_tao)
+colsGroupA_tao <- convertCols(tao_alt$PSI, samplesA_tao)
+colsGroupB_tao <- convertCols(tao_alt$PSI, samplesB_tao)
 
 tao_pdiff_introns_4d <- prepareTableVolcanoFDR(
-  psitable = tao_introns$PSI,
-  qualtable = tao_introns$Qual,
-  npoints = 500,
-  colsA = colsGroupA_tao,
-  colsB = colsGroupB_tao,
-  labA = groupA_tao,
-  labB = groupB_tao,
-  basalColor = "#89C0AE",
-  interestColor = "#E69A9C",
-  maxDevTable = maxDevSimulationN100,
-  nsim=1000,
-  seed = TRUE,
-  CoverageWeight = FALSE
-)
-
-groupA_tao<-"2_days"
-groupB_tao<-"4_days"
-samplesA_tao <- groupList_tao[[groupA_tao]]$samples
-samplesB_tao <- groupList_tao[[groupB_tao]]$samples
-colsGroupA_tao <- convertCols(tao_introns$PSI, samplesA_tao)
-colsGroupB_tao <- convertCols(tao_introns$PSI, samplesB_tao)
-
-tao_pdiff_introns_4dvs2d <- prepareTableVolcanoFDR(
-  psitable = tao_introns$PSI,
-  qualtable = tao_introns$Qual,
+  psitable = tao_alt$PSI,
+  qualtable = tao_alt$Qual,
   npoints = 500,
   colsA = colsGroupA_tao,
   colsB = colsGroupB_tao,
@@ -169,9 +147,8 @@ tao_pdiff_introns_4dvs2d <- prepareTableVolcanoFDR(
 
 
 
-write.csv(tao_pdiff_introns, "tao_pdiff_introns.csv")
-write.csv(tao_pdiff_introns_2d,"tao_pdiff_introns_2d.csv")
-write.csv(tao_pdiff_introns_4d,"tao_pdiff_introns_4d.csv")
-write.csv(tao_pdiff_introns_4dvs2d,"tao_pdiff_introns_4dvs2d.csv")
+write.csv(tao_pdiff_introns, "tao_pdiff_introns_7vs4.csv")
+write.csv(tao_pdiff_introns_2d,"tao_pdiff_exons_7vs4.csv")
+write.csv(tao_pdiff_introns_4d,"tao_pdiff_alt_7vs4.csv")
 ```
 
