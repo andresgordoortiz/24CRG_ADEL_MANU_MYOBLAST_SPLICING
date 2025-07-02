@@ -16,6 +16,9 @@
 *.tab
 data/processed/*
 /downloads
+*.R*
+notebooks/final/tables_10n/*
+notebooks/final/*pdiff*
 
 # File groups and specific data folders
 *to_combine/
