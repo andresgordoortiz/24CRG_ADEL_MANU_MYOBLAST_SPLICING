@@ -19,6 +19,7 @@ data/processed/*
 
 # File groups and specific data folders
 *to_combine/
+*results/
 *tmp/
 *gtf
 *fasta
