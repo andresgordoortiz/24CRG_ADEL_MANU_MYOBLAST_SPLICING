@@ -19,7 +19,7 @@ library(enrichR)
 library(edgeR)
 
 # Load metadata
-metadata <- arrange(read.csv("metadata/tao_metadata.csv", sep = ","), experiment_title)[7:12,]
+metadata <- arrange(read.csv("metadata/tao_metadata.csv", sep = ","), experiment_title)
 
 # Subset count files and ensure proper formatting
 count_files <- file.path(paste0("notebooks/final/Kallisto/", metadata$run_accession, "/abundance.h5"))
@@ -64,7 +64,7 @@ print(pca_plot)
 dds <- DESeq(dds)
 
 # Results for the comparison "7_days" vs "4_days"
-res <- results(dds, contrast = c("experiment_title", "7_days", "4_days"), alpha = 0.05)
+res <- results(dds, contrast = c("experiment_title", "4_days", "0_days"), alpha = 0.05)
 
 # MA Plot
 # Convert results to a data frame
@@ -76,7 +76,7 @@ ma_plot <- ggplot(res_df, aes(x = baseMean, y = log2FoldChange)) +
   scale_x_log10() +
   scale_color_manual(values = c("gray", "red")) +
   labs(
-    title = "MA Plot: 7_days vs 4_days",
+    title = "MA Plot: 4_days vs 0_days",
     x = "Mean of Normalized Counts",
     y = "Log2 Fold Change"
   ) +
@@ -89,8 +89,8 @@ res$gene <- rownames(res)
 annotated_res <- merge(as.data.frame(res), Tx, by.x = "gene", by.y = "gene_name", all.x = TRUE)
 
 # Filter significantly differentially expressed genes
-expression_genes_tao_4vs7 <- annotated_res %>% 
-  filter(padj <= 0.05 & abs(log2FoldChange) >= 1.5) %>% 
+expression_genes_tao_4vs0 <- annotated_res %>% 
+  dplyr::filter(padj <= 0.05 & abs(log2FoldChange) >= 1.5) %>% 
   na.omit() %>% 
   arrange(-abs(log2FoldChange))
 
