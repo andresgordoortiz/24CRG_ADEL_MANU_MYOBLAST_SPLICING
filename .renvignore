@@ -1,0 +1,3 @@
+# Ignore betAS submodule source files during renv restore
+# betAS will be installed from local source instead
+betAS/
