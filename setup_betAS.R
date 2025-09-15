@@ -32,6 +32,13 @@ if (exists("getDataset")) {
   cat("✗ getDataset function not found\n")
 }
 
+# Check if filterEvents is available
+if (exists("filterEvents")) {
+  cat("✓ filterEvents function is available\n")
+} else {
+  cat("✗ filterEvents function not found\n")
+}
+
 # List all exported functions
 cat("\nAvailable betAS functions:\n")
 print(ls("package:betAS"))
