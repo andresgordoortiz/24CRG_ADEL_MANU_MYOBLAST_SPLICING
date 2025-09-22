@@ -1,0 +1,16 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{geometry}
+\geometry{margin=1in}
+\begin{document}
+
+\begin{center}
+\textbf{METHODS --- Bootstrapping Analysis}
+\end{center}
+
+\vspace{1em}
+
+For the bootstrap analysis we focused on the distributional asymmetry (skewness) of $\Delta$PSI stratified by gene exon-count. The gene exon-count list was obtained from the latest version of the mouse genome annotation using a custom Bash script. Prior to bootstrapping, events with no change in PSI ($\Delta$PSI == 0) and events lacking an exon-count annotation were excluded so that only informative $\Delta$PSI values were considered. Genes were binned by exon number into three groups (1--10, 11--50, 51+) after mapping gene identifiers to exon counts. For each exon-count bin we computed a manual skewness estimator defined as the third central moment divided by the cubed standard deviation (skewness = $(1/n) \sum(x-\mu)^3 / s^3$), implemented in R as a function that omits NA values and returns NA for very small samples ($n<3$). To quantify uncertainty in the skewness estimate we performed non-parametric bootstrap resampling with replacement: 1000 bootstrap replicates were generated per bin (using \texttt{replicate(1000, skewness\_manual(sample(difference, replace=TRUE)))}) with a fixed random seed for reproducibility. Briefly, bootstrapping is a resampling-based method that repeatedly draws new samples (with replacement) from the observed data to approximate the sampling distribution of a statistic; by computing the skewness for each resample we approximate how that statistic would vary across repeated experiments without assuming any parametric form for the data, and we derive empirical confidence intervals from the resulting replicate distribution. From the bootstrap distribution we report the mean skewness and the empirical 95\% percentile confidence interval (CI, 2.5\% and 97.5\% quantiles); a bin was considered to show significant skew if this bootstrap 95\% CI did not include zero. This approach leverages a distribution-free assessment of skewness and explicitly reports uncertainty (bootstrap CIs). All the custom scripts can be found in the GitHub repository for further details.
+
+\end{document}
